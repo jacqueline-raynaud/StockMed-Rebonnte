@@ -31,9 +31,9 @@ fun AisleScreen(viewModel: AisleViewModel) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        items(aisles) { aisle ->
+        items(aisles, key = { it.id }) { aisle ->
             AisleItem(aisle = aisle, onClick = {
-                startDetailActivity(context, aisle.name)
+                startDetailActivity(context, aisle.id)
             })
         }
     }
@@ -53,9 +53,9 @@ fun AisleItem(aisle: Aisle, onClick: () -> Unit) {
     }
 }
 
-private fun startDetailActivity(context: Context, name: String) {
+private fun startDetailActivity(context: Context, aisleId: String) {
     val intent = Intent(context, AisleDetailActivity::class.java).apply {
-        putExtra("nameAisle", name)
+        putExtra(AisleDetailActivity.EXTRA_AISLE_ID, aisleId)
     }
     context.startActivity(intent)
 }

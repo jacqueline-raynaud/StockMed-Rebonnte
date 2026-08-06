@@ -2,31 +2,62 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import androidx.lifecycle.ViewModel
 import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.History
+import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.model.Medicine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
-import java.util.Random
+import java.util.UUID
 
 class MedicineViewModel : ViewModel() {
-    var _medicines = MutableStateFlow<MutableList<Medicine>>(mutableListOf())
-    val medicines: StateFlow<List<Medicine>> get() = _medicines
-
-    init {
-        _medicines.value = ArrayList() // Initialiser avec une liste vide
-    }
+    private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
+    val medicines: StateFlow<List<Medicine>> = _medicines.asStateFlow()
 
     fun addRandomMedicine(aisles: List<Aisle>) {
-        val currentMedicines = ArrayList(medicines.value)
-        currentMedicines.add(
-            Medicine(
-                "Medicine " + (currentMedicines.size + 1),
-                Random().nextInt(100),
-                aisles[Random().nextInt(aisles.size)].name,
-                emptyList()
-            )
+        // Sans rayon, l'ancien code levait une exception sur nextInt(0).
+        if (aisles.isEmpty()) return
+
+        val current = _medicines.value
+        _medicines.value = current + Medicine(
+            id = UUID.randomUUID().toString(),
+            name = "Medicine ${current.size + 1}",
+            stock = (0..99).random(),
+            aisleId = aisles.random().id
         )
-        _medicines.value = currentMedicines
+    }
+
+    /**
+     * Applique une variation de stock au medicament designe et trace
+     * l'operation dans son historique, dans la meme mise a jour d'etat.
+     *
+     * L'ancien code ecrivait dans `medicines[medicines.size]` (hors bornes,
+     * donc plantage systematique) puis ajoutait l'entree a une copie jetee par
+     * `toMutableList()`, si bien qu'aucun historique n'etait jamais conserve.
+     */
+    fun updateStock(medicineId: String, delta: Int, userEmail: String) {
+        _medicines.value = _medicines.value.map { medicine ->
+            if (medicine.id != medicineId) return@map medicine
+
+            val stockAfter = (medicine.stock + delta).coerceAtLeast(0)
+            if (stockAfter == medicine.stock) return@map medicine
+
+            medicine.copy(
+                stock = stockAfter,
+                histories = medicine.histories + History(
+                    id = UUID.randomUUID().toString(),
+                    medicineId = medicine.id,
+                    medicineName = medicine.name,
+                    userEmail = userEmail,
+                    date = System.currentTimeMillis(),
+                    action = HistoryAction.STOCK_CHANGE,
+                    stockBefore = medicine.stock,
+                    stockAfter = stockAfter,
+                    details = "Stock modifie de ${medicine.stock} a $stockAfter"
+                )
+            )
+        }
     }
 
     fun filterByName(name: String) {
@@ -43,19 +74,14 @@ class MedicineViewModel : ViewModel() {
     }
 
     fun sortByNone() {
-        _medicines.value = medicines.value.toMutableList() // Pas de tri
+        _medicines.value = _medicines.value // Pas de tri
     }
 
     fun sortByName() {
-        val currentMedicines = ArrayList(medicines.value)
-        currentMedicines.sortWith(Comparator.comparing(Medicine::name))
-        _medicines.value = currentMedicines
+        _medicines.value = _medicines.value.sortedBy { it.name }
     }
 
     fun sortByStock() {
-        val currentMedicines = ArrayList(medicines.value)
-        currentMedicines.sortWith(Comparator.comparingInt(Medicine::stock))
-        _medicines.value = currentMedicines
+        _medicines.value = _medicines.value.sortedBy { it.stock }
     }
 }
-
