@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.openclassrooms.rebonnte.MainActivity
-import com.openclassrooms.rebonnte.ui.history.History
+import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 import java.util.Date
 

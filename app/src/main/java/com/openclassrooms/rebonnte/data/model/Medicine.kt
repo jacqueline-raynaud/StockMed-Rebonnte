@@ -1,6 +1,4 @@
-package com.openclassrooms.rebonnte.ui.medicine
-
-import com.openclassrooms.rebonnte.ui.history.History
+package com.openclassrooms.rebonnte.data.model
 
 data class Medicine(
     var name: String,

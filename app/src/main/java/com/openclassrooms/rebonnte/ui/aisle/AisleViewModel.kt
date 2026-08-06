@@ -1,6 +1,7 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
 import androidx.lifecycle.ViewModel
+import com.openclassrooms.rebonnte.data.model.Aisle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

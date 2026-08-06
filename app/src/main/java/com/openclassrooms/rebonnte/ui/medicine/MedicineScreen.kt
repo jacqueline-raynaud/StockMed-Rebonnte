@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
+import com.openclassrooms.rebonnte.data.model.Medicine
 
 @Composable
 fun MedicineScreen(viewModel: MedicineViewModel = viewModel()) {
