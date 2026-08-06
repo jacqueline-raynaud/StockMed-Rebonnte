@@ -1,16 +1,61 @@
-*.iml
-.gradle
-/local.properties
-/.idea/
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+app/release/
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Local configuration file
 local.properties
+gradle.properties.local
+
+# Android Studio
+.idea/
+*.iml
+.externalNativeBuild
+.cxx/
+*.jks
+*.keystore
+
+# Lint
+lint-results.txt
+lint-results*.html
+
+# ProGuard
+proguard-mappings.txt
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Misc
+*.log
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
+bin/
+gen/
+out/
+
+# Environment
+.env
+.env.local
+
+# Node modules (if used for web assets)
+node_modules/
+npm-debug.log
+
+# Kotlin
+.kotlin/
+
+
