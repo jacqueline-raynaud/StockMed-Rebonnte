@@ -1,0 +1,113 @@
+{
+  "project_info": {
+    "project_number": "258557512789",
+    "project_id": "hexagonalgamesjr",
+    "storage_bucket": "hexagonalgamesjr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258557512789:android:d3a546045ddaf72ae798dc",
+        "android_client_info": {
+          "package_name": "com.openclassrooms.hexagonal.games"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "258557512789-q129rklg10s1qqdm4mm87n6hufkvucvc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.openclassrooms.hexagonal.games",
+            "certificate_hash": "62f1809a9f14decd206108224da3484b5494f041"
+          }
+        },
+        {
+          "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEFyA7Q8MsC3nxshquHxlnCtymYTjEp98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258557512789:android:d9ea5462c5534084e798dc",
+        "android_client_info": {
+          "package_name": "com.openclassrooms.rebonnte"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEFyA7Q8MsC3nxshquHxlnCtymYTjEp98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258557512789:android:6f6ca8e2f6cac921e798dc",
+        "android_client_info": {
+          "package_name": "fr.quinquenaire.eventorias"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "258557512789-4fjqdfca2i0n1s5ip84uvncmaj9kekst.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fr.quinquenaire.eventorias",
+            "certificate_hash": "62f1809a9f14decd206108224da3484b5494f041"
+          }
+        },
+        {
+          "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEFyA7Q8MsC3nxshquHxlnCtymYTjEp98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "258557512789-bs9dhts3sihm4b1pr44gdmlh54fb6e0o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

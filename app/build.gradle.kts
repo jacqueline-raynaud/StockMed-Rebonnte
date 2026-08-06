@@ -1,6 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.sonarqube)
 }
 
 android {
@@ -30,11 +35,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -60,6 +65,19 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
+    // Hilt
+    implementation(libs.hilt.android)
+    debugImplementation(libs.leakcanary)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+
+
+
+    // tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -68,3 +86,21 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+sonar {
+    properties {
+        property("sonar.projectKey", "jacqueline-raynaud_StockMed-Rebonnte")
+        property("sonar.organization", "jacqueline-raynaud")
+        property("sonar.projectName", "StockMed-Rebonnte")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.qualitygate.wait", "true")
+        property("sonar.androidLint.reportPaths", "")
+        /*property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "${layout.buildDirectory.get()}/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml,${layout.buildDirectory.get()}/reports/coverage/androidTest/debug/connected/report.xml"
+        )
+        */
+
+    }
+}
+
