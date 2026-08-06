@@ -26,6 +26,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -57,10 +58,16 @@ class MedicineDetailActivity : ComponentActivity() {
 
 @Composable
 fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
-    val medicines by viewModel.medicines.collectAsState(initial = emptyList())
-    val medicine = medicines.find { it.id == medicineId }
+    // remember(medicineId) : sans cela, un nouveau Flow serait cree a chaque
+    // recomposition.
+    val medicineFlow = remember(medicineId) { viewModel.observeMedicine(medicineId) }
+    val historyFlow = remember(medicineId) { viewModel.observeHistory(medicineId) }
 
-    if (medicine == null) {
+    val medicine by medicineFlow.collectAsState(initial = null)
+    val histories by historyFlow.collectAsState(initial = emptyList())
+
+    val currentMedicine = medicine
+    if (currentMedicine == null) {
         // L'ancien code faisait un `return` au milieu du composable : ecran
         // blanc sans explication.
         Text(
@@ -77,7 +84,7 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
                 .padding(16.dp)
         ) {
             TextField(
-                value = medicine.name,
+                value = currentMedicine.name,
                 onValueChange = {},
                 label = { Text("Name") },
                 enabled = false,
@@ -85,9 +92,9 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
-                // TODO : afficher le libelle du rayon des que AisleRepository
-                //  permettra de resoudre l'identifiant (T-10).
-                value = medicine.aisleId,
+                // TODO : afficher le libelle du rayon en resolvant l'id via
+                //  AisleRepository.
+                value = currentMedicine.aisleId,
                 onValueChange = {},
                 label = { Text("Aisle (id)") },
                 enabled = false,
@@ -98,26 +105,20 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(onClick = {
-                    // TODO : passer l'e-mail de l'utilisateur connecte des que
-                    //  l'authentification sera en place (T-17).
-                    viewModel.updateStock(medicine.id, delta = -1, userEmail = "")
-                }) {
+                IconButton(onClick = { viewModel.updateStock(currentMedicine.id, delta = -1) }) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = "Minus One"
                     )
                 }
                 TextField(
-                    value = medicine.stock.toString(),
+                    value = currentMedicine.stock.toString(),
                     onValueChange = {},
                     label = { Text("Stock") },
                     enabled = false,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = {
-                    viewModel.updateStock(medicine.id, delta = 1, userEmail = "")
-                }) {
+                IconButton(onClick = { viewModel.updateStock(currentMedicine.id, delta = 1) }) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowUp,
                         contentDescription = "Plus One"
@@ -128,7 +129,7 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
             Text(text = "History", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(medicine.histories, key = { it.id }) { history ->
+                items(histories, key = { it.id }) { history ->
                     HistoryItem(history = history)
                 }
             }

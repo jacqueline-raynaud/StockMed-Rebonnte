@@ -10,6 +10,8 @@ package com.openclassrooms.rebonnte.data.model
  * Le rayon est reference par son identifiant et non par son libelle, pour que
  * renommer un rayon ne detache pas les medicaments qu'il contient.
  *
+ * L'historique n'est volontairement pas porte ici : voir MedicineRepository.
+ *
  * Toutes les proprietes ont une valeur par defaut : Firestore a besoin d'un
  * constructeur sans argument pour deserialiser.
  */
@@ -17,6 +19,5 @@ data class Medicine(
     val id: String = "",
     val name: String = "",
     val stock: Int = 0,
-    val aisleId: String = "",
-    val histories: List<History> = emptyList()
+    val aisleId: String = ""
 )

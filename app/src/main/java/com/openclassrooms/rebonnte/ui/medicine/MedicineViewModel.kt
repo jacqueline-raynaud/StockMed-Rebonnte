@@ -1,87 +1,98 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.model.History
-import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.model.Medicine
+import com.openclassrooms.rebonnte.data.repository.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.util.Locale
-import java.util.UUID
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class MedicineViewModel : ViewModel() {
-    private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
-    val medicines: StateFlow<List<Medicine>> = _medicines.asStateFlow()
+/**
+ * Le repository est un parametre de constructeur avec valeur par defaut : les
+ * tests injectent leur propre instance, et `viewModel()` continue de fonctionner
+ * sans fabrique. Il sera fourni par Hilt quand l'injection sera en place.
+ */
+class MedicineViewModel(
+    private val repository: MedicineRepository = InMemoryMedicineRepository()
+) : ViewModel() {
+
+    // Etat de presentation : la recherche et le tri ne touchent jamais la
+    // source de verite. L'ancien filterByName ecrasait la liste complete par la
+    // liste filtree, ce qui supprimait definitivement les medicaments masques.
+    private val query = MutableStateFlow("")
+    private val sort = MutableStateFlow(MedicineSort.NONE)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val medicines: StateFlow<List<Medicine>> =
+        combine(query, sort) { query, sort -> query to sort }
+            .flatMapLatest { (query, sort) -> repository.observeMedicines(query, sort) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
+    fun observeMedicine(id: String): Flow<Medicine?> = repository.observeMedicine(id)
+
+    fun observeHistory(medicineId: String): Flow<List<History>> =
+        repository.observeHistory(medicineId)
 
     fun addRandomMedicine(aisles: List<Aisle>) {
         // Sans rayon, l'ancien code levait une exception sur nextInt(0).
         if (aisles.isEmpty()) return
 
-        val current = _medicines.value
-        _medicines.value = current + Medicine(
-            id = UUID.randomUUID().toString(),
-            name = "Medicine ${current.size + 1}",
-            stock = (0..99).random(),
-            aisleId = aisles.random().id
-        )
-    }
-
-    /**
-     * Applique une variation de stock au medicament designe et trace
-     * l'operation dans son historique, dans la meme mise a jour d'etat.
-     *
-     * L'ancien code ecrivait dans `medicines[medicines.size]` (hors bornes,
-     * donc plantage systematique) puis ajoutait l'entree a une copie jetee par
-     * `toMutableList()`, si bien qu'aucun historique n'etait jamais conserve.
-     */
-    fun updateStock(medicineId: String, delta: Int, userEmail: String) {
-        _medicines.value = _medicines.value.map { medicine ->
-            if (medicine.id != medicineId) return@map medicine
-
-            val stockAfter = (medicine.stock + delta).coerceAtLeast(0)
-            if (stockAfter == medicine.stock) return@map medicine
-
-            medicine.copy(
-                stock = stockAfter,
-                histories = medicine.histories + History(
-                    id = UUID.randomUUID().toString(),
-                    medicineId = medicine.id,
-                    medicineName = medicine.name,
-                    userEmail = userEmail,
-                    date = System.currentTimeMillis(),
-                    action = HistoryAction.STOCK_CHANGE,
-                    stockBefore = medicine.stock,
-                    stockAfter = stockAfter,
-                    details = "Stock modifie de ${medicine.stock} a $stockAfter"
-                )
+        viewModelScope.launch {
+            repository.addMedicine(
+                name = "Medicine ${medicines.value.size + 1}",
+                stock = (0..99).random(),
+                aisleId = aisles.random().id,
+                userEmail = CURRENT_USER_EMAIL
             )
         }
     }
 
-    fun filterByName(name: String) {
-        val currentMedicines: List<Medicine> = medicines.value
-        val filteredMedicines: MutableList<Medicine> = ArrayList()
-        for (medicine in currentMedicines) {
-            if (medicine.name.lowercase(Locale.getDefault())
-                    .contains(name.lowercase(Locale.getDefault()))
-            ) {
-                filteredMedicines.add(medicine)
-            }
+    fun updateStock(medicineId: String, delta: Int) {
+        viewModelScope.launch {
+            repository.updateStock(medicineId, delta, CURRENT_USER_EMAIL)
         }
-        _medicines.value = filteredMedicines
+    }
+
+    fun deleteMedicine(medicineId: String) {
+        viewModelScope.launch {
+            repository.deleteMedicine(medicineId, CURRENT_USER_EMAIL)
+        }
+    }
+
+    fun filterByName(name: String) {
+        query.value = name
     }
 
     fun sortByNone() {
-        _medicines.value = _medicines.value // Pas de tri
+        sort.value = MedicineSort.NONE
     }
 
     fun sortByName() {
-        _medicines.value = _medicines.value.sortedBy { it.name }
+        sort.value = MedicineSort.NAME
     }
 
     fun sortByStock() {
-        _medicines.value = _medicines.value.sortedBy { it.stock }
+        sort.value = MedicineSort.STOCK
+    }
+
+    private companion object {
+        // TODO : e-mail de l'utilisateur connecte, des que l'authentification
+        //  sera en place (T-17).
+        const val CURRENT_USER_EMAIL = ""
     }
 }
