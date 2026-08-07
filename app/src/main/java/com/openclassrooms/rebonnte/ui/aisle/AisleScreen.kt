@@ -1,7 +1,5 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,30 +9,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.data.model.Aisle
 
 @Composable
-fun AisleScreen(viewModel: AisleViewModel) {
-    val aisles by viewModel.aisles.collectAsState(initial = emptyList())
-    val context = LocalContext.current
+fun AisleScreen(
+    viewModel: AisleViewModel,
+    onAisleClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val aisles by viewModel.aisles.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
         items(aisles, key = { it.id }) { aisle ->
-            AisleItem(aisle = aisle, onClick = {
-                startDetailActivity(context, aisle.id)
-            })
+            AisleItem(
+                aisle = aisle,
+                onClick = { onAisleClick(aisle.id) }
+            )
         }
     }
 }
@@ -46,16 +46,13 @@ fun AisleItem(aisle: Aisle, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = aisle.name, style = MaterialTheme.typography.bodyMedium)
-        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "Arrow")
+        Text(text = aisle.name, style = MaterialTheme.typography.bodyLarge)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null
+        )
     }
-}
-
-private fun startDetailActivity(context: Context, aisleId: String) {
-    val intent = Intent(context, AisleDetailActivity::class.java).apply {
-        putExtra(AisleDetailActivity.EXTRA_AISLE_ID, aisleId)
-    }
-    context.startActivity(intent)
 }

@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.ui.medicine
+package com.openclassrooms.rebonnte.ui.aisle
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,17 +8,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.openclassrooms.rebonnte.ui.component.MedicineItem
+import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 
 @Composable
-fun MedicineScreen(
-    viewModel: MedicineViewModel,
+fun AisleDetailScreen(
+    aisleId: String,
+    medicineViewModel: MedicineViewModel,
     onMedicineClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val medicines by viewModel.medicines.collectAsState()
+    val medicines by medicineViewModel.medicines.collectAsState()
+    val filteredMedicines = medicines.filter { it.aisleId == aisleId }
 
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(medicines, key = { it.id }) { medicine ->
+        items(filteredMedicines, key = { it.id }) { medicine ->
             MedicineItem(
                 medicine = medicine,
                 onClick = { onMedicineClick(medicine.id) }
