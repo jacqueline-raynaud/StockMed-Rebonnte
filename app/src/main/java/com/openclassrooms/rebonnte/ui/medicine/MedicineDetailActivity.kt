@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.openclassrooms.rebonnte.MainActivity
 import com.openclassrooms.rebonnte.data.model.History
+import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 import java.text.DateFormat
 import java.util.Date
@@ -42,11 +43,15 @@ class MedicineDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val medicineId = intent.getStringExtra(EXTRA_MEDICINE_ID).orEmpty()
-        val viewModel = ViewModelProvider(MainActivity.mainActivity)[MedicineViewModel::class.java]
+        val owner = ViewModelProvider(MainActivity.mainActivity)
+        val viewModel = owner[MedicineViewModel::class.java]
+        // Meme ViewModelStore que MainActivity, donc la meme instance de
+        // AisleViewModel et le meme jeu de rayons.
+        val aisleViewModel = owner[AisleViewModel::class.java]
 
         setContent {
             RebonnteTheme {
-                MedicineDetailScreen(medicineId, viewModel)
+                MedicineDetailScreen(medicineId, viewModel, aisleViewModel)
             }
         }
     }
@@ -57,7 +62,11 @@ class MedicineDetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
+fun MedicineDetailScreen(
+    medicineId: String,
+    viewModel: MedicineViewModel,
+    aisleViewModel: AisleViewModel
+) {
     // remember(medicineId) : sans cela, un nouveau Flow serait cree a chaque
     // recomposition.
     val medicineFlow = remember(medicineId) { viewModel.observeMedicine(medicineId) }
@@ -65,6 +74,7 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
 
     val medicine by medicineFlow.collectAsState(initial = null)
     val histories by historyFlow.collectAsState(initial = emptyList())
+    val aisles by aisleViewModel.aisles.collectAsState()
 
     val currentMedicine = medicine
     if (currentMedicine == null) {
@@ -92,11 +102,12 @@ fun MedicineDetailScreen(medicineId: String, viewModel: MedicineViewModel) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
-                // TODO : afficher le libelle du rayon en resolvant l'id via
-                //  AisleRepository.
-                value = currentMedicine.aisleId,
+                // Le medicament ne porte que l'identifiant de son rayon ; le
+                // libelle se resout ici, a l'affichage.
+                value = aisles.firstOrNull { it.id == currentMedicine.aisleId }?.name
+                    ?: "Rayon inconnu",
                 onValueChange = {},
-                label = { Text("Aisle (id)") },
+                label = { Text("Aisle") },
                 enabled = false,
                 modifier = Modifier.fillMaxWidth()
             )
