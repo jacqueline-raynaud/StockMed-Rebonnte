@@ -18,16 +18,11 @@
             faisait doublon et exposait au systeme une classe imbriquee dans une
             Activity.
         -->
-        <activity
-            android:name=".ui.medicine.MedicineDetailActivity"
-            android:theme="@style/Theme.Rebonnte.ActionBar"
-            android:parentActivityName=".MainActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.aisle.AisleDetailActivity"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/Theme.Rebonnte.ActionBar"
-            android:exported="false" />
+        <!--
+            Les ecrans de detail ne sont plus des Activity mais des destinations
+            du NavHost : ils partagent le graphe et les ViewModel de
+            MainActivity, sans passer par une reference statique vers elle.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
