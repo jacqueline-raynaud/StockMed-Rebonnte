@@ -7,12 +7,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
@@ -73,7 +75,7 @@ import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var myBroadcastReceiver: MyBroadcastReceiver
+    private val myBroadcastReceiver = MyBroadcastReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,40 +83,67 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApp()
         }
-        startBroadcastReceiver()
+        registerUpdateReceiver()
+        scheduleUpdateBroadcast()
     }
 
-    private fun startMyBroadcast() {
-        val intent = Intent("com.rebonnte.ACTION_UPDATE")
-        sendBroadcast(intent)
-        startBroadcastReceiver()
+    override fun onDestroy() {
+        unregisterReceiver(myBroadcastReceiver)
+        super.onDestroy()
     }
 
-    private fun startBroadcastReceiver() {
-        myBroadcastReceiver = MyBroadcastReceiver()
-        val filter = IntentFilter().apply {
-            addAction("com.rebonnte.ACTION_UPDATE")
+    /**
+     * Un enregistrement unique pour toute la duree de vie de l'Activity, avec
+     * un desenregistrement symetrique dans onDestroy.
+     *
+     * L'ancien code enregistrait un nouveau receiver toutes les 200 ms sans
+     * jamais desenregistrer le precedent : startBroadcastReceiver programmait
+     * startMyBroadcast, qui rappelait startBroadcastReceiver. Le nombre de
+     * receivers vivants croissait indefiniment, chacun retenant l'Activity, et
+     * le thread principal etait reveille cinq fois par seconde pour afficher un
+     * Toast.
+     *
+     * ContextCompat.registerReceiver applique le flag d'export sur toutes les
+     * versions, la ou l'ancienne branche pre-Tiramisu l'omettait.
+     */
+    private fun registerUpdateReceiver() {
+        ContextCompat.registerReceiver(
+            this,
+            myBroadcastReceiver,
+            IntentFilter(ACTION_UPDATE),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    /**
+     * lifecycleScope est annule avec l'Activity : la closure ne peut plus lui
+     * survivre. Le Handler() precedent laissait au contraire son message en
+     * file avec une reference vers une Activity potentiellement detruite.
+     */
+    private fun scheduleUpdateBroadcast() {
+        lifecycleScope.launch {
+            delay(BROADCAST_DELAY_MS)
+            // setPackage restreint la diffusion a notre propre application :
+            // un intent implicite serait visible des autres applications du
+            // telephone, pour un message qui ne concerne que nous.
+            sendBroadcast(Intent(ACTION_UPDATE).setPackage(packageName))
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(myBroadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(myBroadcastReceiver, filter)
-        }
-
-        Handler().postDelayed({
-            startMyBroadcast()
-        }, 200)
     }
-
 
     class MyBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            Toast.makeText(mainActivity, "Update reçu", Toast.LENGTH_SHORT).show()
+            // Le contexte fourni par le systeme, et non la reference statique
+            // vers l'Activity.
+            val target = context ?: return
+            Toast.makeText(target, "Update reçu", Toast.LENGTH_SHORT).show()
         }
     }
 
     companion object {
         lateinit var mainActivity: MainActivity
+
+        private const val ACTION_UPDATE = "com.rebonnte.ACTION_UPDATE"
+        private const val BROADCAST_DELAY_MS = 200L
     }
 }
 
