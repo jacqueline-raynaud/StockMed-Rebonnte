@@ -11,6 +11,16 @@ app/release/
 local.properties
 gradle.properties.local
 
+# Captures brutes de l'Android Profiler / LeakCanary.
+# Elles pesaient 55 Mo dans l'historique et rallongeaient chaque checkout de la
+# CI (fetch-depth: 0 est requis par Sonar). Seules les captures d'ecran
+# annotees (PNG/JPEG) sont versionnees, dans docs/profiler/.
+*.hprof
+*.asdb
+*.heapprofd
+*.trace
+profiler/
+
 # Android Studio
 .idea/
 *.iml

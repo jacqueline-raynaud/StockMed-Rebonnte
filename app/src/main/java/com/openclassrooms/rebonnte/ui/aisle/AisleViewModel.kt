@@ -1,21 +1,29 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.lifecycle.viewModelScope
+import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.repository.AisleRepository
+import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class AisleViewModel : ViewModel() {
-    var _aisles = MutableStateFlow<List<Aisle>>(emptyList())
-    val aisles: StateFlow<List<Aisle>> get() = _aisles
+class AisleViewModel(
+    private val repository: AisleRepository = InMemoryAisleRepository()
+) : ViewModel() {
 
-    init {
-        _aisles.value = listOf(Aisle("Main Aisle"))
-    }
+    val aisles: StateFlow<List<Aisle>> = repository.observeAisles()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
 
     fun addRandomAisle() {
-        val currentAisles: MutableList<Aisle> = ArrayList(aisles.value)
-        currentAisles.add(Aisle("Aisle " + (currentAisles.size + 1)))
-        _aisles.value = currentAisles
+        viewModelScope.launch {
+            repository.addAisle("Aisle ${aisles.value.size + 1}")
+        }
     }
 }
-

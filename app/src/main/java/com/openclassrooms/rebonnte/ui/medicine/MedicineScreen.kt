@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
+import com.openclassrooms.rebonnte.data.model.Medicine
 
 @Composable
 fun MedicineScreen(viewModel: MedicineViewModel = viewModel()) {
@@ -27,9 +28,9 @@ fun MedicineScreen(viewModel: MedicineViewModel = viewModel()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        items(medicines) { medicine ->
+        items(medicines, key = { it.id }) { medicine ->
             MedicineItem(medicine = medicine, onClick = {
-                startDetailActivity(context, medicine.name)
+                startDetailActivity(context, medicine.id)
             })
         }
     }
@@ -52,9 +53,9 @@ fun MedicineItem(medicine: Medicine, onClick: () -> Unit) {
     }
 }
 
-private fun startDetailActivity(context: Context, name: String) {
+private fun startDetailActivity(context: Context, medicineId: String) {
     val intent = Intent(context, MedicineDetailActivity::class.java).apply {
-        putExtra("nameMedicine", name)
+        putExtra(MedicineDetailActivity.EXTRA_MEDICINE_ID, medicineId)
     }
     context.startActivity(intent)
 }

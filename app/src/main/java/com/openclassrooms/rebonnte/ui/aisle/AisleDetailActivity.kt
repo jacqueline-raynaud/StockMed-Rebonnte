@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.openclassrooms.rebonnte.MainActivity
-import com.openclassrooms.rebonnte.ui.medicine.Medicine
+import com.openclassrooms.rebonnte.data.model.Medicine
 import com.openclassrooms.rebonnte.ui.medicine.MedicineDetailActivity
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
@@ -37,21 +37,25 @@ import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 class AisleDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val name = intent.getStringExtra("nameAisle") ?: "Unknown"
+        val aisleId = intent.getStringExtra(EXTRA_AISLE_ID).orEmpty()
         val viewModel = ViewModelProvider(MainActivity.mainActivity)[MedicineViewModel::class.java]
         setContent {
             RebonnteTheme {
-                AisleDetailScreen(name, viewModel)
+                AisleDetailScreen(aisleId, viewModel)
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_AISLE_ID = "aisleId"
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AisleDetailScreen(name: String, viewModel: MedicineViewModel) {
+fun AisleDetailScreen(aisleId: String, viewModel: MedicineViewModel) {
     val medicines by viewModel.medicines.collectAsState(initial = emptyList())
-    val filteredMedicines = medicines.filter { it.nameAisle == name }
+    val filteredMedicines = medicines.filter { it.aisleId == aisleId }
     val context = LocalContext.current
 
     Scaffold { paddingValues ->
@@ -59,10 +63,10 @@ fun AisleDetailScreen(name: String, viewModel: MedicineViewModel) {
             contentPadding = paddingValues,
             modifier = Modifier.fillMaxSize()
         ) {
-            items(filteredMedicines) { medicine ->
-                MedicineItem(medicine = medicine, onClick = { name ->
+            items(filteredMedicines, key = { it.id }) { medicine ->
+                MedicineItem(medicine = medicine, onClick = { medicineId ->
                     val intent = Intent(context, MedicineDetailActivity::class.java).apply {
-                        putExtra("nameMedicine", name)
+                        putExtra(MedicineDetailActivity.EXTRA_MEDICINE_ID, medicineId)
                     }
                     context.startActivity(intent)
                 })
@@ -76,7 +80,7 @@ fun MedicineItem(medicine: Medicine, onClick: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick(medicine.name) }
+            .clickable { onClick(medicine.id) }
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
