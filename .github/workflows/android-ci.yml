@@ -62,3 +62,50 @@ jobs:
           path: |
             app/build/reports/
             app/build/test-results/
+
+  # Job separe : l'emulateur prend plusieurs minutes a demarrer et n'a rien a
+  # partager avec l'analyse. En parallele, il ne retarde pas le retour sur la
+  # compilation et les tests unitaires.
+  instrumented-tests:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configurer Java 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Sans acceleration materielle, l'emulateur demarre en quelques dizaines
+      # de minutes au lieu de quelques dizaines de secondes.
+      - name: Activer KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Tests instrumentés
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          # Aligne sur compileSdk / targetSdk.
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest
+
+      - name: Rapports des tests instrumentés
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Reports-Instrumented-Tests
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
