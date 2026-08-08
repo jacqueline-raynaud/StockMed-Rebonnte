@@ -134,7 +134,7 @@ val jacocoExcludes = listOf(
 )
 
 tasks.register<JacocoReport>("jacocoTestReport") {
-    description = "Genere le rapport de couverture des tests unitaires."
+    description = "Generates xml coverage report for this project."
     group = JavaBasePlugin.VERIFICATION_GROUP
 
     dependsOn("testDebugUnitTest")
@@ -147,8 +147,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 
     classDirectories.setFrom(
         files(
-            // Classes Kotlin : avec AGP 8.5 et le plugin kotlin-android, elles
-            // atterrissent ici et non dans intermediates/built_in_kotlinc.
+            // Classes Kotlin : avec AGP 8.5 et le plugin kotlin-android
             fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
                 exclude(jacocoExcludes)
             },

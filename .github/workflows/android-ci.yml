@@ -37,15 +37,6 @@ jobs:
       - name: Analyse statique
         run: ./gradlew lintDebug
 
-      - name: save reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Reports-Tests-Android
-          path: |
-            app/build/reports/
-            app/build/test-results/
-
       - name: Cache SonarQube
         uses : actions/cache@v4
         with:
@@ -62,3 +53,12 @@ jobs:
         # jacocoTestReport avant sonar : le scanner lit le XML de couverture
         # produit par cette tache. Sans elle, SonarCloud rapporte 0 %.
         run: ./gradlew jacocoTestReport sonar --info
+
+      - name: save reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Reports-Tests-Android
+          path: |
+            app/build/reports/
+            app/build/test-results/
