@@ -6,6 +6,11 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.sonarqube)
+    jacoco
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 android {
@@ -26,6 +31,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Sans ce drapeau, testDebugUnitTest ne produit aucun fichier .exec
+            // et le rapport JaCoCo est vide : c'est ce qui donnait 0 % dans
+            // SonarCloud alors meme que les tests passaient.
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -88,22 +99,86 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 
+/**
+ * Rapport de couverture des tests unitaires.
+ *
+ * Le plugin JaCoCo standard ne connait pas les variantes Android : il faut lui
+ * designer explicitement les classes compilees et les donnees d'execution.
+ *
+ * Les tests instrumentes (connectedDebugAndroidTest) ne sont volontairement pas
+ * inclus : ils exigent un emulateur que la CI ne lance pas encore. Ils seront
+ * ajoutes avec le job emulateur.
+ */
+val jacocoExcludes = listOf(
+    "**/R.class",
+    "**/R$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "**/*Test.class",
+    "**/*Test$*.class",
+    // Code genere : l'inclure ferait chuter la couverture sans rien dire de la
+    // qualite du code ecrit a la main.
+    "**/di/**",
+    "**/*Module*",
+    "**/Hilt_*",
+    "**/*_Hilt*",
+    "**/*_Factory*",
+    "**/*_MembersInjector*",
+    "**/*_GeneratedInjector*",
+    "**/hilt_aggregated_deps/**",
+    "**/dagger/hilt/**",
+    // Composables : non couvrables par des tests unitaires JVM, ils relevent
+    // des tests d'interface.
+    "**/*ComposableSingletons*",
+    "**/ComposableSingletons*"
+)
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    description = "Generates xml coverage report for this project."
+    group = JavaBasePlugin.VERIFICATION_GROUP
+
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    classDirectories.setFrom(
+        files(
+            // Classes Kotlin : avec AGP 8.5 et le plugin kotlin-android
+            fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+                exclude(jacocoExcludes)
+            },
+            fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
+                exclude(jacocoExcludes)
+            }
+        )
+    )
+
+    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory) {
+            include("outputs/unit_test_code_coverage/debugUnitTest/*.exec")
+        }
+    )
+}
+
 sonar {
     properties {
         property("sonar.projectKey", "jacqueline-raynaud_StockMed-Rebonnte")
         property("sonar.organization", "jacqueline-raynaud")
         property("sonar.projectName", "StockMed-Rebonnte")
         property("sonar.host.url", "https://sonarcloud.io")
-        // sonar.qualitygate.wait retire : sans rapport JaCoCo, la couverture
-        // remonte a 0 % et la porte "Sonar way" (80 % sur le code neuf) fait
-        // echouer tous les builds. A remettre avec JaCoCo.
+        // sonar.qualitygate.wait reste retire tant que la couverture n'aura pas
+        // atteint le seuil de la porte "Sonar way".
         property("sonar.androidLint.reportPaths", "")
-        /*property(
+        property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "${layout.buildDirectory.get()}/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml,${layout.buildDirectory.get()}/reports/coverage/androidTest/debug/connected/report.xml"
+            "${layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
         )
-        */
-
     }
 }
 
