@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte
 
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -7,6 +8,7 @@ import android.content.IntentFilter
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
@@ -183,10 +186,15 @@ fun MyApp() {
 
     /**
      * L'acces au stock est conditionne a une session ouverte *et* validee.
-     * popUpTo(0) vide la pile : apres une deconnexion, le bouton retour ne doit
-     * pas ramener sur les ecrans de stock.
+     * La pile est videe a chaque bascule : apres une deconnexion, le bouton
+     * retour ne doit pas ramener sur les ecrans de stock.
      */
     LaunchedEffect(currentUser, welcomeAcknowledged, route) {
+        // Tant que le NavHost n'a pas publie sa destination, route est null et
+        // le graphe demarre deja sur la bonne. Naviguer ici relancerait l'effet
+        // en boucle : l'interface se fige sans planter.
+        if (route == null) return@LaunchedEffect
+
         val target = when {
             currentUser == null -> Destinations.AUTH
             !welcomeAcknowledged -> Destinations.WELCOME
@@ -197,10 +205,29 @@ fun MyApp() {
         }
         if (target != null && route != target) {
             navController.navigate(target) {
-                popUpTo(0) { inclusive = true }
+                // Vider la pile en remontant jusqu'a la destination de depart
+                // incluse, plutot que popUpTo(0) qui detruit aussi l'entree de
+                // graphe et laisse le NavController dans un etat instable.
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = true
+                }
                 launchSingleTop = true
             }
         }
+    }
+
+    /**
+     * Apres une navigation qui vide la pile, il ne reste qu'une seule entree.
+     * Le retour systeme la depilerait a son tour et le NavHost n'aurait plus
+     * rien a afficher : ecran noir, application vivante mais vide.
+     *
+     * Quand il n'y a rien en dessous, le retour doit donc fermer l'application.
+     * Sur un ecran de detail, previousBackStackEntry existe, ce gestionnaire est
+     * desactive et le retour reprend son comportement normal.
+     */
+    val activity = LocalContext.current as? Activity
+    BackHandler(enabled = navController.previousBackStackEntry == null) {
+        activity?.finish()
     }
 
     RebonnteTheme {
