@@ -5,9 +5,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
+import javax.inject.Inject
 
 /** Pendant de [InMemoryMedicineRepository] pour les rayons. */
-class InMemoryAisleRepository : AisleRepository {
+class InMemoryAisleRepository @Inject constructor() : AisleRepository {
 
     private val aisles = MutableStateFlow(
         listOf(Aisle(id = UUID.randomUUID().toString(), name = "Main Aisle"))

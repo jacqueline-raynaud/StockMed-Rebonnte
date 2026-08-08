@@ -24,13 +24,6 @@ class InMemoryMedicineRepositoryTest {
     }
 
     // --- Gestion du stock ----------------------------------------------------
-
-    /**
-     * Regression : l'ancien code indexait `medicines[medicines.size]`, hors
-     * bornes, ce qui fermait l'application a chaque appui sur +1 / -1.
-     * Corriger en `size - 1` aurait supprime le plantage mais vise le dernier
-     * medicament de la liste au lieu de celui affiche.
-     */
     @Test
     fun `updateStock updates the requested medicine and leaves the others untouched`() = runTest {
         val target = repository.addMedicine("Doliprane", stock = 10, aisleId = AISLE, userEmail = USER)
@@ -60,13 +53,7 @@ class InMemoryMedicineRepositoryTest {
         assertEquals(1, repository.observeMedicines().first().size)
     }
 
-    // --- Historique ----------------------------------------------------------
 
-    /**
-     * Regression : l'ancien code ajoutait l'entree a une copie produite par
-     * `toMutableList()`, aussitot jetee. Aucun historique n'etait conserve,
-     * d'ou les manques signales par le service qualite.
-     */
     @Test
     fun `updateStock records the operation with its before and after values`() = runTest {
         val medicine = repository.addMedicine("Doliprane", stock = 10, aisleId = AISLE, userEmail = USER)
@@ -92,10 +79,6 @@ class InMemoryMedicineRepositoryTest {
         assertEquals(HistoryAction.CREATE, history.single().action)
     }
 
-    /**
-     * L'historique vit hors du medicament : une suppression doit rester tracee
-     * alors meme que le medicament disparait du stock.
-     */
     @Test
     fun `deleting a medicine keeps its history`() = runTest {
         val medicine = repository.addMedicine("Doliprane", stock = 10, aisleId = AISLE, userEmail = USER)
@@ -119,11 +102,6 @@ class InMemoryMedicineRepositoryTest {
 
     // --- Recherche et tri ----------------------------------------------------
 
-    /**
-     * Regression : l'ancien `filterByName` ecrasait la source de verite par la
-     * liste filtree. Les medicaments masques etaient supprimes, et effacer la
-     * recherche ne les restaurait pas.
-     */
     @Test
     fun `filtering narrows the result without amputating the source`() = runTest {
         repository.addMedicine("Doliprane", stock = 1, aisleId = AISLE, userEmail = USER)
