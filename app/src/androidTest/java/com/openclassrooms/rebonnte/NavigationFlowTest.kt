@@ -7,15 +7,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso
-import androidx.test.espresso.NoActivityResumedException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -70,17 +67,24 @@ class NavigationFlowTest {
     }
 
     /**
-     * Espresso leve NoActivityResumedException quand le retour ferme
-     * l'application. C'est deterministe, contrairement a une lecture de l'etat
-     * du cycle de vie : finish() est asynchrone et l'Activity passe par STARTED
-     * avant DESTROYED.
+     * Retour envoye directement au dispatcher de l'Activity, et non via
+     * Espresso.pressBack().
+     *
+     * Espresso exige que la fenetre ait le focus avant d'injecter un evenement
+     * (RootViewPicker). Sur un emulateur de CI, ce focus arrive parfois apres
+     * son delai d'attente : les tests passaient en local et sur un run,
+     * echouaient sur le suivant. Le dispatcher emprunte exactement le meme
+     * chemin que le bouton systeme, BackHandler compris, sans dependre du focus.
      */
+    private fun performBack() {
+        scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+    }
+
+    /** finish() est asynchrone : on attend l'etat plutot que de le lire aussitot. */
     private fun assertBackClosesTheApp() {
-        try {
-            Espresso.pressBack()
-            fail("Le retour aurait du fermer l'application")
-        } catch (expected: NoActivityResumedException) {
-            // Comportement attendu : plus rien a depiler.
+        performBack()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            scenario.state == Lifecycle.State.DESTROYED
         }
     }
 
@@ -179,12 +183,12 @@ class NavigationFlowTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("History").assertIsDisplayed()
 
-        // pressBack et non pressBackUnconditionally : s'il fermait
-        // l'application, l'exception ferait echouer le test.
-        Espresso.pressBack()
+        performBack()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Medicine 1").assertIsDisplayed()
+        // Le pendant de assertBackClosesTheApp : le gestionnaire de retour ne
+        // doit pas etre trop large, l'application reste ouverte.
         assertEquals(Lifecycle.State.RESUMED, scenario.state)
     }
 }
