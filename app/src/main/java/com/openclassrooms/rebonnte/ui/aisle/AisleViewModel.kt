@@ -4,14 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
-import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AisleViewModel(
-    private val repository: AisleRepository = InMemoryAisleRepository()
+@HiltViewModel
+class AisleViewModel @Inject constructor(
+    private val repository: AisleRepository
 ) : ViewModel() {
 
     val aisles: StateFlow<List<Aisle>> = repository.observeAisles()

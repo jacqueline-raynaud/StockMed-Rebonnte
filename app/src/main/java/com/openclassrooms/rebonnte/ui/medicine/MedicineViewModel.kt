@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.data.model.Medicine
-import com.openclassrooms.rebonnte.data.repository.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import com.openclassrooms.rebonnte.data.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,14 +18,16 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
- * Le repository est un parametre de constructeur avec valeur par defaut : les
- * tests injectent leur propre instance, et `viewModel()` continue de fonctionner
- * sans fabrique. Il sera fourni par Hilt quand l'injection sera en place.
+ * Les dependances sont fournies par Hilt. Les tests instancient la classe
+ * directement avec leurs propres doubles.
  */
-class MedicineViewModel(
-    private val repository: MedicineRepository = InMemoryMedicineRepository()
+@HiltViewModel
+class MedicineViewModel @Inject constructor(
+    private val repository: MedicineRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     // Etat de presentation : la recherche et le tri ne touchent jamais la
@@ -57,20 +60,20 @@ class MedicineViewModel(
                 name = "Medicine ${medicines.value.size + 1}",
                 stock = (0..99).random(),
                 aisleId = aisles.random().id,
-                userEmail = CURRENT_USER_EMAIL
+                userEmail = currentUserEmail()
             )
         }
     }
 
     fun updateStock(medicineId: String, delta: Int) {
         viewModelScope.launch {
-            repository.updateStock(medicineId, delta, CURRENT_USER_EMAIL)
+            repository.updateStock(medicineId, delta, currentUserEmail())
         }
     }
 
     fun deleteMedicine(medicineId: String) {
         viewModelScope.launch {
-            repository.deleteMedicine(medicineId, CURRENT_USER_EMAIL)
+            repository.deleteMedicine(medicineId, currentUserEmail())
         }
     }
 
@@ -90,9 +93,11 @@ class MedicineViewModel(
         sort.value = MedicineSort.STOCK
     }
 
-    private companion object {
-        // TODO : e-mail de l'utilisateur connecte, des que l'authentification
-        //  sera en place (T-17).
-        const val CURRENT_USER_EMAIL = ""
-    }
+    /**
+     * L'operateur qui signera l'entree d'historique. Lu au moment de
+     * l'operation et non conserve : la session peut changer pendant la vie du
+     * ViewModel.
+     */
+    private fun currentUserEmail(): String =
+        userRepository.currentUserOrNull()?.email.orEmpty()
 }

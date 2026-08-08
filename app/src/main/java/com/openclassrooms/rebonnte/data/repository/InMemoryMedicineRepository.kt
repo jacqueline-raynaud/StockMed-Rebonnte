@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import java.util.Locale
 import java.util.UUID
+import javax.inject.Inject
 
 /**
  * Implementation en memoire, utilisee tant que Firestore n'est pas branche et
@@ -16,7 +17,7 @@ import java.util.UUID
  * Elle definit le comportement attendu du contrat : c'est cette implementation
  * qui sert de reference quand l'implementation Firestore arrivera.
  */
-class InMemoryMedicineRepository : MedicineRepository {
+class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
 
     private val medicines = MutableStateFlow<List<Medicine>>(emptyList())
     private val histories = MutableStateFlow<List<History>>(emptyList())

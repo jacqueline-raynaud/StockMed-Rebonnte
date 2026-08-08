@@ -12,7 +12,10 @@ activityCompose = "1.9.0"
 composeBom = "2024.04.01"
 navigationCompose = "2.7.7"
 googleGmsGoogleServices = "4.5.0"
-firebaseBom = "34.14.1"
+# BOM 34.x embarque firebase-auth 24.x, compile avec des metadonnees Kotlin 2.3
+# que le compilateur Kotlin 2.1 du projet ne sait pas lire. La generation 33.x
+# reste alignee sur Kotlin 2.1.
+firebaseBom = "33.7.0"
 hilt = "2.54"
 ksp = "2.1.0-1.0.29"
 hiltNavigationCompose = "1.2.0"
@@ -26,6 +29,9 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 # Firebase
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+# Fournit Task.await() : convertit les Task de Google Play Services en coroutines.
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -39,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,26 +52,33 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.openclassrooms.rebonnte.ui.MainViewModel
 import com.openclassrooms.rebonnte.ui.aisle.AisleDetailScreen
 import com.openclassrooms.rebonnte.ui.aisle.AisleScreen
 import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
+import com.openclassrooms.rebonnte.ui.auth.AuthScreen
+import com.openclassrooms.rebonnte.ui.auth.AuthViewModel
 import com.openclassrooms.rebonnte.ui.medicine.MedicineDetailScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
+import com.openclassrooms.rebonnte.ui.welcome.WelcomeScreen
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val myBroadcastReceiver = MyBroadcastReceiver()
@@ -145,24 +154,59 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
-    // Portes par le ViewModelStore de l'Activity, donc partages par toutes les
-    // destinations du graphe. C'est ce qui remplace la reference statique vers
-    // MainActivity dont les anciennes Activity de detail avaient besoin.
-    val medicineViewModel: MedicineViewModel = viewModel()
-    val aisleViewModel: AisleViewModel = viewModel()
+    // Fournis par Hilt et portes par le ViewModelStore de l'Activity, donc
+    // partages par toutes les destinations du graphe. C'est ce qui remplace la
+    // reference statique vers MainActivity dont les anciennes Activity de
+    // detail avaient besoin.
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val medicineViewModel: MedicineViewModel = hiltViewModel()
+    val aisleViewModel: AisleViewModel = hiltViewModel()
+
+    val currentUser by mainViewModel.currentUser.collectAsState()
+    val welcomeAcknowledged by mainViewModel.welcomeAcknowledged.collectAsState()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val route = navBackStackEntry?.destination?.route
     val isDetail = Destinations.isDetail(route)
+    val isOutsideApp = Destinations.isOutsideApp(route)
     val isMedicineList = route == Destinations.MEDICINE_LIST
 
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
+    // Calcule une seule fois : la valeur initiale de currentUser est lue de
+    // maniere synchrone, donc pas de passage eclair par l'ecran de connexion
+    // quand une session est deja ouverte.
+    val startDestination = remember {
+        if (mainViewModel.currentUser.value == null) Destinations.AUTH else Destinations.WELCOME
+    }
+
+    /**
+     * L'acces au stock est conditionne a une session ouverte *et* validee.
+     * popUpTo(0) vide la pile : apres une deconnexion, le bouton retour ne doit
+     * pas ramener sur les ecrans de stock.
+     */
+    LaunchedEffect(currentUser, welcomeAcknowledged, route) {
+        val target = when {
+            currentUser == null -> Destinations.AUTH
+            !welcomeAcknowledged -> Destinations.WELCOME
+            route == Destinations.AUTH || route == Destinations.WELCOME ->
+                Destinations.AISLE_LIST
+
+            else -> null
+        }
+        if (target != null && route != target) {
+            navController.navigate(target) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     RebonnteTheme {
         Scaffold(
             topBar = {
-                Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
+                if (!isOutsideApp) Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                     TopAppBar(
                         title = { Text(text = titleFor(route)) },
                         navigationIcon = {
@@ -178,6 +222,17 @@ fun MyApp() {
                         actions = {
                             if (isMedicineList) {
                                 SortMenu(medicineViewModel)
+                            }
+                            // Deconnexion accessible en permanence : sur un
+                            // telephone partage, l'operateur suivant doit
+                            // pouvoir reprendre la main sans chercher.
+                            if (!isDetail) {
+                                IconButton(onClick = mainViewModel::signOut) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                        contentDescription = "Se deconnecter"
+                                    )
+                                }
                             }
                         }
                     )
@@ -195,7 +250,7 @@ fun MyApp() {
                 }
             },
             bottomBar = {
-                if (!isDetail) {
+                if (!isDetail && !isOutsideApp) {
                     NavigationBar {
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Home, contentDescription = null) },
@@ -218,7 +273,7 @@ fun MyApp() {
                 }
             },
             floatingActionButton = {
-                if (!isDetail) {
+                if (!isDetail && !isOutsideApp) {
                     FloatingActionButton(onClick = {
                         when (route) {
                             Destinations.MEDICINE_LIST ->
@@ -235,8 +290,22 @@ fun MyApp() {
             NavHost(
                 modifier = Modifier.padding(innerPadding),
                 navController = navController,
-                startDestination = Destinations.AISLE_LIST
+                startDestination = startDestination
             ) {
+                composable(Destinations.AUTH) {
+                    AuthScreen(viewModel = hiltViewModel<AuthViewModel>())
+                }
+                composable(Destinations.WELCOME) {
+                    // currentUser ne peut pas etre null ici : l'effet de
+                    // navigation renvoie sur AUTH des qu'il l'est.
+                    currentUser?.let { user ->
+                        WelcomeScreen(
+                            user = user,
+                            onContinue = mainViewModel::acknowledgeWelcome,
+                            onSignOut = mainViewModel::signOut
+                        )
+                    }
+                }
                 composable(Destinations.AISLE_LIST) {
                     AisleScreen(
                         viewModel = aisleViewModel,

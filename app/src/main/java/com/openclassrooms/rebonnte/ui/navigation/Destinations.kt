@@ -11,6 +11,9 @@ package com.openclassrooms.rebonnte.ui.navigation
  */
 object Destinations {
 
+    const val AUTH = "auth"
+    const val WELCOME = "welcome"
+
     const val AISLE_LIST = "aisle"
     const val MEDICINE_LIST = "medicine"
 
@@ -26,4 +29,10 @@ object Destinations {
 
     /** Les detail masquent la barre de navigation et le bouton d'ajout. */
     fun isDetail(route: String?) = route == AISLE_DETAIL || route == MEDICINE_DETAIL
+
+    /**
+     * Ecrans affiches hors de l'application proprement dite : ni barre
+     * superieure, ni barre de navigation, ni bouton d'ajout.
+     */
+    fun isOutsideApp(route: String?) = route == AUTH || route == WELCOME
 }
