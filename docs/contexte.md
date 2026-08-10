@@ -180,7 +180,7 @@ non traitées sont signalées comme telles : voir le
 | Suppression d'un médicament | T-16 | **À faire** |
 | Validation des saisies | T-21 | Partiel |
 | Accessibilité (TalkBack, contrastes) | T-31 | **À faire** |
-| APK sur Firebase App Distribution | T-28 | **À faire** |
+| APK sur Firebase App Distribution | T-28 | Fait |
 
 ### Ajouté en cours de projet
 
