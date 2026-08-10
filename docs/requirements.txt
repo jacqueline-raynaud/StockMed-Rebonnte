@@ -1,0 +1,9 @@
+# Dépendances de la documentation uniquement — sans rapport avec la build Android.
+# Installation locale : pip install -r docs/requirements.txt
+# Prévisualisation  : mkdocs serve
+mkdocs-material>=9.5,<10
+# MkDocs 2.0 supprime le systeme de plugins et casse les themes, sans chemin de
+# migration. La CI reinstalle tout a chaque run : sans cette borne, une
+# publication pourrait casser du jour au lendemain sans que rien n'ait change
+# dans le depot.
+mkdocs>=1.6,<2
