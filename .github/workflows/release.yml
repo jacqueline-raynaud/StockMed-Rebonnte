@@ -1,0 +1,91 @@
+name: Distribution de l'APK
+
+# Declenchement manuel, ou sur un tag de version.
+#
+# Le tag sert de trace : chaque APK distribue correspond a un point precis de
+# l'historique, retrouvable sans deviner. Le declenchement manuel permet de
+# rejouer une distribution sans creer de tag.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  distribute:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configurer Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Le keystore ne peut pas etre versionne : il transite en base64 dans un
+      # secret et n'existe que le temps du job.
+      - name: Restaurer le keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > app/release.keystore
+
+      - name: Vérifier le keystore
+        run: |
+          if [ ! -s app/release.keystore ]; then
+            echo "::error::Le keystore est vide. Verifier le secret KEYSTORE_B64."
+            exit 1
+          fi
+          echo "Keystore restauré : $(stat -c%s app/release.keystore) octets"
+
+      # local.properties est lu par app/build.gradle.kts et n'est jamais
+      # versionne. storeFile est relatif au module app.
+      - name: Écrire les paramètres de signature
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > local.properties
+
+      - name: Construire l'APK de release
+        env:
+          # Chaque distribution porte un versionCode distinct, sinon App
+          # Distribution presente le nouvel APK comme identique au precedent.
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || format('0.0.{0}', github.run_number) }}
+        run: ./gradlew assembleRelease
+
+      - name: Envoyer sur Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1.7.1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          releaseNotes: |
+            StockMed ${{ github.ref_name }} — build ${{ github.run_number }}
+            ${{ github.event.head_commit.message }}
+          file: app/build/outputs/apk/release/app-release.apk
+
+      # Le keystore et les mots de passe ne doivent pas survivre au job, meme
+      # si une etape precedente a echoue.
+      - name: Effacer les secrets du runner
+        if: always()
+        run: rm -f app/release.keystore local.properties
+
+      - name: Conserver l'APK en artefact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-release
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
