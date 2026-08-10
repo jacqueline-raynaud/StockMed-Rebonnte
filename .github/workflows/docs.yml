@@ -7,6 +7,13 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
+  # The pull request allows for checking for broken links or missing images upon merging.
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 # Publication via GitHub Pages.
@@ -49,6 +56,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
+    # Une pull request construit sans publier : seul ce qui est sur main est
+    # mis en ligne.
+    if: github.event_name != 'pull_request'
 
     environment:
       name: github-pages
