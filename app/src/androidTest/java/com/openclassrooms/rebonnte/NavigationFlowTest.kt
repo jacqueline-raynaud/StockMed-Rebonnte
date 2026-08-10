@@ -4,7 +4,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -67,6 +69,22 @@ class NavigationFlowTest {
     }
 
     /**
+     * Passe par le formulaire : le bouton « + » ouvre desormais un ecran de
+     * creation au lieu d'ajouter un medicament au nom et au stock aleatoires.
+     */
+    private fun createMedicine(name: String) {
+        composeRule.onNodeWithText("Medicine").performClick()
+        composeRule.onNodeWithContentDescription("Add").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Nom du médicament").performTextInput(name)
+        composeRule.onNodeWithText("Emplacement de stockage").performClick()
+        composeRule.onNodeWithText("Stockage standard").performClick()
+        composeRule.onNodeWithText("Créer le médicament").performClick()
+        composeRule.waitForIdle()
+    }
+
+    /**
      * Retour envoye directement au dispatcher de l'Activity, et non via
      * Espresso.pressBack().
      *
@@ -115,7 +133,7 @@ class NavigationFlowTest {
 
         // Le clic est l'assertion : sur une interface figee, il n'a aucun effet.
         enterStock()
-        composeRule.onNodeWithText("Main Aisle").assertIsDisplayed()
+        composeRule.onNodeWithText("Stockage standard").assertIsDisplayed()
     }
 
     @Test
@@ -175,20 +193,52 @@ class NavigationFlowTest {
         launchApp()
         enterStock()
 
-        composeRule.onNodeWithText("Medicine").performClick()
-        composeRule.onNodeWithContentDescription("Add").performClick()
-        composeRule.waitForIdle()
+        createMedicine("Doliprane")
 
-        composeRule.onNodeWithText("Medicine 1").performClick()
+        composeRule.onNodeWithText("Doliprane").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("History").assertIsDisplayed()
 
         performBack()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Medicine 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Doliprane").assertIsDisplayed()
         // Le pendant de assertBackClosesTheApp : le gestionnaire de retour ne
         // doit pas etre trop large, l'application reste ouverte.
         assertEquals(Lifecycle.State.RESUMED, scenario.state)
+    }
+
+    // --- Creation et suppression ---------------------------------------------
+
+    /** T-15 : le medicament cree porte le nom et l'emplacement choisis. */
+    @Test
+    fun creatingAMedicine_addsItToTheList() {
+        userRepository.setSignedIn(FakeUserRepository.TEST_USER)
+        launchApp()
+        enterStock()
+
+        createMedicine("Doliprane")
+
+        composeRule.onNodeWithText("Doliprane").assertIsDisplayed()
+    }
+
+    /**
+     * T-16 : la suppression etait impossible depuis l'interface. Elle passe
+     * par une confirmation, puis renvoie a la liste.
+     */
+    @Test
+    fun deletingAMedicine_removesItFromTheList() {
+        userRepository.setSignedIn(FakeUserRepository.TEST_USER)
+        launchApp()
+        enterStock()
+        createMedicine("Doliprane")
+
+        composeRule.onNodeWithText("Doliprane").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Supprimer ce médicament").performClick()
+        composeRule.onNodeWithText("Supprimer").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Doliprane").assertIsNotDisplayed()
     }
 }

@@ -17,6 +17,10 @@ object Destinations {
     const val AISLE_LIST = "aisle"
     const val MEDICINE_LIST = "medicine"
 
+    /** Formulaire de creation. Declare avant medicine/{id} pour ne pas etre
+     *  capture comme un identifiant. */
+    const val MEDICINE_NEW = "medicine/new"
+
     const val AISLE_ID_ARG = "aisleId"
     const val AISLE_DETAIL = "aisle/{$AISLE_ID_ARG}"
 
@@ -35,4 +39,7 @@ object Destinations {
      * superieure, ni barre de navigation, ni bouton d'ajout.
      */
     fun isOutsideApp(route: String?) = route == AUTH || route == WELCOME
+
+    /** Le formulaire masque aussi les barres : on y entre pour une seule tache. */
+    fun isForm(route: String?) = route == MEDICINE_NEW
 }

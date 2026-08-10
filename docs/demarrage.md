@@ -12,7 +12,7 @@
 
     Créer le projet, activer Email/Password, récupérer `google-services.json`,
     déployer les règles de sécurité depuis `firestore.rules`, créer l'index
-    composite de l'historique.
+    composite de l'historique : medicineId en croissant, date en décroissant
 
 !!! warning "Les règles de sécurité ne sont pas facultatives"
 
