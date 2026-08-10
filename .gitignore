@@ -69,3 +69,6 @@ npm-debug.log
 .kotlin/
 
 
+
+# MkDocs
+site/

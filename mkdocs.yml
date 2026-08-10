@@ -1,0 +1,81 @@
+site_name: StockMed — Rebonnte
+site_description: >-
+  Reprise de l'application de gestion des stocks de médicaments Rebonnte :
+  analyse, corrections, décisions d'architecture et qualité.
+site_author: Jacqueline Raynaud
+
+repo_url: https://github.com/jacqueline-raynaud/StockMed-Rebonnte
+repo_name: jacqueline-raynaud/StockMed-Rebonnte
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: fr
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    # Le sélecteur clair/sombre, comme dans l'application.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Passer en mode sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Passer en mode clair
+
+nav:
+  - Accueil: index.md
+  - Le projet:
+      - Contexte et demandes: contexte.md
+      - Analyse de l'existant: analyse.md
+  - Le travail:
+      - Tâches réalisées: taches.md
+      - Décisions d'architecture: decisions.md
+  - Qualité:
+      - Tests, CI et mesures: qualite.md
+      - Mesures Android Profiler: profiler.md
+  - Démarrer: demarrage.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  # Requis par la grille de cartes de l'accueil : sans lui, le Markdown a
+  # l'interieur d'une balise HTML n'est pas interprete.
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  # Rend les icones de la forme :material-check: utilisees dans les tableaux
+  # d'etat.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jacqueline-raynaud/StockMed-Rebonnte
