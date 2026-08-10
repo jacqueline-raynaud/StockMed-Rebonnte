@@ -23,9 +23,15 @@ class AisleViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    fun addRandomAisle() {
+    /**
+     * Remplace l'ancien addRandomAisle, qui fabriquait des « Aisle 2 »,
+     * « Aisle 3 » sans signification. Un emplacement de stockage porte un nom
+     * choisi par l'operateur.
+     */
+    fun addAisle(name: String) {
+        if (name.isBlank()) return
         viewModelScope.launch {
-            repository.addAisle("Aisle ${aisles.value.size + 1}")
+            repository.addAisle(name)
         }
     }
 }

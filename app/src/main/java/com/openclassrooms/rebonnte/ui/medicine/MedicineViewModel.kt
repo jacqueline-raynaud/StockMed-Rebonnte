@@ -2,7 +2,6 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.data.model.Medicine
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
@@ -51,20 +50,12 @@ class MedicineViewModel @Inject constructor(
     fun observeHistory(medicineId: String): Flow<List<History>> =
         repository.observeHistory(medicineId)
 
-    fun addRandomMedicine(aisles: List<Aisle>) {
-        // Sans rayon, l'ancien code levait une exception sur nextInt(0).
-        if (aisles.isEmpty()) return
-
-        viewModelScope.launch {
-            repository.addMedicine(
-                name = "Medicine ${medicines.value.size + 1}",
-                stock = (0..99).random(),
-                aisleId = aisles.random().id,
-                userEmail = currentUserEmail()
-            )
-        }
-    }
-
+    /**
+     * [delta] peut valoir plus de un : un mouvement de cinquante boites produit
+     * **une** entree d'historique et non cinquante. Sans cela, le service
+     * qualite cherchant « qui a retire 50 boites » trouverait cinquante lignes
+     * de « -1 », ce qui annulerait une partie du benefice de la journalisation.
+     */
     fun updateStock(medicineId: String, delta: Int) {
         viewModelScope.launch {
             repository.updateStock(medicineId, delta, currentUserEmail())

@@ -40,24 +40,26 @@ class MedicineViewModelTest {
         backgroundScope.launch { viewModel.medicines.collect { } }
     }
 
+    /**
+     * T-44 : un mouvement de cinquante boites doit produire **une** entree
+     * d'historique. Avec des appuis unitaires, le service qualite cherchant
+     * « qui a retire 50 boites » trouvait cinquante lignes de « -1 ».
+     */
     @Test
-    fun `adding a medicine requires at least one aisle`() = runTest(mainDispatcherRule.dispatcher) {
-        collectMedicines()
+    fun `a bulk movement produces a single history entry`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            collectMedicines()
+            repository.addMedicine("Doliprane", 60, aisle.id, "")
+            val medicine = viewModel.medicines.value.single()
 
-        viewModel.addRandomMedicine(emptyList())
+            viewModel.updateStock(medicine.id, delta = -50)
 
-        assertEquals(0, viewModel.medicines.value.size)
-    }
-
-    @Test
-    fun `adding a medicine places it in one of the given aisles`() = runTest(mainDispatcherRule.dispatcher) {
-        collectMedicines()
-
-        viewModel.addRandomMedicine(listOf(aisle))
-
-        assertEquals(1, viewModel.medicines.value.size)
-        assertEquals(aisle.id, viewModel.medicines.value.single().aisleId)
-    }
+            val movements = repository.observeHistory(medicine.id).first()
+                .filter { it.action == HistoryAction.STOCK_CHANGE }
+            assertEquals(1, movements.size)
+            assertEquals(60, movements.single().stockBefore)
+            assertEquals(10, movements.single().stockAfter)
+        }
 
     /**
      * L'e-mail signe l'historique. Il est lu au moment de l'operation, donc une
@@ -66,7 +68,7 @@ class MedicineViewModelTest {
     @Test
     fun `a stock change is signed with the signed in operator`() = runTest(mainDispatcherRule.dispatcher) {
         collectMedicines()
-        viewModel.addRandomMedicine(listOf(aisle))
+        repository.addMedicine("Doliprane", 10, aisle.id, "")
         val medicine = viewModel.medicines.value.single()
 
         viewModel.updateStock(medicine.id, delta = 5)
@@ -81,7 +83,7 @@ class MedicineViewModelTest {
         userRepository = FakeUserRepository(initialUser = null)
         viewModel = MedicineViewModel(repository, userRepository)
         collectMedicines()
-        viewModel.addRandomMedicine(listOf(aisle))
+        repository.addMedicine("Doliprane", 10, aisle.id, "")
         val medicine = viewModel.medicines.value.single()
 
         viewModel.updateStock(medicine.id, delta = 1)
@@ -94,7 +96,7 @@ class MedicineViewModelTest {
     @Test
     fun `deleting removes the medicine from the list`() = runTest(mainDispatcherRule.dispatcher) {
         collectMedicines()
-        viewModel.addRandomMedicine(listOf(aisle))
+        repository.addMedicine("Doliprane", 10, aisle.id, "")
         val medicine = viewModel.medicines.value.single()
 
         viewModel.deleteMedicine(medicine.id)

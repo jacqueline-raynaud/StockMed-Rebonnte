@@ -71,7 +71,10 @@ import com.openclassrooms.rebonnte.ui.aisle.AisleScreen
 import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
 import com.openclassrooms.rebonnte.ui.auth.AuthScreen
 import com.openclassrooms.rebonnte.ui.auth.AuthViewModel
+import com.openclassrooms.rebonnte.ui.aisle.AddAisleDialog
 import com.openclassrooms.rebonnte.ui.medicine.MedicineDetailScreen
+import com.openclassrooms.rebonnte.ui.medicine.MedicineFormScreen
+import com.openclassrooms.rebonnte.ui.medicine.MedicineFormViewModel
 import com.openclassrooms.rebonnte.ui.medicine.MedicineScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
@@ -173,6 +176,10 @@ fun MyApp() {
     val isDetail = Destinations.isDetail(route)
     val isOutsideApp = Destinations.isOutsideApp(route)
     val isMedicineList = route == Destinations.MEDICINE_LIST
+    val isForm = Destinations.isForm(route)
+    val hidesAppBars = isDetail || isOutsideApp || isForm
+
+    var showAddAisleDialog by remember { mutableStateOf(false) }
 
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -231,9 +238,16 @@ fun MyApp() {
     }
 
     RebonnteTheme {
+        if (showAddAisleDialog) {
+            AddAisleDialog(
+                onDismiss = { showAddAisleDialog = false },
+                onConfirm = aisleViewModel::addAisle
+            )
+        }
+
         Scaffold(
             topBar = {
-                if (!isOutsideApp) Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
+                if (!isOutsideApp && !isForm) Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                     TopAppBar(
                         title = { Text(text = titleFor(route)) },
                         navigationIcon = {
@@ -277,7 +291,7 @@ fun MyApp() {
                 }
             },
             bottomBar = {
-                if (!isDetail && !isOutsideApp) {
+                if (!hidesAppBars) {
                     NavigationBar {
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Home, contentDescription = null) },
@@ -300,13 +314,14 @@ fun MyApp() {
                 }
             },
             floatingActionButton = {
-                if (!isDetail && !isOutsideApp) {
+                if (!hidesAppBars) {
                     FloatingActionButton(onClick = {
                         when (route) {
+                            // Un formulaire, plus une creation aleatoire.
                             Destinations.MEDICINE_LIST ->
-                                medicineViewModel.addRandomMedicine(aisleViewModel.aisles.value)
+                                navController.navigate(Destinations.MEDICINE_NEW)
 
-                            Destinations.AISLE_LIST -> aisleViewModel.addRandomAisle()
+                            Destinations.AISLE_LIST -> showAddAisleDialog = true
                         }
                     }) {
                         Icon(Icons.Default.Add, contentDescription = "Add")
@@ -352,12 +367,21 @@ fun MyApp() {
                         onMedicineClick = { navController.navigate(Destinations.medicineDetail(it)) }
                     )
                 }
+                // Declaree avant medicine/{id} : sans cela, « new » serait
+                // capture comme un identifiant de medicament.
+                composable(Destinations.MEDICINE_NEW) {
+                    MedicineFormScreen(
+                        viewModel = hiltViewModel<MedicineFormViewModel>(),
+                        onSaved = { navController.navigateUp() }
+                    )
+                }
                 composable(Destinations.MEDICINE_DETAIL) { entry ->
                     MedicineDetailScreen(
                         medicineId = entry.arguments
                             ?.getString(Destinations.MEDICINE_ID_ARG).orEmpty(),
                         medicineViewModel = medicineViewModel,
-                        aisleViewModel = aisleViewModel
+                        aisleViewModel = aisleViewModel,
+                        onDeleted = { navController.navigateUp() }
                     )
                 }
             }

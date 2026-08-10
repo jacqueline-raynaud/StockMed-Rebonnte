@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui
 
+import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
@@ -17,7 +18,7 @@ class MainViewModelTest {
 
     @Test
     fun `an open session is visible immediately without waiting for the flow`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository())
 
         // Valeur initiale lue de maniere synchrone : c'est ce qui evite le
         // passage eclair par l'ecran de connexion au demarrage.
@@ -26,7 +27,7 @@ class MainViewModelTest {
 
     @Test
     fun `no session exposes a null user`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository(initialUser = null))
+        val viewModel = MainViewModel(FakeUserRepository(initialUser = null), InMemoryAisleRepository())
 
         assertNull(viewModel.currentUser.value)
     }
@@ -37,14 +38,14 @@ class MainViewModelTest {
      */
     @Test
     fun `the welcome screen starts unacknowledged`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository())
 
         assertFalse(viewModel.welcomeAcknowledged.value)
     }
 
     @Test
     fun `acknowledging the welcome screen opens the stock`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository())
 
         viewModel.acknowledgeWelcome()
 
@@ -58,7 +59,7 @@ class MainViewModelTest {
     @Test
     fun `signing out resets the welcome acknowledgement`() = runTest {
         val userRepository = FakeUserRepository()
-        val viewModel = MainViewModel(userRepository)
+        val viewModel = MainViewModel(userRepository, InMemoryAisleRepository())
         viewModel.acknowledgeWelcome()
 
         viewModel.signOut()

@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
+import com.openclassrooms.rebonnte.data.model.StorageLocations
 import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.launch
@@ -14,34 +15,69 @@ class AisleViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    /**
+     * Sans emplacement, aucun medicament ne peut etre range : la liste ne doit
+     * jamais etre vide au premier lancement.
+     */
     @Test
-    fun `the aisle list starts with the default aisle`() = runTest(mainDispatcherRule.dispatcher) {
+    fun `the list starts with the standard storage locations`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = AisleViewModel(InMemoryAisleRepository())
+            backgroundScope.launch { viewModel.aisles.collect { } }
+
+            assertEquals(
+                StorageLocations.DEFAULTS.map { it.name },
+                viewModel.aisles.value.map { it.name }
+            )
+        }
+
+    @Test
+    fun `adding a location appends it with the chosen name`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = AisleViewModel(InMemoryAisleRepository())
+            backgroundScope.launch { viewModel.aisles.collect { } }
+
+            viewModel.addAisle("Stupéfiants")
+
+            assertEquals("Stupéfiants", viewModel.aisles.value.last().name)
+        }
+
+    /** Un nom vide ne doit pas creer d'emplacement fantome. */
+    @Test
+    fun `a blank name creates nothing`() = runTest(mainDispatcherRule.dispatcher) {
         val viewModel = AisleViewModel(InMemoryAisleRepository())
         backgroundScope.launch { viewModel.aisles.collect { } }
+        val before = viewModel.aisles.value.size
 
-        assertEquals(listOf("Main Aisle"), viewModel.aisles.value.map { it.name })
+        viewModel.addAisle("   ")
+
+        assertEquals(before, viewModel.aisles.value.size)
     }
 
     @Test
-    fun `adding an aisle appends it with a sequential name`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = AisleViewModel(InMemoryAisleRepository())
-        backgroundScope.launch { viewModel.aisles.collect { } }
+    fun `each location receives a distinct identifier`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = AisleViewModel(InMemoryAisleRepository())
+            backgroundScope.launch { viewModel.aisles.collect { } }
 
-        viewModel.addRandomAisle()
+            viewModel.addAisle("Froid négatif")
+            viewModel.addAisle("Quarantaine")
 
-        assertEquals(listOf("Main Aisle", "Aisle 2"), viewModel.aisles.value.map { it.name })
-    }
+            val ids = viewModel.aisles.value.map { it.id }
+            assertTrue(ids.toSet().size == ids.size)
+        }
 
+    /** L'amorcage est appele a chaque session : il ne doit pas creer de doublon. */
     @Test
-    fun `each aisle receives a distinct identifier`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = AisleViewModel(InMemoryAisleRepository())
-        backgroundScope.launch { viewModel.aisles.collect { } }
+    fun `seeding twice does not duplicate the standard locations`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = InMemoryAisleRepository()
+            val viewModel = AisleViewModel(repository)
+            backgroundScope.launch { viewModel.aisles.collect { } }
 
-        viewModel.addRandomAisle()
-        viewModel.addRandomAisle()
+            repository.ensureDefaultStorageLocations()
+            repository.ensureDefaultStorageLocations()
 
-        val ids = viewModel.aisles.value.map { it.id }
-        assertEquals(3, ids.size)
-        assertTrue(ids.toSet().size == ids.size)
-    }
+            assertEquals(StorageLocations.DEFAULTS.size, viewModel.aisles.value.size)
+        }
 }
