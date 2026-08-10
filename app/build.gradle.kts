@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -13,6 +15,25 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
+/**
+ * Parametres de signature lus depuis local.properties, jamais versionne.
+ *
+ * La CI ecrit ce fichier a partir de secrets GitHub. En local, il est absent :
+ * les builds debug fonctionnent sans, et seul assembleRelease reclame une
+ * signature.
+ */
+val signingProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun signingProperty(name: String): String? =
+    signingProperties.getProperty(name) ?: System.getenv(name)
+
+val keystoreFile: File? = signingProperty("storeFile")
+    ?.let { file(it) }
+    ?.takeIf { it.exists() }
+
 android {
     namespace = "com.openclassrooms.rebonnte"
     compileSdk = 34
@@ -21,14 +42,31 @@ android {
         applicationId = "com.openclassrooms.rebonnte"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // Chaque distribution doit porter un versionCode distinct, sinon App
+        // Distribution presente la nouvelle version comme identique a la
+        // precedente. La CI fournit le numero du run ; en local, 1 suffit.
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionName = System.getenv("VERSION_NAME") ?: "1.0"
 
         // Runner personnalise : Hilt doit remplacer l'Application par
         // HiltTestApplication avant que le test ne demarre.
         testInstrumentationRunner = "com.openclassrooms.rebonnte.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    // Declaree uniquement si le keystore est present : sans cela, toute
+    // configuration Gradle echouerait sur un poste qui n'a pas la cle, y compris
+    // pour un simple assembleDebug.
+    signingConfigs {
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = signingProperty("storePassword")
+                keyAlias = signingProperty("keyAlias")
+                keyPassword = signingProperty("keyPassword")
+            }
         }
     }
 
@@ -45,6 +83,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Absente en local sans keystore : le build reste possible, l'APK
+            // produit n'est simplement pas signe.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
