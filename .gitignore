@@ -13,13 +13,15 @@ gradle.properties.local
 
 # Captures brutes de l'Android Profiler / LeakCanary.
 # Elles pesaient 55 Mo dans l'historique et rallongeaient chaque checkout de la
-# CI (fetch-depth: 0 est requis par Sonar). Seules les captures d'ecran
-# annotees (PNG/JPEG) sont versionnees, dans docs/profiler/.
+# CI (fetch-depth: 0 est requis par Sonar).
 *.hprof
 *.asdb
 *.heapprofd
 *.trace
-profiler/
+# La barre oblique initiale ancre le motif a la racine du depot. Sans elle,
+# "profiler/" correspondait aussi a docs/assets/profiler/ et les captures
+# annotees de la documentation n'etaient jamais versionnees.
+/profiler/
 
 # Android Studio
 .idea/
