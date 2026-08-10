@@ -23,10 +23,10 @@ d'implémentation quand il éclaire le choix.
 | 1 | Crashs et fuites mémoire | Terminé |
 | 2 | Architecture | Terminé |
 | 3 | Persistance et fonctionnalités | Partiel |
-| 4 | Qualité, CI et livrables | Partiel |
+| 4 | Qualité, CI et livrables | Terminé |
 | 5 | Finition | À faire |
 
-**Réalisé : 22 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 23 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---
@@ -320,6 +320,45 @@ séquence d'utilisation des deux côtés.
 `MainActivity` et de `MyBroadcastReceiver` dans le heap dump — un comptage exact
 plutôt qu'une pente lue à l'œil sur un graphe.
 
+### T-28 · Distribution de l'APK · 0,75 j
+
+**Problème.** Le Product Owner ne pouvait pas tester l'application sans dépendre
+du développeur pour lui transmettre un APK — « c'est vraiment une galère de
+télécharger l'application à chaque fois que tu fais des changements ».
+
+**Fait.** Un troisième workflow, déclenché sur un tag `v*` ou manuellement :
+restauration du keystore depuis un secret, construction d'un APK de release
+signé, envoi sur Firebase App Distribution au groupe `testers`.
+
+**Détail.** La configuration de signature lit `local.properties`, jamais
+versionné, et n'est déclarée **que si le keystore est présent** — sans quoi la
+seule configuration de Gradle échouerait sur un poste sans clé, y compris pour un
+`assembleDebug`.
+
+Le `versionCode` est dérivé du numéro de run. Sans cela, App Distribution
+présente chaque nouvel APK comme identique au précédent et les testeurs ne voient
+pas la mise à jour.
+
+Le keystore et `local.properties` sont effacés en fin de job, avec `if: always()`
+pour que ça s'exécute même après un échec.
+
+!!! note "Un secret jamais utilisé est un secret jamais validé"
+
+    Le workflow dont celui-ci est adapté déclarait un secret `KEY_PASSWORD` mais
+    écrivait en réalité le mot de passe du magasin dans les deux champs. Le
+    secret existait, semblait correct, et n'avait jamais servi.
+
+    Corriger cette incohérence a fait échouer le premier build sur
+    `Given final block not properly padded` — le déchiffrement de la clé. La
+    valeur était fausse depuis toujours ; rien ne pouvait le révéler tant qu'elle
+    n'était pas lue.
+
+    Deux échecs successifs ont été nécessaires — d'abord l'alias, puis le mot de
+    passe de clé — tous deux dus à des valeurs de secrets approximatives. GitHub
+    n'affiche jamais le contenu d'un secret : une espace finale y reste invisible
+    jusqu'à ce qu'elle casse quelque chose, et aucun message d'erreur ne la
+    mentionne.
+
 ### T-30 · Documentation · 0,5 j
 
 **Fait.** Ce site, publié sur GitHub Pages par une action dédiée.
@@ -349,11 +388,10 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 
 ### Livrables et finition
 
-| | Tâche |
-|---|---|
-| **T-28** | APK sur Firebase App Distribution — dépend d'un keystore et de secrets, **la tâche la plus risquée du reste** |
-| **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes |
-| **T-32** | Mode sombre — le thème est encore forcé sur `Theme.Material.Light` |
+| | Tâche                                                                       |
+|---|-----------------------------------------------------------------------------|
+| **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes               |
+| **T-32** | Mode sombre — le thème est encore forcé sur `Theme.Material.Light`          |
 | **T-34** | Externalisation des chaînes — `strings.xml` ne contient qu'une seule entrée |
 
 ### Dette assumée

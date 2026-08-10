@@ -26,6 +26,19 @@ les tests unitaires — c'est-à-dire sur 90 % des erreurs.
 Le job émulateur est aussi le plus fragile de la chaîne. Le séparer permet, si
 besoin, de le rendre non bloquant sans toucher au reste.
 
+### Les autres workflows
+
+| Workflow | Déclencheur | Rôle |
+|---|---|---|
+| Documentation | `docs/**` ou `mkdocs.yml` modifiés | Construit le site ; ne le publie que depuis `main` |
+| Distribution de l'APK | Tag `v*` ou manuel | Construit un APK de release signé et l'envoie sur Firebase App Distribution |
+
+Le workflow de documentation construit aussi sur les pull requests, sans
+publier. Il a détecté un vrai défaut dès sa première exécution : les captures du
+Profiler n'étaient pas versionnées, un motif `profiler/` du `.gitignore` les
+excluant sans qu'on s'en aperçoive. La construction locale passait — MkDocs lit
+le disque, la CI part d'un `git clone`.
+
 ### Ordonnancement
 
 Les étapes sont volontairement distinctes plutôt que regroupées en une seule
@@ -102,6 +115,26 @@ emprunte le même chemin que le bouton système sans dépendre du focus. Détail
     On prend l'habitude de relancer le job, puis d'ignorer le rouge — et le jour
     où c'est un vrai bug, on passe à côté. Un échec intermittent doit être traité
     comme un échec, pas comme un aléa.
+
+### Secrets de signature jamais validés
+
+**Symptôme.** Deux échecs successifs du workflow de distribution :
+`No key with alias ... found in keystore`, puis
+`Get Key failed: Given final block not properly padded`.
+
+**Cause.** Le workflow dont celui-ci est adapté écrivait le mot de passe du
+magasin dans les deux champs de signature, alors qu'un secret `KEY_PASSWORD`
+distinct était déclaré. Ce secret existait, semblait correct — et n'était jamais
+lu. Sa valeur était fausse depuis toujours.
+
+**Correctif.** Utiliser le bon secret pour le bon champ, et corriger sa valeur.
+
+!!! note "Un secret jamais utilisé est un secret jamais validé"
+
+    Rien ne signalait l'erreur tant que la valeur n'était pas lue. Et GitHub
+    n'affiche jamais le contenu d'un secret : une espace finale y reste
+    invisible jusqu'à ce qu'elle casse quelque chose, sans qu'aucun message
+    d'erreur ne la mentionne.
 
 ### Couverture bloquée à 0 %
 

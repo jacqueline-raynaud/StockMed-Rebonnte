@@ -54,15 +54,11 @@ Product Owner** et la finition.
 |---|---|
 | Capture de l'exécution de la CI | :material-check: Disponible — la chaîne est verte, capture à produire |
 | Listing des tâches + Kanban | :material-check: [Page dédiée](taches.md) — durées réelles à renseigner, export PDF à produire |
-| Capture annotée de l'Android Profiler | :material-alert: Mesures faites avant/après ; **annotation à produire** |
-| Capture de l'APK sur Firebase App Distribution | :material-close: **Non commencé** — dépend d'un keystore et de secrets |
+| Capture annotée de l'Android Profiler | :material-check: [Page dédiée](profiler.md) — mesures avant/après |
+| Capture de l'APK sur Firebase App Distribution | :material-check: Chaîne opérationnelle — capture à produire |
 
-!!! warning "La tâche la plus risquée du reste"
-
-    T-28, la distribution de l'APK, est le seul livrable qui dépende d'éléments
-    externes : un keystore de release, un compte de service Firebase et des
-    secrets GitHub. C'est aussi celui qui peut coûter une journée si quelque
-    chose coince — à traiter avant la finition.
+**Les quatre livrables ont désormais leur support.** Ce qu'il reste tient à des
+captures d'écran et à un export PDF, plus aux durées réelles à renseigner.
 
 ### Qualité
 
@@ -71,7 +67,8 @@ Product Owner** et la finition.
 | Tests unitaires | 38 |
 | Tests d'interface | 7 |
 | Couverture (indicateur SonarCloud) | 16,2 % |
-| Intégration continue | Deux jobs, sur push et pull request |
+| Intégration continue | Trois workflows : vérification, tests instrumentés, documentation |
+| Livraison continue | APK signé envoyé sur Firebase App Distribution |
 | Règles de sécurité Firestore | Déployées, journal d'audit en ajout seul |
 
 Le détail et les limites de ces chiffres sont dans [Tests, CI et
