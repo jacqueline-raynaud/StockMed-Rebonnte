@@ -131,6 +131,19 @@ par construction**, y compris pour du code qui n'existe pas encore.
 Firestore impose que toutes les lectures précèdent toutes les écritures dans une
 transaction — le code est structuré en conséquence.
 
+### Des identifiants de document fixes pour l'amorçage
+
+Les trois emplacements de stockage standards sont créés avec des identifiants
+choisis — `standard`, `cold`, `secured` — et non générés.
+
+C'est ce qui rend l'amorçage **idempotent**. L'opération est appelée à chaque
+ouverture de session ; avec des identifiants aléatoires, deux appareils
+démarrant en même temps sur une base vide auraient créé six emplacements au lieu
+de trois. Un `set` sur un identifiant fixe écrit toujours au même endroit.
+
+Le `merge` préserve par ailleurs un libellé qui aurait été personnalisé depuis la
+console.
+
 ### Un journal en ajout seul
 
 Les règles Firestore autorisent `create` sur `history`, et **refusent `update` et
@@ -249,6 +262,18 @@ Les implémentations en mémoire sont de **vraies implémentations du contrat**.
 Un test qui passe contre elles valide un comportement réellement possible ; un
 mock, lui, répond ce qu'on lui a dit de répondre — y compris des choses que
 l'implémentation réelle ne fera jamais.
+
+!!! warning "La limite de l'approche"
+
+    Un double reste un double. `InMemoryAisleRepository` créait un emplacement
+    de stockage au démarrage ; `FirestoreAisleRepository` n'en créait aucun.
+    Tous les tests passaient, et l'application était pourtant inutilisable sur
+    une base neuve — impossible de créer un médicament faute d'endroit où le
+    ranger.
+
+    **Quand un double se comporte mieux que l'implémentation réelle, il cache ce
+    qu'il devrait révéler.** Le défaut a été trouvé par une question métier sur
+    les règles de stockage, pas par la suite de tests.
 
 ### Le retour arrière passe par le dispatcher, pas par Espresso
 

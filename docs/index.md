@@ -43,9 +43,9 @@ Product Owner** et la finition.
 |---|---|---|
 | Créer un compte | Absent | :material-check: Fait |
 | S'identifier | Absent | :material-check: Fait |
-| Gérer les rayons | Partiel, en mémoire | :material-alert: Persisté, mais l'ajout reste aléatoire |
-| Gérer les médicaments | Partiel, en mémoire | :material-alert: Persisté, mais ni création guidée ni suppression |
-| Gérer le stock | Plantage systématique | :material-check: Fait — saisie unité par unité (T-44) |
+| Gérer les rayons | Partiel, en mémoire | :material-check: Emplacements réels : standard, froid, sécurisé |
+| Gérer les médicaments | Partiel, en mémoire | :material-check: Création guidée et suppression |
+| Gérer le stock | Plantage systématique | :material-check: Fait — saisie par quantité |
 | Historique | Jamais enregistré | :material-check: Fait, fiable et signé |
 
 ### Les quatre livrables
@@ -64,8 +64,8 @@ captures d'écran et à un export PDF, plus aux durées réelles à renseigner.
 
 | | |
 |---|---|
-| Tests unitaires | 38 |
-| Tests d'interface | 7 |
+| Tests unitaires | 47 |
+| Tests d'interface | 9 |
 | Couverture (indicateur SonarCloud) | 16,2 % |
 | Intégration continue | Trois workflows : vérification, tests instrumentés, documentation |
 | Livraison continue | APK signé envoyé sur Firebase App Distribution |

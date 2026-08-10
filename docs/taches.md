@@ -22,11 +22,11 @@ d'implémentation quand il éclaire le choix.
 | 0 | Dépôt et chaîne de build | Terminé |
 | 1 | Crashs et fuites mémoire | Terminé |
 | 2 | Architecture | Terminé |
-| 3 | Persistance et fonctionnalités | Partiel |
+| 3 | Persistance et fonctionnalités | Terminé |
 | 4 | Qualité, CI et livrables | Terminé |
 | 5 | Finition | À faire |
 
-**Réalisé : 23 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 27 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---
@@ -272,6 +272,74 @@ en ajout seul**.
 `userEmail` doit correspondre au compte appelant. C'est ce qui distingue un
 journal d'audit d'un simple log.
 
+### T-46 · Emplacements de stockage · 0,5 j
+
+**Problème.** Les rayons étaient créés au hasard : « Aisle 2 », « Aisle 3 ». Or
+un médicament se range selon des règles précises — stockage standard, froid, ou
+sécurisé pour les stupéfiants et les produits coûteux.
+
+**Fait.** Les trois emplacements réels sont amorcés au premier lancement.
+`addAisle(nom)` permet d'en ajouter d'autres, par un dialogue qui remplace la
+numérotation automatique.
+
+**Détail.** Le modèle n'a pas changé : `Aisle` était déjà la bonne abstraction —
+un emplacement de stockage. Seules les données étaient fausses. Ce sont des
+**données et non une énumération** : un établissement peut avoir besoin d'un
+froid négatif ou d'une quarantaine sans qu'on recompile.
+
+!!! danger "Un bug que le double de test masquait"
+
+    `FirestoreAisleRepository` ne créait **aucun** emplacement. L'implémentation
+    en mémoire, elle, en semait un — ce qui a masqué le défaut pendant tous les
+    tests.
+
+    Sur une base Firestore neuve, la collection était donc vide, et la création
+    d'un médicament s'interrompait silencieusement faute d'endroit où le ranger.
+
+    C'est la limite des doubles de test : quand ils se comportent **mieux** que
+    l'implémentation réelle, ils cachent ce qu'ils devraient révéler. Le défaut a
+    été trouvé par une question métier, pas par la suite de tests.
+
+### T-15 · Création de médicament · 0,75 j
+
+**Problème.** Le bouton « + » ajoutait un médicament au nom et au stock
+aléatoires, dans un rayon tiré au hasard. Demande explicite du Product Owner :
+ouvrir un écran à remplir.
+
+**Fait.** Un formulaire avec le nom, une **liste déroulante des emplacements** et
+la quantité initiale. Validation avant écriture, champ quantité restreint aux
+chiffres, nom débarrassé de ses espaces de frappe.
+
+**Détail.** La liste déroulante est alimentée par `observeAisles()` : on choisit
+parmi ce qui existe, on ne saisit pas un emplacement librement. C'est ce qui
+garantit qu'un médicament est toujours rangé quelque part de valide.
+
+### T-16 · Suppression d'un médicament · 0,5 j
+
+**Problème.** `deleteMedicine` existait dans le repository et le `ViewModel`,
+mais **aucune interface ne l'appelait**. La suppression restait impossible.
+
+**Fait.** Depuis la fiche détail, avec une confirmation qui précise que
+l'historique reste consultable.
+
+**Détail.** C'est vrai, et c'est le fruit d'un choix antérieur : l'historique
+vivant dans une collection racine, la trace de suppression survit au document
+supprimé.
+
+### T-44 · Saisie d'une quantité · 0,5 j
+
+**Problème.** Retirer cinquante boîtes demandait cinquante appuis — et produisait
+**cinquante lignes d'historique**. Le service qualité cherchant « qui a retiré
+50 boîtes » aurait trouvé cinquante entrées de « -1 ».
+
+**Fait.** Un champ de quantité et deux boutons, Retirer et Ajouter. Un mouvement,
+une opération, une entrée d'historique.
+
+**Détail.** Ce défaut ne figurait dans aucune note : il est apparu **après** la
+correction de T-05. Tant que l'historique n'était jamais écrit, personne ne
+pouvait constater qu'il serait illisible. Corriger un défaut a rendu le suivant
+visible.
+
 ---
 
 ## Lot 4 — Qualité, CI et livrables
@@ -280,7 +348,7 @@ journal d'audit d'un simple log.
 
 **Problème.** Aucun test sur une application critique pour l'entreprise.
 
-**Fait.** 38 tests sur les repositories et les quatre `ViewModel`.
+**Fait.** 47 tests sur les repositories et les quatre `ViewModel`.
 
 **Détail.** Chaque test de régression correspond à un défaut réellement
 rencontré : le stock qui vise le bon médicament, l'historique effectivement
@@ -291,7 +359,7 @@ Couverture mesurée par JaCoCo, remontée à SonarCloud.
 
 ### T-26 · Tests d'interface · 1 j
 
-**Fait.** 7 tests de parcours : accès verrouillé sans session, écran d'accueil
+**Fait.** 9 tests de parcours : accès verrouillé sans session, écran d'accueil
 au démarrage avec session, déconnexion, comportement du bouton retour.
 
 **Détail.** Deux d'entre eux verrouillent des bugs trouvés à la main pendant les
@@ -369,13 +437,10 @@ pour que ça s'exécute même après un échec.
 
 Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches.
 
-### Demandes du Product Owner encore ouvertes
+### Demandes encore ouvertes
 
 | | Tâche | État actuel |
 |---|---|---|
-| **T-15** | Écran de création de médicament | Le bouton « + » ajoute toujours un médicament **aléatoire** |
-| **T-16** | Suppression d'un médicament | `deleteMedicine` existe dans le repository et le `ViewModel`, mais **aucune interface ne l'appelle** |
-| **T-44** | Saisie d'une quantité | Retirer 50 boîtes demande 50 clics **et produit 50 lignes d'historique**, ce qui annule une partie du bénéfice de T-20 |
 | **T-45** | Journal global du stock | L'historique n'est consultable que médicament par médicament. Le service qualité a besoin de « qui a touché au stock cette semaine ». Le modèle le permet déjà, il ne manque qu'un écran — voir l'[ambiguïté relevée](analyse.md#une-ambiguite-dans-les-demandes) |
 
 ### Robustesse
