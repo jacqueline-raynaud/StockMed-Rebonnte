@@ -394,6 +394,39 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 | **T-32** | Mode sombre — le thème est encore forcé sur `Theme.Material.Light`          |
 | **T-34** | Externalisation des chaînes — `strings.xml` ne contient qu'une seule entrée |
 
+### Questions ouvertes pour le Product Owner
+
+Deux points relèvent d'une **règle métier**, pas d'un choix technique. Ils sont
+signalés ici plutôt que tranchés unilatéralement.
+
+#### Supprimer un médicament encore en stock
+
+Rien n'empêche aujourd'hui de supprimer un médicament dont il reste des unités.
+Sur un stock pharmaceutique, c'est discutable : les boîtes existent
+physiquement, et la suppression fait disparaître la ligne sans dire ce qu'elles
+sont devenues.
+
+**Mesure conservatoire prise** : la fenêtre de confirmation rappelle désormais en
+rouge le nombre d'unités restantes. La décision est donc prise en connaissance
+de cause, mais elle reste possible.
+
+**Trois politiques possibles, à arbitrer :**
+
+| Politique | Conséquence |
+|---|---|
+| Interdire tant que le stock n'est pas à zéro | Force à sortir explicitement les unités, donc à les tracer. Le plus rigoureux, le plus contraignant |
+| Autoriser avec l'avertissement actuel | État actuel. Rapide, mais l'écart de stock n'est pas expliqué |
+| Remplacer la suppression par un archivage | Le médicament sort des listes sans disparaître. Plus fidèle à un stock réel, mais demande un champ d'état et un filtrage partout |
+
+La troisième est la plus proche des usages en pharmacie, et la plus coûteuse.
+Le choix appartient au Product Owner.
+
+#### Portée de l'historique
+
+Voir T-45 : « fiche détail d'un magasin » ne correspond à aucun écran de
+l'application. L'interprétation retenue et la lecture alternative sont détaillées
+dans l'[analyse](analyse.md#une-ambiguite-dans-les-demandes).
+
 ### Dette assumée
 
 La porte qualité SonarCloud (`sonar.qualitygate.wait`) est **désactivée**. Elle
