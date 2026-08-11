@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -19,14 +20,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,14 +40,27 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
+
+/**
+ * Champ vide au depart et apres chaque mouvement : les boutons Retirer et
+ * Ajouter sont alors desactives.
+ *
+ * Repartir de « 1 » serait plus rapide pour un mouvement unitaire, mais
+ * laisserait les boutons actifs en permanence. Sur un telephone partage,
+ * un doigt qui traine suffirait a produire un mouvement de stock intempestif —
+ * et il serait trace dans l'historique comme un mouvement legitime.
+ */
+private const val EMPTY_QUANTITY = ""
 
 @Composable
 fun MedicineDetailScreen(
     medicineId: String,
     medicineViewModel: MedicineViewModel,
     aisleViewModel: AisleViewModel,
+    snackbarHostState: SnackbarHostState,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -55,8 +73,20 @@ fun MedicineDetailScreen(
     val histories by historyFlow.collectAsState(initial = emptyList())
     val aisles by aisleViewModel.aisles.collectAsState()
 
-    var quantity by rememberSaveableQuantity()
+    var quantity by rememberSaveable { mutableStateOf(EMPTY_QUANTITY) }
     var confirmDelete by remember { mutableStateOf(false) }
+
+    val historyListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    // L'historique est trie du plus recent au plus ancien : une nouvelle entree
+    // apparait en tete. Si l'operateur avait fait defiler la liste, il ne la
+    // verrait pas — d'ou le retour en haut quand la plus recente change.
+    LaunchedEffect(histories.firstOrNull()?.id) {
+        if (histories.isNotEmpty()) {
+            historyListState.animateScrollToItem(0)
+        }
+    }
 
     val currentMedicine = medicine
     if (currentMedicine == null) {
@@ -74,10 +104,23 @@ fun MedicineDetailScreen(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Supprimer ce médicament ?") },
             text = {
-                Text(
-                    "${currentMedicine.name} sera retiré du stock. " +
-                        "Son historique reste consultable."
-                )
+                Column {
+                    Text(
+                        "${currentMedicine.name} sera retiré du stock. " +
+                            "Son historique reste consultable."
+                    )
+                    // Le stock restant est rappele explicitement : supprimer un
+                    // medicament encore en stock est une decision qui doit etre
+                    // prise en connaissance de cause.
+                    if (currentMedicine.stock > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Il reste ${currentMedicine.stock} unité(s) en stock.",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -92,6 +135,21 @@ fun MedicineDetailScreen(
                 TextButton(onClick = { confirmDelete = false }) { Text("Annuler") }
             }
         )
+    }
+
+    /**
+     * Confirme le mouvement et vide le champ.
+     *
+     * Sans retour visible, l'operateur doute d'avoir appuye et recommence — un
+     * double retrait de cinquante boites passe inapercu jusqu'a l'inventaire.
+     *
+     * Vider le champ desactive les deux boutons : le geste doit etre repris
+     * deliberement, il ne peut pas se repeter par inadvertance.
+     */
+    fun applyMovement(delta: Int, message: String) {
+        medicineViewModel.updateStock(currentMedicine.id, delta)
+        quantity = EMPTY_QUANTITY
+        scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
     Column(modifier = modifier.padding(16.dp)) {
@@ -142,13 +200,13 @@ fun MedicineDetailScreen(
             )
             val amount = quantity.toIntOrNull() ?: 0
             OutlinedButton(
-                onClick = { medicineViewModel.updateStock(currentMedicine.id, -amount) },
+                onClick = { applyMovement(-amount, "$amount unité(s) retirée(s)") },
                 enabled = amount > 0
             ) {
                 Text("Retirer")
             }
             Button(
-                onClick = { medicineViewModel.updateStock(currentMedicine.id, amount) },
+                onClick = { applyMovement(amount, "$amount unité(s) ajoutée(s)") },
                 enabled = amount > 0
             ) {
                 Text("Ajouter")
@@ -163,18 +221,16 @@ fun MedicineDetailScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "History", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = historyListState,
+            modifier = Modifier.fillMaxSize()
+        ) {
             items(histories, key = { it.id }) { history ->
                 HistoryItem(history = history)
             }
         }
     }
 }
-
-/** La quantite saisie survit a une rotation d'ecran. */
-@Composable
-private fun rememberSaveableQuantity() =
-    androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("1") }
 
 @Composable
 fun HistoryItem(history: History) {

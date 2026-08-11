@@ -39,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -180,6 +182,9 @@ fun MyApp() {
     val hidesAppBars = isDetail || isOutsideApp || isForm
 
     var showAddAisleDialog by remember { mutableStateOf(false) }
+    // Partage par toutes les destinations : il servira aussi aux messages
+    // d'erreur reseau (T-24).
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -246,6 +251,7 @@ fun MyApp() {
         }
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 if (!isOutsideApp && !isForm) Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                     TopAppBar(
@@ -381,6 +387,7 @@ fun MyApp() {
                             ?.getString(Destinations.MEDICINE_ID_ARG).orEmpty(),
                         medicineViewModel = medicineViewModel,
                         aisleViewModel = aisleViewModel,
+                        snackbarHostState = snackbarHostState,
                         onDeleted = { navController.navigateUp() }
                     )
                 }
