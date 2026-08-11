@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.auth
 
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
@@ -115,6 +116,9 @@ class AuthViewModelTest {
     /**
      * Les libelles bruts de Firebase sont en anglais et parlent de « credential
      * is incorrect » : on les traduit avant affichage.
+     *
+     * Le test porte sur l'identifiant de ressource, pas sur le texte : il reste
+     * valable quelle que soit la langue du telephone.
      */
     @Test
     fun `a wrong password produces a readable message`() = runTest {
@@ -125,7 +129,10 @@ class AuthViewModelTest {
 
         viewModel.submit()
 
-        assertEquals("E-mail ou mot de passe incorrect", viewModel.uiState.value.formError)
+        assertEquals(
+            R.string.auth_error_bad_credentials,
+            viewModel.uiState.value.formError
+        )
         assertFalse(viewModel.uiState.value.isSubmitting)
     }
 
@@ -139,7 +146,7 @@ class AuthViewModelTest {
         viewModel.submit()
 
         assertEquals(
-            "Connexion impossible : verifiez votre reseau",
+            R.string.auth_error_network,
             viewModel.uiState.value.formError
         )
     }
@@ -156,7 +163,7 @@ class AuthViewModelTest {
         viewModel.submit()
 
         assertEquals(
-            "Un compte existe deja avec cette adresse",
+            R.string.auth_error_email_in_use,
             viewModel.uiState.value.formError
         )
     }

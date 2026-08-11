@@ -1,7 +1,9 @@
 package com.openclassrooms.rebonnte.ui.auth
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,15 +15,23 @@ import javax.inject.Inject
 
 enum class AuthMode { SIGN_IN, SIGN_UP }
 
+/**
+ * Les erreurs sont portees par un identifiant de ressource, pas par un texte.
+ *
+ * Le ViewModel n'a alors besoin d'aucun Context pour produire un message
+ * localise — c'est l'ecran qui resout le libelle, dans la langue du telephone.
+ * Un ViewModel qui detiendrait un Context serait aussi une fuite memoire en
+ * puissance et rendrait les tests unitaires dependants d'Android.
+ */
 data class AuthUiState(
     val mode: AuthMode = AuthMode.SIGN_IN,
     val email: String = "",
     val password: String = "",
     val displayName: String = "",
-    val emailError: String? = null,
-    val passwordError: String? = null,
-    val displayNameError: String? = null,
-    val formError: String? = null,
+    @StringRes val emailError: Int? = null,
+    @StringRes val passwordError: Int? = null,
+    @StringRes val displayNameError: Int? = null,
+    @StringRes val formError: Int? = null,
     val isSubmitting: Boolean = false
 )
 
@@ -58,21 +68,21 @@ class AuthViewModel @Inject constructor(
         if (state.isSubmitting) return
 
         val emailError = when {
-            state.email.isBlank() -> "L'adresse e-mail est obligatoire"
+            state.email.isBlank() -> R.string.auth_error_email_required
             !state.email.contains('@') || !state.email.contains('.') ->
-                "Adresse e-mail invalide"
+                R.string.auth_error_email_invalid
 
             else -> null
         }
         val passwordError = when {
-            state.password.isEmpty() -> "Le mot de passe est obligatoire"
+            state.password.isEmpty() -> R.string.auth_error_password_required
             // Minimum impose par Firebase Authentication.
-            state.password.length < 6 -> "Au moins 6 caracteres"
+            state.password.length < 6 -> R.string.auth_error_password_too_short
             else -> null
         }
         val displayNameError =
             if (state.mode == AuthMode.SIGN_UP && state.displayName.isBlank()) {
-                "Le nom est obligatoire"
+                R.string.auth_error_name_required
             } else {
                 null
             }
@@ -108,20 +118,21 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun messageFor(error: Throwable): String = when {
+    @StringRes
+    private fun messageFor(error: Throwable): Int = when {
         error.message?.contains("password is invalid", ignoreCase = true) == true ||
             error.message?.contains("credential is incorrect", ignoreCase = true) == true ->
-            "E-mail ou mot de passe incorrect"
+            R.string.auth_error_bad_credentials
 
         error.message?.contains("no user record", ignoreCase = true) == true ->
-            "Aucun compte ne correspond a cette adresse"
+            R.string.auth_error_no_account
 
         error.message?.contains("already in use", ignoreCase = true) == true ->
-            "Un compte existe deja avec cette adresse"
+            R.string.auth_error_email_in_use
 
         error.message?.contains("network", ignoreCase = true) == true ->
-            "Connexion impossible : verifiez votre reseau"
+            R.string.auth_error_network
 
-        else -> "La connexion a echoue. Reessayez."
+        else -> R.string.auth_error_generic
     }
 }

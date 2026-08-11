@@ -16,7 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.User
 
 /**
@@ -39,7 +41,7 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Bonjour ${user.displayName}",
+            text = stringResource(R.string.welcome_greeting, user.displayName),
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(Modifier.height(8.dp))
@@ -57,8 +59,7 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Toutes les modifications de stock seront enregistrees " +
-                    "sous ce compte. Si ce n'est pas vous, deconnectez-vous.",
+                text = stringResource(R.string.welcome_notice),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.padding(16.dp)
@@ -67,11 +68,11 @@ fun WelcomeScreen(
 
         Spacer(Modifier.height(32.dp))
         Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
-            Text("OK, c'est bien moi")
+            Text(stringResource(R.string.welcome_continue))
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
-            Text("Se deconnecter")
+            Text(stringResource(R.string.action_sign_out))
         }
     }
 }

@@ -25,9 +25,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.openclassrooms.rebonnte.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,10 +55,10 @@ fun MedicineFormScreen(
         OutlinedTextField(
             value = state.name,
             onValueChange = viewModel::onNameChange,
-            label = { Text("Nom du médicament") },
+            label = { Text(stringResource(R.string.form_medicine_name)) },
             singleLine = true,
             isError = state.nameError != null,
-            supportingText = { state.nameError?.let { Text(it) } },
+            supportingText = { state.nameError?.let { Text(stringResource(it)) } },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth()
         )
@@ -72,9 +74,9 @@ fun MedicineFormScreen(
                 value = aisles.firstOrNull { it.id == state.aisleId }?.name.orEmpty(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Emplacement de stockage") },
+                label = { Text(stringResource(R.string.form_storage_location)) },
                 isError = state.aisleError != null,
-                supportingText = { state.aisleError?.let { Text(it) } },
+                supportingText = { state.aisleError?.let { Text(stringResource(it)) } },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor(),
@@ -99,10 +101,10 @@ fun MedicineFormScreen(
         OutlinedTextField(
             value = state.stock,
             onValueChange = viewModel::onStockChange,
-            label = { Text("Quantité initiale") },
+            label = { Text(stringResource(R.string.form_initial_quantity)) },
             singleLine = true,
             isError = state.stockError != null,
-            supportingText = { state.stockError?.let { Text(it) } },
+            supportingText = { state.stockError?.let { Text(stringResource(it)) } },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -116,14 +118,13 @@ fun MedicineFormScreen(
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Créer le médicament")
+            Text(stringResource(R.string.form_submit))
         }
 
         if (aisles.isEmpty()) {
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Aucun emplacement de stockage n'est disponible. " +
-                    "Créez-en un depuis l'onglet des rayons.",
+                text = stringResource(R.string.form_no_aisle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )

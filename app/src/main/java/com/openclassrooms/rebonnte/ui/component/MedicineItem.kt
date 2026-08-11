@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.Medicine
 
 /**
@@ -48,7 +50,7 @@ fun MedicineItem(
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = "Stock: ${medicine.stock}",
+                text = stringResource(R.string.medicine_stock, medicine.stock),
                 style = MaterialTheme.typography.bodyMedium,
                 // Couleur du theme plutot que Color.Gray en dur : illisible en
                 // mode sombre.

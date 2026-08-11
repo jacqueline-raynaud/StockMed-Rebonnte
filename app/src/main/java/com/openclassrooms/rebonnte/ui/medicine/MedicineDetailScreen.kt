@@ -35,9 +35,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
 import kotlinx.coroutines.launch
@@ -78,6 +81,10 @@ fun MedicineDetailScreen(
 
     val historyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    // stringResource n'est appelable que depuis un composable ; le message du
+    // snackbar depend de la quantite saisie au moment du clic, donc il se
+    // resout via le contexte.
+    val context = LocalContext.current
 
     // L'historique est trie du plus recent au plus ancien : une nouvelle entree
     // apparait en tete. Si l'operateur avait fait defiler la liste, il ne la
@@ -93,7 +100,7 @@ fun MedicineDetailScreen(
         // L'ancien code faisait un `return` au milieu du composable : ecran
         // blanc sans explication.
         Text(
-            text = "Medicament introuvable",
+            text = stringResource(R.string.detail_not_found),
             modifier = modifier.padding(16.dp)
         )
         return
@@ -102,12 +109,11 @@ fun MedicineDetailScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Supprimer ce médicament ?") },
+            title = { Text(stringResource(R.string.detail_delete_title)) },
             text = {
                 Column {
                     Text(
-                        "${currentMedicine.name} sera retiré du stock. " +
-                            "Son historique reste consultable."
+                        stringResource(R.string.detail_delete_message, currentMedicine.name)
                     )
                     // Le stock restant est rappele explicitement : supprimer un
                     // medicament encore en stock est une decision qui doit etre
@@ -115,7 +121,10 @@ fun MedicineDetailScreen(
                     if (currentMedicine.stock > 0) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "Il reste ${currentMedicine.stock} unité(s) en stock.",
+                            text = stringResource(
+                                R.string.detail_delete_remaining,
+                                currentMedicine.stock
+                            ),
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
                         )
@@ -128,11 +137,13 @@ fun MedicineDetailScreen(
                     medicineViewModel.deleteMedicine(currentMedicine.id)
                     onDeleted()
                 }) {
-                    Text("Supprimer")
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Annuler") }
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }
@@ -156,7 +167,7 @@ fun MedicineDetailScreen(
         TextField(
             value = currentMedicine.name,
             onValueChange = {},
-            label = { Text("Name") },
+            label = { Text(stringResource(R.string.detail_field_name)) },
             enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
@@ -165,9 +176,9 @@ fun MedicineDetailScreen(
             // Le medicament ne porte que l'identifiant de son emplacement ; le
             // libelle se resout ici, a l'affichage.
             value = aisles.firstOrNull { it.id == currentMedicine.aisleId }?.name
-                ?: "Emplacement inconnu",
+                ?: stringResource(R.string.detail_unknown_location),
             onValueChange = {},
-            label = { Text("Emplacement") },
+            label = { Text(stringResource(R.string.detail_field_location)) },
             enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
@@ -175,7 +186,7 @@ fun MedicineDetailScreen(
         TextField(
             value = currentMedicine.stock.toString(),
             onValueChange = {},
-            label = { Text("Stock") },
+            label = { Text(stringResource(R.string.detail_field_stock)) },
             enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
@@ -193,33 +204,49 @@ fun MedicineDetailScreen(
             OutlinedTextField(
                 value = quantity,
                 onValueChange = { quantity = it.filter(Char::isDigit).take(5) },
-                label = { Text("Quantité") },
+                label = { Text(stringResource(R.string.detail_field_quantity)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(120.dp)
             )
             val amount = quantity.toIntOrNull() ?: 0
             OutlinedButton(
-                onClick = { applyMovement(-amount, "$amount unité(s) retirée(s)") },
+                onClick = {
+                    applyMovement(
+                        -amount,
+                        context.getString(R.string.detail_units_removed, amount)
+                    )
+                },
                 enabled = amount > 0
             ) {
-                Text("Retirer")
+                Text(stringResource(R.string.detail_action_remove))
             }
             Button(
-                onClick = { applyMovement(amount, "$amount unité(s) ajoutée(s)") },
+                onClick = {
+                    applyMovement(
+                        amount,
+                        context.getString(R.string.detail_units_added, amount)
+                    )
+                },
                 enabled = amount > 0
             ) {
-                Text("Ajouter")
+                Text(stringResource(R.string.detail_action_add))
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = { confirmDelete = true }) {
-            Text("Supprimer ce médicament", color = MaterialTheme.colorScheme.error)
+            Text(
+                text = stringResource(R.string.detail_delete_medicine),
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "History", style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = stringResource(R.string.history_title),
+            style = MaterialTheme.typography.titleLarge
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(
             state = historyListState,
@@ -242,17 +269,34 @@ fun HistoryItem(history: History) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = history.medicineName, fontWeight = FontWeight.Bold)
-            Text(text = "User: ${history.userEmail.ifEmpty { "utilisateur inconnu" }}")
-            Text(text = "Date: ${formatHistoryDate(history.date)}")
-            Text(text = "Stock: ${history.stockBefore} -> ${history.stockAfter}")
-            Text(text = "Details: ${history.details}")
+            Text(
+                text = stringResource(
+                    R.string.history_user,
+                    history.userEmail.ifEmpty { stringResource(R.string.history_unknown_user) }
+                )
+            )
+            Text(
+                text = stringResource(
+                    R.string.history_date,
+                    formatHistoryDate(history.date) ?: stringResource(R.string.history_no_date)
+                )
+            )
+            Text(
+                text = stringResource(
+                    R.string.history_stock,
+                    history.stockBefore,
+                    history.stockAfter
+                )
+            )
+            Text(text = stringResource(R.string.history_details, history.details))
         }
     }
 }
 
-private fun formatHistoryDate(epochMillis: Long): String =
+/** null quand la date est absente : le libelle de remplacement est une ressource. */
+private fun formatHistoryDate(epochMillis: Long): String? =
     if (epochMillis == 0L) {
-        "-"
+        null
     } else {
         DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
             .format(Date(epochMillis))

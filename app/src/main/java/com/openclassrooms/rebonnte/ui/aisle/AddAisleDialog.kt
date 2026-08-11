@@ -9,6 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.openclassrooms.rebonnte.R
 
 /**
  * Creation d'un emplacement de stockage.
@@ -25,12 +27,12 @@ fun AddAisleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nouvel emplacement de stockage") },
+        title = { Text(stringResource(R.string.aisle_dialog_title)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nom") },
+                label = { Text(stringResource(R.string.aisle_dialog_name)) },
                 singleLine = true
             )
         },
@@ -42,11 +44,11 @@ fun AddAisleDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Créer")
+                Text(stringResource(R.string.action_create))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

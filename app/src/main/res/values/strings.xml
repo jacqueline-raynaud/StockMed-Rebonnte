@@ -1,3 +1,101 @@
 <resources>
     <string name="app_name">rebonnte</string>
+
+    <!-- Navigation et barre superieure -->
+    <string name="title_aisles">Aisle</string>
+    <string name="title_medicines">Medicines</string>
+    <string name="nav_aisles">Aisle</string>
+    <string name="nav_medicines">Medicine</string>
+    <string name="action_back">Retour</string>
+    <string name="action_sign_out">Se deconnecter</string>
+    <string name="action_add">Add</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_create">Créer</string>
+    <string name="action_delete">Supprimer</string>
+
+    <!-- Recherche -->
+    <string name="search_hint">Search</string>
+    <string name="search_close">Fermer la recherche</string>
+    <string name="search_clear">Effacer la recherche</string>
+
+    <!-- Tri -->
+    <string name="sort_menu">Trier</string>
+    <string name="sort_active">Tri actif</string>
+    <string name="sort_none">Aucun tri</string>
+    <string name="sort_name_asc">Nom (A → Z)</string>
+    <string name="sort_name_desc">Nom (Z → A)</string>
+    <string name="sort_stock_asc">Stock croissant</string>
+    <string name="sort_stock_desc">Stock décroissant</string>
+
+    <!-- Diffusion interne -->
+    <string name="broadcast_update_received">Update reçu</string>
+
+    <!-- Authentification -->
+    <string name="auth_title_sign_in">Connexion</string>
+    <string name="auth_title_sign_up">Creer un compte</string>
+    <string name="auth_field_name">Nom</string>
+    <string name="auth_field_email">Adresse e-mail</string>
+    <string name="auth_field_password">Mot de passe</string>
+    <string name="auth_action_sign_in">Se connecter</string>
+    <string name="auth_action_sign_up">Creer le compte</string>
+    <string name="auth_switch_to_sign_in">J\'ai deja un compte</string>
+    <string name="auth_switch_to_sign_up">Creer un compte</string>
+    <string name="auth_error_email_required">L\'adresse e-mail est obligatoire</string>
+    <string name="auth_error_email_invalid">Adresse e-mail invalide</string>
+    <string name="auth_error_password_required">Le mot de passe est obligatoire</string>
+    <string name="auth_error_password_too_short">Au moins 6 caracteres</string>
+    <string name="auth_error_name_required">Le nom est obligatoire</string>
+    <string name="auth_error_bad_credentials">E-mail ou mot de passe incorrect</string>
+    <string name="auth_error_no_account">Aucun compte ne correspond a cette adresse</string>
+    <string name="auth_error_email_in_use">Un compte existe deja avec cette adresse</string>
+    <string name="auth_error_network">Connexion impossible : verifiez votre reseau</string>
+    <string name="auth_error_generic">La connexion a echoue. Reessayez.</string>
+
+    <!-- Ecran d'accueil -->
+    <string name="welcome_greeting">Bonjour %1$s</string>
+    <string name="welcome_notice">Toutes les modifications de stock seront enregistrees sous ce compte. Si ce n\'est pas vous, deconnectez-vous.</string>
+    <string name="welcome_continue">OK, c\'est bien moi</string>
+
+    <!-- Emplacements de stockage -->
+    <string name="aisle_dialog_title">Nouvel emplacement de stockage</string>
+    <string name="aisle_dialog_name">Nom</string>
+
+    <!-- Creation d'un medicament -->
+    <string name="form_medicine_name">Nom du médicament</string>
+    <string name="form_storage_location">Emplacement de stockage</string>
+    <string name="form_initial_quantity">Quantité initiale</string>
+    <string name="form_submit">Créer le médicament</string>
+    <string name="form_no_aisle">Aucun emplacement de stockage n\'est disponible. Créez-en un depuis l\'onglet des rayons.</string>
+    <string name="form_error_name_required">Le nom est obligatoire</string>
+    <string name="form_error_quantity_invalid">Quantite invalide</string>
+    <string name="form_error_quantity_negative">La quantite ne peut pas etre negative</string>
+    <string name="form_error_aisle_required">Choisissez un emplacement de stockage</string>
+
+    <!-- Fiche detail d'un medicament -->
+    <string name="detail_not_found">Medicament introuvable</string>
+    <string name="detail_field_name">Name</string>
+    <string name="detail_field_location">Emplacement</string>
+    <string name="detail_unknown_location">Emplacement inconnu</string>
+    <string name="detail_field_stock">Stock</string>
+    <string name="detail_field_quantity">Quantité</string>
+    <string name="detail_action_remove">Retirer</string>
+    <string name="detail_action_add">Ajouter</string>
+    <string name="detail_delete_medicine">Supprimer ce médicament</string>
+    <string name="detail_delete_title">Supprimer ce médicament ?</string>
+    <string name="detail_delete_message">%1$s sera retiré du stock. Son historique reste consultable.</string>
+    <string name="detail_delete_remaining">Il reste %1$d unité(s) en stock.</string>
+    <string name="detail_units_removed">%1$d unité(s) retirée(s)</string>
+    <string name="detail_units_added">%1$d unité(s) ajoutée(s)</string>
+
+    <!-- Historique -->
+    <string name="history_title">History</string>
+    <string name="history_user">User: %1$s</string>
+    <string name="history_unknown_user">utilisateur inconnu</string>
+    <string name="history_date">Date: %1$s</string>
+    <string name="history_no_date">-</string>
+    <string name="history_stock">Stock: %1$d -&gt; %2$d</string>
+    <string name="history_details">Details: %1$s</string>
+
+    <!-- Liste des medicaments -->
+    <string name="medicine_stock">Stock: %1$d</string>
 </resources>

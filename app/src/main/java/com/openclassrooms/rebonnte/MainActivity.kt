@@ -51,11 +51,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.annotation.StringRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
@@ -150,7 +152,7 @@ class MainActivity : ComponentActivity() {
             // Le contexte fourni par le systeme, et non une reference statique
             // vers l'Activity.
             val target = context ?: return
-            Toast.makeText(target, "Update reçu", Toast.LENGTH_SHORT).show()
+            Toast.makeText(target, R.string.broadcast_update_received, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -257,13 +259,13 @@ fun MyApp() {
             topBar = {
                 if (!isOutsideApp && !isForm) Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                     TopAppBar(
-                        title = { Text(text = titleFor(route)) },
+                        title = { Text(text = stringResource(titleFor(route))) },
                         navigationIcon = {
                             if (isDetail) {
                                 IconButton(onClick = { navController.navigateUp() }) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = "Retour"
+                                        contentDescription = stringResource(R.string.action_back)
                                     )
                                 }
                             }
@@ -279,7 +281,7 @@ fun MyApp() {
                                 IconButton(onClick = mainViewModel::signOut) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                        contentDescription = "Se deconnecter"
+                                        contentDescription = stringResource(R.string.action_sign_out)
                                     )
                                 }
                             }
@@ -303,7 +305,7 @@ fun MyApp() {
                     NavigationBar {
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                            label = { Text("Aisle") },
+                            label = { Text(stringResource(R.string.nav_aisles)) },
                             selected = route == Destinations.AISLE_LIST,
                             onClick = { navController.switchTab(Destinations.AISLE_LIST) }
                         )
@@ -314,7 +316,7 @@ fun MyApp() {
                                     contentDescription = null
                                 )
                             },
-                            label = { Text("Medicine") },
+                            label = { Text(stringResource(R.string.nav_medicines)) },
                             selected = route == Destinations.MEDICINE_LIST,
                             onClick = { navController.switchTab(Destinations.MEDICINE_LIST) }
                         )
@@ -332,7 +334,10 @@ fun MyApp() {
                             Destinations.AISLE_LIST -> showAddAisleDialog = true
                         }
                     }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add")
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.action_add)
+                        )
                     }
                 }
             }
@@ -413,9 +418,10 @@ private fun NavHostController.switchTab(route: String) {
     }
 }
 
-private fun titleFor(route: String?): String = when (route) {
-    Destinations.AISLE_LIST, Destinations.AISLE_DETAIL -> "Aisle"
-    else -> "Medicines"
+@StringRes
+private fun titleFor(route: String?): Int = when (route) {
+    Destinations.AISLE_LIST, Destinations.AISLE_DETAIL -> R.string.title_aisles
+    else -> R.string.title_medicines
 }
 
 @Composable
@@ -426,11 +432,11 @@ private fun SortMenu(medicineViewModel: MedicineViewModel) {
     // Libelles explicites plutot que « Sort by Name » : avec deux sens de tri,
     // il faut dire lequel.
     val options = listOf(
-        MedicineSort.NONE to "Aucun tri",
-        MedicineSort.NAME_ASC to "Nom (A → Z)",
-        MedicineSort.NAME_DESC to "Nom (Z → A)",
-        MedicineSort.STOCK_ASC to "Stock croissant",
-        MedicineSort.STOCK_DESC to "Stock décroissant"
+        MedicineSort.NONE to R.string.sort_none,
+        MedicineSort.NAME_ASC to R.string.sort_name_asc,
+        MedicineSort.NAME_DESC to R.string.sort_name_desc,
+        MedicineSort.STOCK_ASC to R.string.sort_stock_asc,
+        MedicineSort.STOCK_DESC to R.string.sort_stock_desc
     )
 
     Row(
@@ -442,25 +448,31 @@ private fun SortMenu(medicineViewModel: MedicineViewModel) {
     ) {
         Box {
             IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Trier")
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.sort_menu)
+                )
             }
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 offset = DpOffset(x = 0.dp, y = 0.dp)
             ) {
-                options.forEach { (criterion, label) ->
+                options.forEach { (criterion, labelRes) ->
                     DropdownMenuItem(
                         onClick = {
                             medicineViewModel.sortBy(criterion)
                             expanded = false
                         },
-                        text = { Text(label) },
+                        text = { Text(stringResource(labelRes)) },
                         // Le critere actif est coche : sans cela, on ne sait pas
                         // ce qui s'applique.
                         trailingIcon = {
                             if (criterion == currentSort) {
-                                Icon(Icons.Default.Check, contentDescription = "Tri actif")
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = stringResource(R.string.sort_active)
+                                )
                             }
                         }
                     )
@@ -501,7 +513,7 @@ fun EmbeddedSearchBar(
             IconButton(onClick = { activeChanged(false) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Fermer la recherche",
+                    contentDescription = stringResource(R.string.search_close),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -523,7 +535,7 @@ fun EmbeddedSearchBar(
             decorationBox = { innerTextField ->
                 if (query.isEmpty()) {
                     Text(
-                        text = "Search",
+                        text = stringResource(R.string.search_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
@@ -536,7 +548,7 @@ fun EmbeddedSearchBar(
             IconButton(onClick = { onQueryChange("") }) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "Effacer la recherche",
+                    contentDescription = stringResource(R.string.search_clear),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

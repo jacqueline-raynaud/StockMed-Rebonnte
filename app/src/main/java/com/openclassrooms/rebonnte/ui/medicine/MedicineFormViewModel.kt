@@ -1,7 +1,9 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
@@ -20,9 +22,10 @@ data class MedicineFormUiState(
     val name: String = "",
     val stock: String = "0",
     val aisleId: String = "",
-    val nameError: String? = null,
-    val stockError: String? = null,
-    val aisleError: String? = null,
+    // Identifiants de ressource : voir AuthUiState pour la raison.
+    @StringRes val nameError: Int? = null,
+    @StringRes val stockError: Int? = null,
+    @StringRes val aisleError: Int? = null,
     val isSubmitting: Boolean = false,
     val isSaved: Boolean = false
 )
@@ -64,15 +67,15 @@ class MedicineFormViewModel @Inject constructor(
         val state = _uiState.value
         if (state.isSubmitting) return
 
-        val nameError = if (state.name.isBlank()) "Le nom est obligatoire" else null
+        val nameError = if (state.name.isBlank()) R.string.form_error_name_required else null
         val stock = state.stock.toIntOrNull()
         val stockError = when {
-            stock == null -> "Quantite invalide"
-            stock < 0 -> "La quantite ne peut pas etre negative"
+            stock == null -> R.string.form_error_quantity_invalid
+            stock < 0 -> R.string.form_error_quantity_negative
             else -> null
         }
         val aisleError =
-            if (state.aisleId.isBlank()) "Choisissez un emplacement de stockage" else null
+            if (state.aisleId.isBlank()) R.string.form_error_aisle_required else null
 
         if (nameError != null || stockError != null || aisleError != null) {
             _uiState.update {
