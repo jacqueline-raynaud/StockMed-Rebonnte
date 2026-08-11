@@ -153,16 +153,17 @@ lu. Sa valeur était fausse depuis toujours.
 
 ## Tests unitaires
 
-**38 tests** sur les repositories et les quatre `ViewModel`, exécutés sur la JVM,
+**51 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
 sans émulateur ni réseau.
 
 | Classe testée | Tests |
 |---|---|
 | `AuthViewModel` | 11 |
+| `MedicineFormViewModel` | 8 |
 | `InMemoryMedicineRepository` | 11 |
-| `MedicineViewModel` | 8 |
+| `MedicineViewModel` | 11 |
 | `MainViewModel` | 5 |
-| `AisleViewModel` | 3 |
+| `AisleViewModel` | 5 |
 
 ### Ce qu'ils verrouillent
 
@@ -196,7 +197,7 @@ quoi le collecteur ne démarre jamais.
 
 ## Tests d'interface
 
-**7 tests de parcours**, exécutés sur émulateur.
+**9 tests de parcours**, exécutés sur émulateur.
 
 | Test | Ce qu'il vérifie |
 |---|---|

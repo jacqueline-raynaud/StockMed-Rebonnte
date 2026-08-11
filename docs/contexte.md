@@ -176,8 +176,8 @@ non traitées sont signalées comme telles : voir le
 | Données non persistées | T-11 | Fait |
 | Déconnexion | T-18 | Fait |
 | Liste détaillée du travail effectué | T-30 | Fait |
-| Ajout de médicament aléatoire | T-15 | **À faire** |
-| Suppression d'un médicament | T-16 | **À faire** |
+| Ajout de médicament aléatoire | T-15 | Fait |
+| Suppression d'un médicament | T-16 | Fait |
 | Validation des saisies | T-21 | Partiel |
 | Accessibilité (TalkBack, contrastes) | T-31 | **À faire** |
 | APK sur Firebase App Distribution | T-28 | Fait |
@@ -186,8 +186,9 @@ non traitées sont signalées comme telles : voir le
 
 | Constat | Tâche | État |
 |---|---|---|
-| Retirer 50 boîtes demande 50 clics et produit 50 lignes d'historique | T-44 | **À faire** |
+| Retirer 50 boîtes demande 50 clics et produit 50 lignes d'historique | T-44 | Fait |
 | Historique consultable seulement médicament par médicament | T-45 | **À faire** |
+| Rayons créés au hasard, sans rapport avec les règles de stockage | T-46 | Fait |
 | Base de données ouverte sans règles de sécurité | T-43 | Fait |
 
 !!! note "T-44 ne figurait dans aucune note"
