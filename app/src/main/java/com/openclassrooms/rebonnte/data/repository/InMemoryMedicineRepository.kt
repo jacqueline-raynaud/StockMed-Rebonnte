@@ -109,6 +109,10 @@ private fun List<Medicine>.filterByName(query: String): List<Medicine> {
 
 private fun List<Medicine>.sortedBy(sort: MedicineSort): List<Medicine> = when (sort) {
     MedicineSort.NONE -> this
-    MedicineSort.NAME -> sortedBy { it.name }
-    MedicineSort.STOCK -> sortedBy { it.stock }
+    // lowercase() : meme ordre alphabetique que l'implementation Firestore, qui
+    // trie sur le champ en minuscules.
+    MedicineSort.NAME_ASC -> sortedBy { it.name.lowercase(Locale.getDefault()) }
+    MedicineSort.NAME_DESC -> sortedByDescending { it.name.lowercase(Locale.getDefault()) }
+    MedicineSort.STOCK_ASC -> sortedBy { it.stock }
+    MedicineSort.STOCK_DESC -> sortedByDescending { it.stock }
 }

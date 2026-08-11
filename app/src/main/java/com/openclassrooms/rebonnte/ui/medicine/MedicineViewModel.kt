@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -34,6 +35,10 @@ class MedicineViewModel @Inject constructor(
     // liste filtree, ce qui supprimait definitivement les medicaments masques.
     private val query = MutableStateFlow("")
     private val sort = MutableStateFlow(MedicineSort.NONE)
+
+    /** Expose pour que le menu puisse indiquer le critere actif : avec cinq
+     *  entrees, ne pas savoir laquelle s'applique est deroutant. */
+    val currentSort: StateFlow<MedicineSort> = sort.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val medicines: StateFlow<List<Medicine>> =
@@ -72,16 +77,10 @@ class MedicineViewModel @Inject constructor(
         query.value = name
     }
 
-    fun sortByNone() {
-        sort.value = MedicineSort.NONE
-    }
-
-    fun sortByName() {
-        sort.value = MedicineSort.NAME
-    }
-
-    fun sortByStock() {
-        sort.value = MedicineSort.STOCK
+    /** Une seule entree plutot qu'une methode par critere : le menu passe la
+     *  valeur, le ViewModel n'a pas a connaitre les libelles. */
+    fun sortBy(criterion: MedicineSort) {
+        sort.value = criterion
     }
 
     /**

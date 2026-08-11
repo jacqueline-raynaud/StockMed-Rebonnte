@@ -3,6 +3,7 @@ package com.openclassrooms.rebonnte.ui.medicine
 import com.openclassrooms.rebonnte.data.model.Aisle
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.repository.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
@@ -124,27 +125,66 @@ class MedicineViewModelTest {
     }
 
     @Test
-    fun `sorting by name reorders the exposed list`() = runTest(mainDispatcherRule.dispatcher) {
-        collectMedicines()
-        repository.addMedicine("Zovirax", 5, aisle.id, "")
-        repository.addMedicine("Aspirine", 1, aisle.id, "")
+    fun `sorting by name ascending reorders the exposed list`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            collectMedicines()
+            repository.addMedicine("Zovirax", 5, aisle.id, "")
+            repository.addMedicine("Aspirine", 1, aisle.id, "")
 
-        viewModel.sortByName()
+            viewModel.sortBy(MedicineSort.NAME_ASC)
 
-        assertEquals(
-            listOf("Aspirine", "Zovirax"),
-            viewModel.medicines.value.map { it.name }
-        )
-    }
+            assertEquals(
+                listOf("Aspirine", "Zovirax"),
+                viewModel.medicines.value.map { it.name }
+            )
+        }
 
     @Test
-    fun `sorting by stock reorders the exposed list`() = runTest(mainDispatcherRule.dispatcher) {
-        collectMedicines()
-        repository.addMedicine("Zovirax", 5, aisle.id, "")
-        repository.addMedicine("Aspirine", 1, aisle.id, "")
+    fun `sorting by name descending reverses the order`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            collectMedicines()
+            repository.addMedicine("Aspirine", 1, aisle.id, "")
+            repository.addMedicine("Zovirax", 5, aisle.id, "")
 
-        viewModel.sortByStock()
+            viewModel.sortBy(MedicineSort.NAME_DESC)
 
-        assertEquals(listOf(1, 5), viewModel.medicines.value.map { it.stock })
+            assertEquals(
+                listOf("Zovirax", "Aspirine"),
+                viewModel.medicines.value.map { it.name }
+            )
+        }
+
+    @Test
+    fun `sorting by stock ascending reorders the exposed list`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            collectMedicines()
+            repository.addMedicine("Zovirax", 5, aisle.id, "")
+            repository.addMedicine("Aspirine", 1, aisle.id, "")
+
+            viewModel.sortBy(MedicineSort.STOCK_ASC)
+
+            assertEquals(listOf(1, 5), viewModel.medicines.value.map { it.stock })
+        }
+
+    @Test
+    fun `sorting by stock descending reverses the order`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            collectMedicines()
+            repository.addMedicine("Aspirine", 1, aisle.id, "")
+            repository.addMedicine("Zovirax", 5, aisle.id, "")
+
+            viewModel.sortBy(MedicineSort.STOCK_DESC)
+
+            assertEquals(listOf(5, 1), viewModel.medicines.value.map { it.stock })
+        }
+
+    /** Le menu coche le critere actif : il doit donc etre observable. */
+    @Test
+    fun `the active sort criterion is exposed`() = runTest(mainDispatcherRule.dispatcher) {
+        assertEquals(MedicineSort.NONE, viewModel.currentSort.value)
+
+        viewModel.sortBy(MedicineSort.STOCK_DESC)
+
+        assertEquals(MedicineSort.STOCK_DESC, viewModel.currentSort.value)
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -79,6 +80,7 @@ import com.openclassrooms.rebonnte.ui.medicine.MedicineFormScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineFormViewModel
 import com.openclassrooms.rebonnte.ui.medicine.MedicineScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 import com.openclassrooms.rebonnte.ui.welcome.WelcomeScreen
@@ -419,6 +421,17 @@ private fun titleFor(route: String?): String = when (route) {
 @Composable
 private fun SortMenu(medicineViewModel: MedicineViewModel) {
     var expanded by remember { mutableStateOf(false) }
+    val currentSort by medicineViewModel.currentSort.collectAsState()
+
+    // Libelles explicites plutot que « Sort by Name » : avec deux sens de tri,
+    // il faut dire lequel.
+    val options = listOf(
+        MedicineSort.NONE to "Aucun tri",
+        MedicineSort.NAME_ASC to "Nom (A → Z)",
+        MedicineSort.NAME_DESC to "Nom (Z → A)",
+        MedicineSort.STOCK_ASC to "Stock croissant",
+        MedicineSort.STOCK_DESC to "Stock décroissant"
+    )
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -436,27 +449,22 @@ private fun SortMenu(medicineViewModel: MedicineViewModel) {
                 onDismissRequest = { expanded = false },
                 offset = DpOffset(x = 0.dp, y = 0.dp)
             ) {
-                DropdownMenuItem(
-                    onClick = {
-                        medicineViewModel.sortByNone()
-                        expanded = false
-                    },
-                    text = { Text("Sort by None") }
-                )
-                DropdownMenuItem(
-                    onClick = {
-                        medicineViewModel.sortByName()
-                        expanded = false
-                    },
-                    text = { Text("Sort by Name") }
-                )
-                DropdownMenuItem(
-                    onClick = {
-                        medicineViewModel.sortByStock()
-                        expanded = false
-                    },
-                    text = { Text("Sort by Stock") }
-                )
+                options.forEach { (criterion, label) ->
+                    DropdownMenuItem(
+                        onClick = {
+                            medicineViewModel.sortBy(criterion)
+                            expanded = false
+                        },
+                        text = { Text(label) },
+                        // Le critere actif est coche : sans cela, on ne sait pas
+                        // ce qui s'applique.
+                        trailingIcon = {
+                            if (criterion == currentSort) {
+                                Icon(Icons.Default.Check, contentDescription = "Tri actif")
+                            }
+                        }
+                    )
+                }
             }
         }
     }
