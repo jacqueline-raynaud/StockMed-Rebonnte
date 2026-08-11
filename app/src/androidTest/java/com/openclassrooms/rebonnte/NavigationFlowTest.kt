@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte
 
+import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -10,6 +11,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.openclassrooms.rebonnte.data.model.StorageLocations
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -30,6 +33,12 @@ import javax.inject.Inject
  *
  * L'Activity est lancee a la main, et non par une regle, pour pouvoir installer
  * une session avant son demarrage.
+ *
+ * Les libelles sont lus dans les ressources plutot qu'ecrits en dur. L'emulateur
+ * de l'integration continue tourne en en-US : des chaines francaises figees ici
+ * passeraient tant que les ressources par defaut sont francaises, puis
+ * echoueraient toutes le jour ou elles deviendront anglaises — et elles
+ * echoueraient en CI, pas sur le poste de developpement.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -45,6 +54,19 @@ class NavigationFlowTest {
     lateinit var userRepository: FakeUserRepository
 
     private lateinit var scenario: ActivityScenario<MainActivity>
+
+    /**
+     * Le premier emplacement amorce, lu a la source plutot que recopie : si son
+     * libelle change, le test suit au lieu de casser.
+     */
+    private val standardStorage = StorageLocations.DEFAULTS.first().name
+
+    /**
+     * Resout un libelle dans la langue de l'appareil de test, exactement comme
+     * l'application le fait a l'affichage.
+     */
+    private fun string(@StringRes id: Int, vararg args: Any): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(id, *args)
 
     @Before
     fun setUp() {
@@ -64,7 +86,7 @@ class NavigationFlowTest {
     }
 
     private fun enterStock() {
-        composeRule.onNodeWithText("OK, c'est bien moi").performClick()
+        composeRule.onNodeWithText(string(R.string.welcome_continue)).performClick()
         composeRule.waitForIdle()
     }
 
@@ -73,14 +95,17 @@ class NavigationFlowTest {
      * creation au lieu d'ajouter un medicament au nom et au stock aleatoires.
      */
     private fun createMedicine(name: String) {
-        composeRule.onNodeWithText("Medicine").performClick()
-        composeRule.onNodeWithContentDescription("Add").performClick()
+        composeRule.onNodeWithText(string(R.string.nav_medicines)).performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.action_add)).performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Nom du médicament").performTextInput(name)
-        composeRule.onNodeWithText("Emplacement de stockage").performClick()
-        composeRule.onNodeWithText("Stockage standard").performClick()
-        composeRule.onNodeWithText("Créer le médicament").performClick()
+        composeRule.onNodeWithText(string(R.string.form_medicine_name)).performTextInput(name)
+        composeRule.onNodeWithText(string(R.string.form_storage_location)).performClick()
+        // Nom d'emplacement en dur : c'est une donnee amorcee en base, pas un
+        // libelle d'interface, et elle reste en francais quelle que soit la
+        // langue de l'application.
+        composeRule.onNodeWithText(standardStorage).performClick()
+        composeRule.onNodeWithText(string(R.string.form_submit)).performClick()
         composeRule.waitForIdle()
     }
 
@@ -114,7 +139,7 @@ class NavigationFlowTest {
 
         launchApp()
 
-        composeRule.onNodeWithText("Se connecter").assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.auth_action_sign_in)).assertIsDisplayed()
     }
 
     /**
@@ -128,12 +153,15 @@ class NavigationFlowTest {
 
         launchApp()
 
-        composeRule.onNodeWithText("Bonjour ${FakeUserRepository.TEST_DISPLAY_NAME}")
+        composeRule
+            .onNodeWithText(
+                string(R.string.welcome_greeting, FakeUserRepository.TEST_DISPLAY_NAME)
+            )
             .assertIsDisplayed()
 
         // Le clic est l'assertion : sur une interface figee, il n'a aucun effet.
         enterStock()
-        composeRule.onNodeWithText("Stockage standard").assertIsDisplayed()
+        composeRule.onNodeWithText(standardStorage).assertIsDisplayed()
     }
 
     @Test
@@ -141,10 +169,10 @@ class NavigationFlowTest {
         userRepository.setSignedIn(FakeUserRepository.TEST_USER)
         launchApp()
 
-        composeRule.onNodeWithText("Se deconnecter").performClick()
+        composeRule.onNodeWithText(string(R.string.action_sign_out)).performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Se connecter").assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.auth_action_sign_in)).assertIsDisplayed()
     }
 
     @Test
@@ -153,10 +181,10 @@ class NavigationFlowTest {
         launchApp()
         enterStock()
 
-        composeRule.onNodeWithContentDescription("Se deconnecter").performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.action_sign_out)).performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Se connecter").assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.auth_action_sign_in)).assertIsDisplayed()
     }
 
     // --- Bouton retour --------------------------------------------------------
@@ -197,7 +225,7 @@ class NavigationFlowTest {
 
         composeRule.onNodeWithText("Doliprane").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("History").assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.history_title)).assertIsDisplayed()
 
         performBack()
         composeRule.waitForIdle()
@@ -235,8 +263,8 @@ class NavigationFlowTest {
 
         composeRule.onNodeWithText("Doliprane").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Supprimer ce médicament").performClick()
-        composeRule.onNodeWithText("Supprimer").performClick()
+        composeRule.onNodeWithText(string(R.string.detail_delete_medicine)).performClick()
+        composeRule.onNodeWithText(string(R.string.action_delete)).performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Doliprane").assertIsNotDisplayed()
