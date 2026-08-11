@@ -123,11 +123,23 @@ class InMemoryMedicineRepositoryTest {
         repository.addMedicine("Zovirax", stock = 5, aisleId = AISLE, userEmail = USER)
         repository.addMedicine("Aspirine", stock = 1, aisleId = AISLE, userEmail = USER)
 
-        val sortedByName = repository.observeMedicines(sort = MedicineSort.NAME).first()
+        val sortedByName = repository.observeMedicines(sort = MedicineSort.NAME_ASC).first()
         assertEquals(listOf("Aspirine", "Zovirax"), sortedByName.map { it.name })
 
         val unsorted = repository.observeMedicines().first()
         assertEquals(listOf("Zovirax", "Aspirine"), unsorted.map { it.name })
+    }
+
+    /** L'ordre alphabetique attendu ignore la casse : un tri lexicographique
+     *  brut placerait « Zovirax » avant « aspirine ». */
+    @Test
+    fun `sorting by name ignores case`() = runTest {
+        repository.addMedicine("aspirine", stock = 1, aisleId = AISLE, userEmail = USER)
+        repository.addMedicine("Zovirax", stock = 5, aisleId = AISLE, userEmail = USER)
+
+        val sorted = repository.observeMedicines(sort = MedicineSort.NAME_ASC).first()
+
+        assertEquals(listOf("aspirine", "Zovirax"), sorted.map { it.name })
     }
 
     @Test
@@ -135,7 +147,7 @@ class InMemoryMedicineRepositoryTest {
         repository.addMedicine("Zovirax", stock = 5, aisleId = AISLE, userEmail = USER)
         repository.addMedicine("Aspirine", stock = 1, aisleId = AISLE, userEmail = USER)
 
-        val sorted = repository.observeMedicines(sort = MedicineSort.STOCK).first()
+        val sorted = repository.observeMedicines(sort = MedicineSort.STOCK_ASC).first()
 
         assertEquals(listOf(1, 5), sorted.map { it.stock })
     }

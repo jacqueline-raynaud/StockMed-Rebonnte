@@ -41,8 +41,20 @@ class FirestoreMedicineRepository @Inject constructor(
                 .startAt(needle)
                 .endAt(needle + PREFIX_UPPER_BOUND)
 
-            sort == MedicineSort.NAME -> medicines.orderBy(FIELD_NAME)
-            sort == MedicineSort.STOCK -> medicines.orderBy(FIELD_STOCK)
+            // Le tri par nom porte sur le champ en minuscules : sur le champ
+            // brut, Firestore placerait « Zovirax » avant « aspirine ».
+            sort == MedicineSort.NAME_ASC ->
+                medicines.orderBy(FIELD_NAME_LOWERCASE, Query.Direction.ASCENDING)
+
+            sort == MedicineSort.NAME_DESC ->
+                medicines.orderBy(FIELD_NAME_LOWERCASE, Query.Direction.DESCENDING)
+
+            sort == MedicineSort.STOCK_ASC ->
+                medicines.orderBy(FIELD_STOCK, Query.Direction.ASCENDING)
+
+            sort == MedicineSort.STOCK_DESC ->
+                medicines.orderBy(FIELD_STOCK, Query.Direction.DESCENDING)
+
             else -> medicines
         }
 
@@ -228,6 +240,8 @@ private fun DocumentSnapshot.toMedicine(): Medicine? =
 
 private fun List<Medicine>.sortedBy(sort: MedicineSort): List<Medicine> = when (sort) {
     MedicineSort.NONE -> this
-    MedicineSort.NAME -> sortedBy { it.name }
-    MedicineSort.STOCK -> sortedBy { it.stock }
+    MedicineSort.NAME_ASC -> sortedBy { it.name.lowercase() }
+    MedicineSort.NAME_DESC -> sortedByDescending { it.name.lowercase() }
+    MedicineSort.STOCK_ASC -> sortedBy { it.stock }
+    MedicineSort.STOCK_DESC -> sortedByDescending { it.stock }
 }
