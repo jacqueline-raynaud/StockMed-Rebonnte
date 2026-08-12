@@ -23,4 +23,18 @@ interface UserRepository {
     suspend fun signUp(email: String, password: String, displayName: String): Result<UserDto>
 
     fun signOut()
+
+    /**
+     * Supprime le compte d'authentification de l'operateur connecte.
+     *
+     * Le mot de passe est redemande parce que Firebase exige une connexion
+     * recente pour cette operation : sans cela, un telephone laisse deverrouille
+     * suffirait a supprimer le compte de son proprietaire.
+     *
+     * **L'historique n'est pas efface.** Les entrees restent, avec l'adresse de
+     * leur auteur : un journal d'audit dont on peut retirer son propre nom ne
+     * vaut rien. Le sort de cette donnee personnelle relevera de la politique
+     * RGPD de l'entreprise — voir la question ouverte dans la documentation.
+     */
+    suspend fun deleteAccount(password: String): Result<Unit>
 }

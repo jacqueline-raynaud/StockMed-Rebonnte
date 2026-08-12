@@ -122,4 +122,10 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_active">Selected appearance</string>
+    <!-- Suppression de compte -->
+    <string name="account_delete">Delete my account</string>
+    <string name="account_delete_title">Delete your account?</string>
+    <string name="account_delete_message">Your account will be removed and you will be signed out. This cannot be undone.</string>
+    <string name="account_delete_history_notice">The stock history stays untouched: the entries you signed remain readable, with your email address. A stock audit trail cannot be rewritten.</string>
+    <string name="account_delete_password">Confirm your password</string>
 </resources>

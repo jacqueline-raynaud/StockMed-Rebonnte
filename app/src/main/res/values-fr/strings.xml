@@ -119,4 +119,10 @@
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
     <string name="theme_active">Apparence sélectionnée</string>
+    <!-- Suppression de compte -->
+    <string name="account_delete">Supprimer mon compte</string>
+    <string name="account_delete_title">Supprimer votre compte ?</string>
+    <string name="account_delete_message">Votre compte sera supprimé et vous serez déconnecté. Cette action est irréversible.</string>
+    <string name="account_delete_history_notice">L\'historique du stock n\'est pas modifié : les mouvements que vous avez signés restent consultables, avec votre adresse e-mail. Un journal d\'audit de stock ne se réécrit pas.</string>
+    <string name="account_delete_password">Confirmez votre mot de passe</string>
 </resources>

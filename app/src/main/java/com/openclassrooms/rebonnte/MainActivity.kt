@@ -434,7 +434,11 @@ fun MyApp() {
                         WelcomeScreen(
                             user = user,
                             onContinue = mainViewModel::acknowledgeWelcome,
-                            onSignOut = mainViewModel::signOut
+                            onSignOut = mainViewModel::signOut,
+                            onDeleteAccount = mainViewModel::deleteAccount,
+                            isDeletingAccount = mainUiState.isDeletingAccount,
+                            deleteAccountError = mainUiState.deleteAccountError,
+                            onDeleteAccountErrorShown = mainViewModel::deleteAccountErrorShown
                         )
                     }
                 }

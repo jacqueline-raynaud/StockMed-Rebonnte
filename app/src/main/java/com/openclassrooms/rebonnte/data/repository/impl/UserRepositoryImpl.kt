@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.data.repository.impl
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -60,6 +61,26 @@ class UserRepositoryImpl @Inject constructor(
 
     override fun signOut() {
         auth.signOut()
+    }
+
+    /**
+     * Re-authentification puis suppression, dans cet ordre.
+     *
+     * Firebase refuse `delete()` si la connexion n'est pas recente, avec une
+     * erreur peu parlante. Redemander le mot de passe leve la contrainte et
+     * sert de confirmation : c'est une operation irreversible.
+     *
+     * L'e-mail est relu sur le compte plutot que passe en parametre : il doit
+     * correspondre a la session en cours, quoi qu'affiche l'ecran.
+     */
+    override suspend fun deleteAccount(password: String): Result<Unit> = runCatching {
+        val firebaseUser = checkNotNull(auth.currentUser)
+        val credential = EmailAuthProvider.getCredential(
+            checkNotNull(firebaseUser.email),
+            password
+        )
+        firebaseUser.reauthenticate(credential).await()
+        firebaseUser.delete().await()
     }
 }
 

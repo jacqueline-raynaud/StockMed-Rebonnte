@@ -11,6 +11,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import com.openclassrooms.rebonnte.R
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -159,4 +161,73 @@ class MainViewModelTest {
 
         assertEquals(ThemeMode.DARK, viewModel.uiState.value.themeMode)
     }
+
+    // --- Suppression de compte -----------------------------------------------
+
+    @Test
+    fun `deleting the account closes the session`() = runTest {
+        val userRepository = FakeUserRepository()
+        val viewModel = viewModel(userRepository)
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        viewModel.deleteAccount("motdepasse")
+
+        assertEquals(1, userRepository.deleteAccountCount)
+        assertEquals("motdepasse", userRepository.lastDeletePassword)
+        assertNull(viewModel.uiState.value.user)
+        assertNull(viewModel.uiState.value.deleteAccountError)
+    }
+
+    /**
+     * Le motif d'echec le plus frequent : Firebase exige une re-authentification
+     * et la refuse si le mot de passe est faux. Le compte doit rester en place.
+     */
+    @Test
+    fun `a wrong password reports an error and keeps the account`() = runTest {
+        val userRepository = FakeUserRepository()
+        userRepository.deleteResult =
+            Result.failure(Exception("The supplied auth credential is incorrect"))
+        val viewModel = viewModel(userRepository)
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        viewModel.deleteAccount("mauvais")
+
+        assertEquals(
+            R.string.auth_error_bad_credentials,
+            viewModel.uiState.value.deleteAccountError
+        )
+        assertNotNull(viewModel.uiState.value.user)
+    }
+
+    @Test
+    fun `a network failure during deletion is reported`() = runTest {
+        val userRepository = FakeUserRepository()
+        userRepository.deleteResult = Result.failure(Exception("A network error has occurred"))
+        val viewModel = viewModel(userRepository)
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        viewModel.deleteAccount("motdepasse")
+
+        assertEquals(R.string.error_network, viewModel.uiState.value.deleteAccountError)
+    }
+
+    @Test
+    fun `acknowledging the deletion error clears it`() = runTest {
+        val userRepository = FakeUserRepository()
+        userRepository.deleteResult = Result.failure(Exception("network"))
+        val viewModel = viewModel(userRepository)
+        backgroundScope.launch { viewModel.uiState.collect { } }
+        viewModel.deleteAccount("motdepasse")
+
+        viewModel.deleteAccountErrorShown()
+
+        assertNull(viewModel.uiState.value.deleteAccountError)
+    }
+
+    private fun viewModel(userRepository: FakeUserRepository) = MainViewModel(
+        userRepository,
+        InMemoryAisleRepository(),
+        FakeThemeRepository(),
+        FakeNetworkMonitor()
+    )
 }

@@ -49,6 +49,23 @@ class FakeUserRepository(
         userFlow.value = null
     }
 
+    /** Resultat renvoye par [deleteAccount]. Modifiable par le test. */
+    var deleteResult: Result<Unit> = Result.success(Unit)
+
+    var deleteAccountCount = 0
+        private set
+
+    /** Dernier mot de passe recu : le test verifie qu'il est bien transmis. */
+    var lastDeletePassword: String? = null
+        private set
+
+    override suspend fun deleteAccount(password: String): Result<Unit> {
+        deleteAccountCount++
+        lastDeletePassword = password
+        // La suppression du compte ferme la session, comme chez Firebase.
+        return deleteResult.onSuccess { userFlow.value = null }
+    }
+
     companion object {
         val SIGNED_IN_USER = UserDto(
             id = "uid-1",
