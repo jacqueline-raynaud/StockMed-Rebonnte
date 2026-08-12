@@ -26,14 +26,14 @@ class MainViewModelTest {
         //
         // La comparaison porte sur le modele d'affichage : le ViewModel expose
         // un UserUi, qui ne porte pas l'UID Firebase.
-        assertEquals(FakeUserRepository.SIGNED_IN_USER.toUi(), viewModel.currentUser.value)
+        assertEquals(FakeUserRepository.SIGNED_IN_USER.toUi(), viewModel.uiState.value.user)
     }
 
     @Test
     fun `no session exposes a null user`() = runTest {
         val viewModel = MainViewModel(FakeUserRepository(initialUser = null), InMemoryAisleRepository())
 
-        assertNull(viewModel.currentUser.value)
+        assertNull(viewModel.uiState.value.user)
     }
 
     /**
@@ -44,7 +44,7 @@ class MainViewModelTest {
     fun `the welcome screen starts unacknowledged`() = runTest {
         val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository())
 
-        assertFalse(viewModel.welcomeAcknowledged.value)
+        assertFalse(viewModel.uiState.value.welcomeAcknowledged)
     }
 
     @Test
@@ -53,7 +53,7 @@ class MainViewModelTest {
 
         viewModel.acknowledgeWelcome()
 
-        assertTrue(viewModel.welcomeAcknowledged.value)
+        assertTrue(viewModel.uiState.value.welcomeAcknowledged)
     }
 
     /**
@@ -68,8 +68,8 @@ class MainViewModelTest {
 
         viewModel.signOut()
 
-        assertFalse(viewModel.welcomeAcknowledged.value)
+        assertFalse(viewModel.uiState.value.welcomeAcknowledged)
         assertEquals(1, userRepository.signOutCount)
-        assertNull(viewModel.currentUser.value)
+        assertNull(viewModel.uiState.value.user)
     }
 }

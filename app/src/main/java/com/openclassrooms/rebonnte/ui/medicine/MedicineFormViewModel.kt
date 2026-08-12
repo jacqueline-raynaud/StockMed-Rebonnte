@@ -7,6 +7,7 @@ import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.whileSignedIn
 import com.openclassrooms.rebonnte.ui.model.AisleUi
 import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,6 +49,7 @@ class MedicineFormViewModel @Inject constructor(
     /** Alimente la liste deroulante : on choisit parmi ce qui existe. */
     val aisles: StateFlow<List<AisleUi>> = aisleRepository.observeAisles()
         .map { aisles -> aisles.map { it.toUi() } }
+        .whileSignedIn(userRepository, emptyList())
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

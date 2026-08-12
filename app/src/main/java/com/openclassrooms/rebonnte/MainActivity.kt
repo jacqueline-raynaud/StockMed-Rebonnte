@@ -174,8 +174,9 @@ fun MyApp() {
     val medicineViewModel: MedicineViewModel = hiltViewModel()
     val aisleViewModel: AisleViewModel = hiltViewModel()
 
-    val currentUser by mainViewModel.currentUser.collectAsState()
-    val welcomeAcknowledged by mainViewModel.welcomeAcknowledged.collectAsState()
+    val mainUiState by mainViewModel.uiState.collectAsState()
+    val currentUser = mainUiState.user
+    val welcomeAcknowledged = mainUiState.welcomeAcknowledged
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val route = navBackStackEntry?.destination?.route
@@ -190,14 +191,16 @@ fun MyApp() {
     // d'erreur reseau (T-24).
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Seul l'etat « la barre est-elle ouverte » reste ici : c'est de la mise en
+    // forme. Le texte cherche, lui, appartient au ViewModel — il pilote la
+    // requete envoyee a Firestore.
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     // Calcule une seule fois : la valeur initiale de currentUser est lue de
     // maniere synchrone, donc pas de passage eclair par l'ecran de connexion
     // quand une session est deja ouverte.
     val startDestination = remember {
-        if (mainViewModel.currentUser.value == null) Destinations.AUTH else Destinations.WELCOME
+        if (mainViewModel.uiState.value.user == null) Destinations.AUTH else Destinations.WELCOME
     }
 
     /**
@@ -271,8 +274,19 @@ fun MyApp() {
                             }
                         },
                         actions = {
+                            // La collecte est faite ici, et non en tete de
+                            // MyApp : `uiState` est partage en WhileSubscribed,
+                            // donc l'observer ouvre les ecouteurs Firestore.
+                            // Le faire en permanence les ouvrait des l'ecran de
+                            // connexion, ou les regles de securite refusent
+                            // toute lecture.
                             if (isMedicineList) {
-                                SortMenu(medicineViewModel)
+                                val sort by medicineViewModel.uiState
+                                    .collectAsState()
+                                SortMenu(
+                                    currentSort = sort.sort,
+                                    onSortSelected = medicineViewModel::sortBy
+                                )
                             }
                             // Deconnexion accessible en permanence : sur un
                             // telephone partage, l'operateur suivant doit
@@ -288,12 +302,10 @@ fun MyApp() {
                         }
                     )
                     if (isMedicineList) {
+                        val medicineUiState by medicineViewModel.uiState.collectAsState()
                         EmbeddedSearchBar(
-                            query = searchQuery,
-                            onQueryChange = {
-                                searchQuery = it
-                                medicineViewModel.filterByName(it)
-                            },
+                            query = medicineUiState.query,
+                            onQueryChange = medicineViewModel::filterByName,
                             isSearchActive = isSearchActive,
                             onActiveChanged = { isSearchActive = it }
                         )
@@ -424,9 +436,11 @@ private fun titleFor(route: String?): Int = when (route) {
 }
 
 @Composable
-private fun SortMenu(medicineViewModel: MedicineViewModel) {
+private fun SortMenu(
+    currentSort: MedicineSort,
+    onSortSelected: (MedicineSort) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
-    val currentSort by medicineViewModel.currentSort.collectAsState()
 
     // Libelles explicites plutot que « Sort by Name » : avec deux sens de tri,
     // il faut dire lequel.
@@ -460,7 +474,7 @@ private fun SortMenu(medicineViewModel: MedicineViewModel) {
                 options.forEach { (criterion, labelRes) ->
                     DropdownMenuItem(
                         onClick = {
-                            medicineViewModel.sortBy(criterion)
+                            onSortSelected(criterion)
                             expanded = false
                         },
                         text = { Text(stringResource(labelRes)) },

@@ -1,11 +1,13 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.whileSignedIn
 import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.model.toUi
@@ -22,6 +24,25 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/**
+ * Ce que l'ecran de la liste affiche, en un seul objet.
+ *
+ * Les trois valeurs etaient exposees separement — la liste, le critere de tri,
+ * la recherche. Trois flux se lisent independamment et peuvent donc etre
+ * observes dans des etats incoherents : une liste deja triee alors que le menu
+ * montre encore l'ancien critere. Un etat unique ne peut pas se contredire.
+ *
+ * [query] vit ici et non dans la composable : la saisie etait dupliquee entre
+ * un `rememberSaveable` de MainActivity et le flux du ViewModel, soit deux
+ * sources de verite pour la meme donnee.
+ */
+@Immutable
+data class MedicineUiState(
+    val medicines: List<MedicineUi> = emptyList(),
+    val sort: MedicineSort = MedicineSort.NONE,
+    val query: String = ""
+)
 
 /**
  * Les dependances sont fournies par Hilt. Les tests instancient la classe
@@ -50,30 +71,36 @@ class MedicineViewModel @Inject constructor(
     private val query = MutableStateFlow("")
     private val sort = MutableStateFlow(MedicineSort.NONE)
 
-    /** Expose pour que le menu puisse indiquer le critere actif : avec cinq
-     *  entrees, ne pas savoir laquelle s'applique est deroutant. */
-    val currentSort: StateFlow<MedicineSort> = sort.asStateFlow()
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    val medicines: StateFlow<List<MedicineUi>> =
+    private val medicines: Flow<List<MedicineUi>> =
         combine(query, sort) { query, sort -> query to sort }
             .flatMapLatest { (query, sort) -> repository.observeMedicines(query, sort) }
             .combine(aisleNames) { medicines, names ->
                 medicines.map { it.toUi(names[it.aisleId]) }
             }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
-            )
+
+    val uiState: StateFlow<MedicineUiState> =
+        combine(
+            medicines.whileSignedIn(userRepository, emptyList()),
+            query,
+            sort
+        ) { medicines, query, sort ->
+            MedicineUiState(medicines = medicines, sort = sort, query = query)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = MedicineUiState()
+        )
 
     fun observeMedicine(id: String): Flow<MedicineUi?> =
-        repository.observeMedicine(id).combine(aisleNames) { medicine, names ->
-            medicine?.toUi(names[medicine.aisleId])
-        }
+        repository.observeMedicine(id)
+            .combine(aisleNames) { medicine, names -> medicine?.toUi(names[medicine.aisleId]) }
+            .whileSignedIn(userRepository, null)
 
     fun observeHistory(medicineId: String): Flow<List<HistoryUi>> =
-        repository.observeHistory(medicineId).map { entries -> entries.map { it.toUi() } }
+        repository.observeHistory(medicineId)
+            .map { entries -> entries.map { it.toUi() } }
+            .whileSignedIn(userRepository, emptyList())
 
     /**
      * [delta] peut valoir plus de un : un mouvement de cinquante boites produit

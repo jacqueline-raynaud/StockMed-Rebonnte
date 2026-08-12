@@ -17,9 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.model.UserUi
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
  * Garde-fou pour les telephones partages entre operateurs, demande par le
@@ -74,5 +76,17 @@ fun WelcomeScreen(
         OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.action_sign_out))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun WelcomeScreenPreview() {
+    RebonnteTheme {
+        WelcomeScreen(
+            user = UserUi(email = "operateur@rebonnte.fr", displayName = "Jacqueline"),
+            onContinue = {},
+            onSignOut = {}
+        )
     }
 }

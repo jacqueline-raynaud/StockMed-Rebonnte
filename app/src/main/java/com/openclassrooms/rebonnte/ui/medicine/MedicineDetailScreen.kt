@@ -39,9 +39,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.model.HistoryUi
+import com.openclassrooms.rebonnte.ui.model.MedicineUi
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 import kotlinx.coroutines.launch
 
 /**
@@ -54,6 +57,8 @@ import kotlinx.coroutines.launch
  * et il serait trace dans l'historique comme un mouvement legitime.
  */
 private const val EMPTY_QUANTITY = ""
+
+private const val CONTENT_TYPE_HISTORY = "history"
 
 @Composable
 fun MedicineDetailScreen(
@@ -72,21 +77,27 @@ fun MedicineDetailScreen(
     val histories by historyFlow.collectAsState(initial = emptyList())
 
     var quantity by rememberSaveable { mutableStateOf(EMPTY_QUANTITY) }
-    var confirmDelete by remember { mutableStateOf(false) }
 
-    val historyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // stringResource n'est appelable que depuis un composable ; le message du
     // snackbar depend de la quantite saisie au moment du clic, donc il se
     // resout via le contexte.
     val context = LocalContext.current
 
-    // L'historique est trie du plus recent au plus ancien : une nouvelle entree
-    // apparait en tete. Si l'operateur avait fait defiler la liste, il ne la
-    // verrait pas — d'ou le retour en haut quand la plus recente change.
-    LaunchedEffect(histories.firstOrNull()?.id) {
-        if (histories.isNotEmpty()) {
-            historyListState.animateScrollToItem(0)
+    /**
+     * Confirme le mouvement et vide le champ.
+     *
+     * Sans retour visible, l'operateur doute d'avoir appuye et recommence — un
+     * double retrait de cinquante boites passe inapercu jusqu'a l'inventaire.
+     *
+     * Vider le champ desactive les deux boutons : le geste doit etre repris
+     * deliberement, il ne peut pas se repeter par inadvertance.
+     */
+    fun applyMovement(delta: Int, messageRes: Int, amount: Int) {
+        medicineViewModel.updateStock(medicineId, delta)
+        quantity = EMPTY_QUANTITY
+        scope.launch {
+            snackbarHostState.showSnackbar(context.getString(messageRes, amount))
         }
     }
 
@@ -101,66 +112,58 @@ fun MedicineDetailScreen(
         return
     }
 
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.detail_delete_title)) },
-            text = {
-                Column {
-                    Text(
-                        stringResource(R.string.detail_delete_message, currentMedicine.name)
-                    )
-                    // Le stock restant est rappele explicitement : supprimer un
-                    // medicament encore en stock est une decision qui doit etre
-                    // prise en connaissance de cause.
-                    if (currentMedicine.stock > 0) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.detail_delete_remaining,
-                                currentMedicine.stock
-                            ),
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    medicineViewModel.deleteMedicine(currentMedicine.id)
-                    onDeleted()
-                }) {
-                    Text(stringResource(R.string.action_delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
+    MedicineDetailContent(
+        medicine = currentMedicine,
+        histories = histories,
+        quantity = quantity,
+        onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
+        onRemove = { applyMovement(-it, R.string.detail_units_removed, it) },
+        onAdd = { applyMovement(it, R.string.detail_units_added, it) },
+        onDelete = {
+            medicineViewModel.deleteMedicine(currentMedicine.id)
+            onDeleted()
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun MedicineDetailContent(
+    medicine: MedicineUi,
+    histories: List<HistoryUi>,
+    quantity: String,
+    onQuantityChange: (String) -> Unit,
+    onRemove: (Int) -> Unit,
+    onAdd: (Int) -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    val historyListState = rememberLazyListState()
+
+    // L'historique est trie du plus recent au plus ancien : une nouvelle entree
+    // apparait en tete. Si l'operateur avait fait defiler la liste, il ne la
+    // verrait pas — d'ou le retour en haut quand la plus recente change.
+    LaunchedEffect(histories.firstOrNull()?.id) {
+        if (histories.isNotEmpty()) {
+            historyListState.animateScrollToItem(0)
+        }
     }
 
-    /**
-     * Confirme le mouvement et vide le champ.
-     *
-     * Sans retour visible, l'operateur doute d'avoir appuye et recommence — un
-     * double retrait de cinquante boites passe inapercu jusqu'a l'inventaire.
-     *
-     * Vider le champ desactive les deux boutons : le geste doit etre repris
-     * deliberement, il ne peut pas se repeter par inadvertance.
-     */
-    fun applyMovement(delta: Int, message: String) {
-        medicineViewModel.updateStock(currentMedicine.id, delta)
-        quantity = EMPTY_QUANTITY
-        scope.launch { snackbarHostState.showSnackbar(message) }
+    if (confirmDelete) {
+        DeleteMedicineDialog(
+            medicine = medicine,
+            onConfirm = {
+                confirmDelete = false
+                onDelete()
+            },
+            onDismiss = { confirmDelete = false }
+        )
     }
 
     Column(modifier = modifier.padding(16.dp)) {
         TextField(
-            value = currentMedicine.name,
+            value = medicine.name,
             onValueChange = {},
             label = { Text(stringResource(R.string.detail_field_name)) },
             enabled = false,
@@ -170,7 +173,7 @@ fun MedicineDetailScreen(
         TextField(
             // Le libelle arrive deja resolu par le ViewModel : l'ecran n'a plus
             // a croiser la liste des emplacements.
-            value = currentMedicine.locationName
+            value = medicine.locationName
                 ?: stringResource(R.string.detail_unknown_location),
             onValueChange = {},
             label = { Text(stringResource(R.string.detail_field_location)) },
@@ -179,7 +182,7 @@ fun MedicineDetailScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
-            value = currentMedicine.stock.toString(),
+            value = medicine.stock.toString(),
             onValueChange = {},
             label = { Text(stringResource(R.string.detail_field_stock)) },
             enabled = false,
@@ -198,33 +201,17 @@ fun MedicineDetailScreen(
         ) {
             OutlinedTextField(
                 value = quantity,
-                onValueChange = { quantity = it.filter(Char::isDigit).take(5) },
+                onValueChange = onQuantityChange,
                 label = { Text(stringResource(R.string.detail_field_quantity)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(120.dp)
             )
             val amount = quantity.toIntOrNull() ?: 0
-            OutlinedButton(
-                onClick = {
-                    applyMovement(
-                        -amount,
-                        context.getString(R.string.detail_units_removed, amount)
-                    )
-                },
-                enabled = amount > 0
-            ) {
+            OutlinedButton(onClick = { onRemove(amount) }, enabled = amount > 0) {
                 Text(stringResource(R.string.detail_action_remove))
             }
-            Button(
-                onClick = {
-                    applyMovement(
-                        amount,
-                        context.getString(R.string.detail_units_added, amount)
-                    )
-                },
-                enabled = amount > 0
-            ) {
+            Button(onClick = { onAdd(amount) }, enabled = amount > 0) {
                 Text(stringResource(R.string.detail_action_add))
             }
         }
@@ -247,11 +234,49 @@ fun MedicineDetailScreen(
             state = historyListState,
             modifier = Modifier.fillMaxSize()
         ) {
-            items(histories, key = { it.id }) { history ->
+            items(
+                items = histories,
+                key = { it.id },
+                contentType = { CONTENT_TYPE_HISTORY }
+            ) { history ->
                 HistoryItem(history = history)
             }
         }
     }
+}
+
+@Composable
+private fun DeleteMedicineDialog(
+    medicine: MedicineUi,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.detail_delete_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.detail_delete_message, medicine.name))
+                // Le stock restant est rappele explicitement : supprimer un
+                // medicament encore en stock est une decision qui doit etre
+                // prise en connaissance de cause.
+                if (medicine.stock > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.detail_delete_remaining, medicine.stock),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_delete)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 @Composable
@@ -285,5 +310,77 @@ fun HistoryItem(history: HistoryUi) {
             )
             Text(text = stringResource(R.string.history_details, history.details))
         }
+    }
+}
+
+private val previewMedicine = MedicineUi(
+    id = "1",
+    name = "Doliprane 1000 mg",
+    stock = 42,
+    aisleId = "standard",
+    locationName = "Stockage standard"
+)
+
+private val previewHistories = listOf(
+    HistoryUi(
+        id = "h1",
+        medicineName = "Doliprane 1000 mg",
+        userEmail = "operateur@rebonnte.fr",
+        dateLabel = "12/08/26 09:14",
+        stockBefore = 92,
+        stockAfter = 42,
+        details = "Stock modifie de 92 a 42"
+    ),
+    // Entree ancienne, sans auteur ni date : le cas que l'historique d'origine
+    // produisait, et que l'affichage doit encaisser.
+    HistoryUi(
+        id = "h2",
+        medicineName = "Doliprane 1000 mg",
+        userEmail = "",
+        dateLabel = null,
+        stockBefore = 0,
+        stockAfter = 92,
+        details = "Medicament cree"
+    )
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineDetailContentPreview() {
+    RebonnteTheme {
+        MedicineDetailContent(
+            medicine = previewMedicine,
+            histories = previewHistories,
+            quantity = "",
+            onQuantityChange = {},
+            onRemove = {},
+            onAdd = {},
+            onDelete = {}
+        )
+    }
+}
+
+/** Quantite saisie : les deux boutons deviennent actifs. */
+@Preview(showBackground = true)
+@Composable
+private fun MedicineDetailContentWithQuantityPreview() {
+    RebonnteTheme {
+        MedicineDetailContent(
+            medicine = previewMedicine.copy(locationName = null),
+            histories = emptyList(),
+            quantity = "50",
+            onQuantityChange = {},
+            onRemove = {},
+            onAdd = {},
+            onDelete = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DeleteMedicineDialogPreview() {
+    RebonnteTheme {
+        DeleteMedicineDialog(medicine = previewMedicine, onConfirm = {}, onDismiss = {})
     }
 }

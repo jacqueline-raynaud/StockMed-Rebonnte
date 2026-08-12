@@ -39,7 +39,7 @@ class MedicineViewModelTest {
 
     /** `medicines` n'emet que tant qu'un collecteur est actif (WhileSubscribed). */
     private fun kotlinx.coroutines.test.TestScope.collectMedicines() {
-        backgroundScope.launch { viewModel.medicines.collect { } }
+        backgroundScope.launch { viewModel.uiState.collect { } }
     }
 
     /**
@@ -52,7 +52,7 @@ class MedicineViewModelTest {
         runTest(mainDispatcherRule.dispatcher) {
             collectMedicines()
             repository.addMedicine("Doliprane", 60, aisle.id, "")
-            val medicine = viewModel.medicines.value.single()
+            val medicine = viewModel.uiState.value.medicines.single()
 
             viewModel.updateStock(medicine.id, delta = -50)
 
@@ -71,7 +71,7 @@ class MedicineViewModelTest {
     fun `a stock change is signed with the signed in operator`() = runTest(mainDispatcherRule.dispatcher) {
         collectMedicines()
         repository.addMedicine("Doliprane", 10, aisle.id, "")
-        val medicine = viewModel.medicines.value.single()
+        val medicine = viewModel.uiState.value.medicines.single()
 
         viewModel.updateStock(medicine.id, delta = 5)
 
@@ -80,13 +80,18 @@ class MedicineViewModelTest {
         assertEquals(FakeUserRepository.SIGNED_IN_USER.email, stockChange.userEmail)
     }
 
+    /**
+     * L'identifiant est lu dans le depot et non dans l'etat : sans session,
+     * l'etat est vide par construction — les flux sont geles tant que personne
+     * n'est connecte, pour ne pas heurter les regles de securite Firestore.
+     */
     @Test
     fun `a stock change with no session leaves an empty operator`() = runTest(mainDispatcherRule.dispatcher) {
         userRepository = FakeUserRepository(initialUser = null)
         viewModel = MedicineViewModel(repository, userRepository, InMemoryAisleRepository())
         collectMedicines()
         repository.addMedicine("Doliprane", 10, aisle.id, "")
-        val medicine = viewModel.medicines.value.single()
+        val medicine = repository.observeMedicines("", MedicineSort.NONE).first().single()
 
         viewModel.updateStock(medicine.id, delta = 1)
 
@@ -99,11 +104,11 @@ class MedicineViewModelTest {
     fun `deleting removes the medicine from the list`() = runTest(mainDispatcherRule.dispatcher) {
         collectMedicines()
         repository.addMedicine("Doliprane", 10, aisle.id, "")
-        val medicine = viewModel.medicines.value.single()
+        val medicine = viewModel.uiState.value.medicines.single()
 
         viewModel.deleteMedicine(medicine.id)
 
-        assertTrue(viewModel.medicines.value.isEmpty())
+        assertTrue(viewModel.uiState.value.medicines.isEmpty())
     }
 
     // --- Recherche et tri ----------------------------------------------------
@@ -119,10 +124,10 @@ class MedicineViewModelTest {
         repository.addMedicine("Ibuprofene", 1, aisle.id, "")
 
         viewModel.filterByName("dol")
-        assertEquals(1, viewModel.medicines.value.size)
+        assertEquals(1, viewModel.uiState.value.medicines.size)
 
         viewModel.filterByName("")
-        assertEquals(2, viewModel.medicines.value.size)
+        assertEquals(2, viewModel.uiState.value.medicines.size)
     }
 
     @Test
@@ -136,7 +141,7 @@ class MedicineViewModelTest {
 
             assertEquals(
                 listOf("Aspirine", "Zovirax"),
-                viewModel.medicines.value.map { it.name }
+                viewModel.uiState.value.medicines.map { it.name }
             )
         }
 
@@ -151,7 +156,7 @@ class MedicineViewModelTest {
 
             assertEquals(
                 listOf("Zovirax", "Aspirine"),
-                viewModel.medicines.value.map { it.name }
+                viewModel.uiState.value.medicines.map { it.name }
             )
         }
 
@@ -164,7 +169,7 @@ class MedicineViewModelTest {
 
             viewModel.sortBy(MedicineSort.STOCK_ASC)
 
-            assertEquals(listOf(1, 5), viewModel.medicines.value.map { it.stock })
+            assertEquals(listOf(1, 5), viewModel.uiState.value.medicines.map { it.stock })
         }
 
     @Test
@@ -176,16 +181,24 @@ class MedicineViewModelTest {
 
             viewModel.sortBy(MedicineSort.STOCK_DESC)
 
-            assertEquals(listOf(5, 1), viewModel.medicines.value.map { it.stock })
+            assertEquals(listOf(5, 1), viewModel.uiState.value.medicines.map { it.stock })
         }
 
-    /** Le menu coche le critere actif : il doit donc etre observable. */
+    /**
+     * Le menu coche le critere actif : il doit donc etre observable.
+     *
+     * Le collecteur est indispensable depuis que le critere vit dans l'etat
+     * unique : celui-ci est partage en `WhileSubscribed`, donc sans abonne il
+     * reste fige sur sa valeur initiale. A l'ecran, c'est la composable qui
+     * joue ce role.
+     */
     @Test
     fun `the active sort criterion is exposed`() = runTest(mainDispatcherRule.dispatcher) {
-        assertEquals(MedicineSort.NONE, viewModel.currentSort.value)
+        collectMedicines()
+        assertEquals(MedicineSort.NONE, viewModel.uiState.value.sort)
 
         viewModel.sortBy(MedicineSort.STOCK_DESC)
 
-        assertEquals(MedicineSort.STOCK_DESC, viewModel.currentSort.value)
+        assertEquals(MedicineSort.STOCK_DESC, viewModel.uiState.value.sort)
     }
 }
