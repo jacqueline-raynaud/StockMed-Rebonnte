@@ -4,15 +4,17 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.model.AisleUi
+import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -44,7 +46,8 @@ class MedicineFormViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Alimente la liste deroulante : on choisit parmi ce qui existe. */
-    val aisles: StateFlow<List<AisleDto>> = aisleRepository.observeAisles()
+    val aisles: StateFlow<List<AisleUi>> = aisleRepository.observeAisles()
+        .map { aisles -> aisles.map { it.toUi() } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

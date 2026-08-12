@@ -41,11 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.HistoryDto
-import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
+import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import kotlinx.coroutines.launch
-import java.text.DateFormat
-import java.util.Date
 
 /**
  * Champ vide au depart et apres chaque mouvement : les boutons Retirer et
@@ -62,7 +59,6 @@ private const val EMPTY_QUANTITY = ""
 fun MedicineDetailScreen(
     medicineId: String,
     medicineViewModel: MedicineViewModel,
-    aisleViewModel: AisleViewModel,
     snackbarHostState: SnackbarHostState,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier
@@ -74,7 +70,6 @@ fun MedicineDetailScreen(
 
     val medicine by medicineFlow.collectAsState(initial = null)
     val histories by historyFlow.collectAsState(initial = emptyList())
-    val aisles by aisleViewModel.aisles.collectAsState()
 
     var quantity by rememberSaveable { mutableStateOf(EMPTY_QUANTITY) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -173,9 +168,9 @@ fun MedicineDetailScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
-            // Le medicament ne porte que l'identifiant de son emplacement ; le
-            // libelle se resout ici, a l'affichage.
-            value = aisles.firstOrNull { it.id == currentMedicine.aisleId }?.name
+            // Le libelle arrive deja resolu par le ViewModel : l'ecran n'a plus
+            // a croiser la liste des emplacements.
+            value = currentMedicine.locationName
                 ?: stringResource(R.string.detail_unknown_location),
             onValueChange = {},
             label = { Text(stringResource(R.string.detail_field_location)) },
@@ -260,7 +255,7 @@ fun MedicineDetailScreen(
 }
 
 @Composable
-fun HistoryItem(history: HistoryDto) {
+fun HistoryItem(history: HistoryUi) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -278,7 +273,7 @@ fun HistoryItem(history: HistoryDto) {
             Text(
                 text = stringResource(
                     R.string.history_date,
-                    formatHistoryDate(history.date) ?: stringResource(R.string.history_no_date)
+                    history.dateLabel ?: stringResource(R.string.history_no_date)
                 )
             )
             Text(
@@ -292,12 +287,3 @@ fun HistoryItem(history: HistoryDto) {
         }
     }
 }
-
-/** null quand la date est absente : le libelle de remplacement est une ressource. */
-private fun formatHistoryDate(epochMillis: Long): String? =
-    if (epochMillis == 0L) {
-        null
-    } else {
-        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-            .format(Date(epochMillis))
-    }

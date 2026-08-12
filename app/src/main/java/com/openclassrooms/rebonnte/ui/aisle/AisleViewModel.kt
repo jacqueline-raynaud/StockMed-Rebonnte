@@ -2,11 +2,13 @@ package com.openclassrooms.rebonnte.ui.aisle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
+import com.openclassrooms.rebonnte.ui.model.AisleUi
+import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,7 +18,8 @@ class AisleViewModel @Inject constructor(
     private val repository: AisleRepository
 ) : ViewModel() {
 
-    val aisles: StateFlow<List<AisleDto>> = repository.observeAisles()
+    val aisles: StateFlow<List<AisleUi>> = repository.observeAisles()
+        .map { aisles -> aisles.map { it.toUi() } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

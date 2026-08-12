@@ -2,9 +2,10 @@ package com.openclassrooms.rebonnte.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.rebonnte.data.model.UserDto
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.model.UserUi
+import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,13 +32,14 @@ class MainViewModel @Inject constructor(
     private val aisleRepository: AisleRepository
 ) : ViewModel() {
 
-    val currentUser: StateFlow<UserDto?> = userRepository.currentUser
+    val currentUser: StateFlow<UserUi?> = userRepository.currentUser
+        .map { it?.toUi() }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             // Lecture synchrone : sans elle, l'ecran de connexion apparaitrait
             // brievement au demarrage meme pour une session deja ouverte.
-            initialValue = userRepository.currentUserOrNull()
+            initialValue = userRepository.currentUserOrNull()?.toUi()
         )
 
     private val _welcomeAcknowledged = MutableStateFlow(false)

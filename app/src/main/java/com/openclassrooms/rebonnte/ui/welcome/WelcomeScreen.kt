@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.UserDto
+import com.openclassrooms.rebonnte.ui.model.UserUi
 
 /**
  * Garde-fou pour les telephones partages entre operateurs, demande par le
@@ -28,7 +28,7 @@ import com.openclassrooms.rebonnte.data.model.UserDto
  */
 @Composable
 fun WelcomeScreen(
-    user: UserDto,
+    user: UserUi,
     onContinue: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier

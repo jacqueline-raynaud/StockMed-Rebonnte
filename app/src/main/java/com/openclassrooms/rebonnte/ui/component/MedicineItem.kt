@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.MedicineDto
+import com.openclassrooms.rebonnte.ui.model.MedicineUi
 
 /**
  * Ligne de liste d'un medicament.
@@ -32,7 +32,7 @@ import com.openclassrooms.rebonnte.data.model.MedicineDto
  */
 @Composable
 fun MedicineItem(
-    medicine: MedicineDto,
+    medicine: MedicineUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

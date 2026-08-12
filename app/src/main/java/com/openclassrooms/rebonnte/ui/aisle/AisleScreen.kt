@@ -19,7 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.openclassrooms.rebonnte.data.model.AisleDto
+import com.openclassrooms.rebonnte.ui.model.AisleUi
 
 @Composable
 fun AisleScreen(
@@ -40,7 +40,7 @@ fun AisleScreen(
 }
 
 @Composable
-fun AisleItem(aisle: AisleDto, onClick: () -> Unit) {
+fun AisleItem(aisle: AisleUi, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

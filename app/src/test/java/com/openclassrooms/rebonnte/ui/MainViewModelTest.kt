@@ -2,6 +2,7 @@ package com.openclassrooms.rebonnte.ui
 
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
+import com.openclassrooms.rebonnte.ui.model.toUi
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -22,7 +23,10 @@ class MainViewModelTest {
 
         // Valeur initiale lue de maniere synchrone : c'est ce qui evite le
         // passage eclair par l'ecran de connexion au demarrage.
-        assertEquals(FakeUserRepository.SIGNED_IN_USER, viewModel.currentUser.value)
+        //
+        // La comparaison porte sur le modele d'affichage : le ViewModel expose
+        // un UserUi, qui ne porte pas l'UID Firebase.
+        assertEquals(FakeUserRepository.SIGNED_IN_USER.toUi(), viewModel.currentUser.value)
     }
 
     @Test

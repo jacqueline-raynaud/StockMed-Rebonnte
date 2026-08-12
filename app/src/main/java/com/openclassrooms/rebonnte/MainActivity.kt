@@ -393,7 +393,6 @@ fun MyApp() {
                         medicineId = entry.arguments
                             ?.getString(Destinations.MEDICINE_ID_ARG).orEmpty(),
                         medicineViewModel = medicineViewModel,
-                        aisleViewModel = aisleViewModel,
                         snackbarHostState = snackbarHostState,
                         onDeleted = { navController.navigateUp() }
                     )

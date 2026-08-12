@@ -2,6 +2,7 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.HistoryAction
+import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
@@ -33,7 +34,7 @@ class MedicineViewModelTest {
         // comportement attendu.
         repository = InMemoryMedicineRepository()
         userRepository = FakeUserRepository()
-        viewModel = MedicineViewModel(repository, userRepository)
+        viewModel = MedicineViewModel(repository, userRepository, InMemoryAisleRepository())
     }
 
     /** `medicines` n'emet que tant qu'un collecteur est actif (WhileSubscribed). */
@@ -82,7 +83,7 @@ class MedicineViewModelTest {
     @Test
     fun `a stock change with no session leaves an empty operator`() = runTest(mainDispatcherRule.dispatcher) {
         userRepository = FakeUserRepository(initialUser = null)
-        viewModel = MedicineViewModel(repository, userRepository)
+        viewModel = MedicineViewModel(repository, userRepository, InMemoryAisleRepository())
         collectMedicines()
         repository.addMedicine("Doliprane", 10, aisle.id, "")
         val medicine = viewModel.medicines.value.single()
