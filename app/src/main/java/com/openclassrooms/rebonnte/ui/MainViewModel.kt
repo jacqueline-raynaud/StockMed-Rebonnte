@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.network.NetworkMonitor
+import com.openclassrooms.rebonnte.data.preferences.ThemeMode
+import com.openclassrooms.rebonnte.data.preferences.ThemeRepository
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import com.openclassrooms.rebonnte.ui.model.UserUi
@@ -50,13 +52,15 @@ enum class AppState { READY, OFFLINE }
 data class MainUiState(
     val user: UserUi? = null,
     val welcomeAcknowledged: Boolean = false,
-    val appState: AppState = AppState.READY
+    val appState: AppState = AppState.READY,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val aisleRepository: AisleRepository,
+    private val themeRepository: ThemeRepository,
     networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
@@ -76,12 +80,14 @@ class MainViewModel @Inject constructor(
         combine(
             currentUser,
             _welcomeAcknowledged,
-            networkMonitor.isOnline
-        ) { user, acknowledged, isOnline ->
+            networkMonitor.isOnline,
+            themeRepository.themeMode
+        ) { user, acknowledged, isOnline, themeMode ->
             MainUiState(
                 user = user,
                 welcomeAcknowledged = acknowledged,
-                appState = if (isOnline) AppState.READY else AppState.OFFLINE
+                appState = if (isOnline) AppState.READY else AppState.OFFLINE,
+                themeMode = themeMode
             )
         }.stateIn(
             scope = viewModelScope,
@@ -98,6 +104,10 @@ class MainViewModel @Inject constructor(
             // fixes, l'appeler a chaque session ne cree pas de doublon.
             runCatching { aisleRepository.ensureDefaultStorageLocations() }
         }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        themeRepository.setThemeMode(mode)
     }
 
     fun acknowledgeWelcome() {

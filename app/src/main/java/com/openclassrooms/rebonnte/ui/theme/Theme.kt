@@ -1,15 +1,10 @@
 package com.openclassrooms.rebonnte.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -23,25 +18,25 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40
 )
 
+/**
+ * Les couleurs dynamiques sont **volontairement absentes**.
+ *
+ * Elles derivent la palette du fond d'ecran de l'utilisateur : les contrastes
+ * deviennent imprevisibles et aucune conformite WCAG ne peut etre garantie.
+ * Sur une application ou l'on lit des quantites de medicaments, la lisibilite
+ * prime sur la coquetterie — et c'est incompatible avec T-31.
+ *
+ * [darkTheme] est un parametre et non une lecture directe du systeme : le
+ * reglage de l'utilisateur peut forcer un mode, quel que soit celui du
+ * telephone.
+ */
 @Composable
 fun RebonnteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
         typography = Typography,
         content = content
     )

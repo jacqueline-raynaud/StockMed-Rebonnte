@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -171,31 +172,22 @@ fun MedicineDetailContent(
     }
 
     Column(modifier = modifier.padding(16.dp)) {
-        TextField(
-            value = medicine.name,
-            onValueChange = {},
-            label = { Text(stringResource(R.string.detail_field_name)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
+        ReadOnlyField(
+            label = stringResource(R.string.detail_field_name),
+            value = medicine.name
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
+        Spacer(modifier = Modifier.height(12.dp))
+        ReadOnlyField(
+            label = stringResource(R.string.detail_field_location),
             // Le libelle arrive deja resolu par le ViewModel : l'ecran n'a plus
             // a croiser la liste des emplacements.
             value = medicine.locationName
-                ?: stringResource(R.string.detail_unknown_location),
-            onValueChange = {},
-            label = { Text(stringResource(R.string.detail_field_location)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
+                ?: stringResource(R.string.detail_unknown_location)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = medicine.stock.toString(),
-            onValueChange = {},
-            label = { Text(stringResource(R.string.detail_field_stock)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
+        Spacer(modifier = Modifier.height(12.dp))
+        ReadOnlyField(
+            label = stringResource(R.string.detail_field_stock),
+            value = medicine.stock.toString()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -217,10 +209,28 @@ fun MedicineDetailContent(
                 modifier = Modifier.width(120.dp)
             )
             val amount = quantity.toIntOrNull() ?: 0
-            OutlinedButton(onClick = { onRemove(amount) }, enabled = amount > 0) {
+            // Les deux boutons restent visiblement inactifs tant qu'aucune
+            // quantite n'est saisie — c'est le garde-fou voulu — mais leur
+            // libelle doit rester lisible. L'attenuation par defaut de Material
+            // (38 %) disparaissait dans le fond sombre.
+            OutlinedButton(
+                onClick = { onRemove(amount) },
+                enabled = amount > 0,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            ) {
                 Text(stringResource(R.string.detail_action_remove))
             }
-            Button(onClick = { onAdd(amount) }, enabled = amount > 0) {
+            Button(
+                onClick = { onAdd(amount) },
+                enabled = amount > 0,
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor =
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            ) {
                 Text(stringResource(R.string.detail_action_add))
             }
         }
@@ -251,6 +261,35 @@ fun MedicineDetailContent(
                 HistoryItem(history = history)
             }
         }
+    }
+}
+
+/**
+ * Une donnee en lecture, et non un champ de saisie desactive.
+ *
+ * Ces trois valeurs etaient des `TextField(enabled = false)`. Material atténue
+ * volontairement le contenu desactive — c'est correct pour un champ momentanement
+ * indisponible, et faux ici : ce n'est pas une saisie qu'on interdit, c'est
+ * **la donnee** que l'ecran est venu montrer. En mode sombre, le stock
+ * s'affichait en gris clair sur gris fonce.
+ *
+ * Les contenus desactives echappent aux exigences de contraste WCAG, justement
+ * parce qu'ils ne portent pas d'information utile. Raison de plus pour ne pas
+ * s'en servir comme affichage.
+ */
+@Composable
+private fun ReadOnlyField(label: String, value: String) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

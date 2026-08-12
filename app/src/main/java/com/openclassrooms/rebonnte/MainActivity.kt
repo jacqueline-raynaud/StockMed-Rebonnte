@@ -25,7 +25,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
@@ -88,6 +90,7 @@ import com.openclassrooms.rebonnte.ui.medicine.MedicineFormScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineFormViewModel
 import com.openclassrooms.rebonnte.ui.medicine.MedicineScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
+import com.openclassrooms.rebonnte.data.preferences.ThemeMode
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
@@ -281,7 +284,14 @@ fun MyApp() {
         }
     }
 
-    RebonnteTheme {
+    // Le mode choisi l'emporte sur celui du telephone ; « Systeme » le suit.
+    val darkTheme = when (mainUiState.themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+
+    RebonnteTheme(darkTheme = darkTheme) {
         if (showAddAisleDialog) {
             AddAisleDialog(
                 onDismiss = { showAddAisleDialog = false },
@@ -330,6 +340,10 @@ fun MyApp() {
                                     onSortSelected = medicineViewModel::sortBy
                                 )
                             }
+                            ThemeMenu(
+                                currentMode = mainUiState.themeMode,
+                                onModeSelected = mainViewModel::setThemeMode
+                            )
                             // Deconnexion accessible en permanence : sur un
                             // telephone partage, l'operateur suivant doit
                             // pouvoir reprendre la main sans chercher.
@@ -502,6 +516,55 @@ private fun NavHostController.switchTab(route: String) {
 private fun titleFor(route: String?): Int = when (route) {
     Destinations.AISLE_LIST, Destinations.AISLE_DETAIL -> R.string.title_aisles
     else -> R.string.title_medicines
+}
+
+/**
+ * Choix du theme, accessible depuis tous les ecrans de l'application.
+ *
+ * Trois etats et non deux : « Systeme » suit le telephone, mais on ne peut pas
+ * imposer un mode sans connaitre les besoins visuels de l'operateur. Le sombre
+ * n'est pas universellement plus lisible.
+ */
+@Composable
+private fun ThemeMenu(
+    currentMode: ThemeMode,
+    onModeSelected: (ThemeMode) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val options = listOf(
+        ThemeMode.SYSTEM to R.string.theme_system,
+        ThemeMode.LIGHT to R.string.theme_light,
+        ThemeMode.DARK to R.string.theme_dark
+    )
+
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = stringResource(R.string.theme_menu)
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (mode, labelRes) ->
+                DropdownMenuItem(
+                    onClick = {
+                        onModeSelected(mode)
+                        expanded = false
+                    },
+                    text = { Text(stringResource(labelRes)) },
+                    trailingIcon = {
+                        if (mode == currentMode) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = stringResource(R.string.theme_active)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable

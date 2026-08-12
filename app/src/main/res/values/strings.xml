@@ -116,4 +116,10 @@
     <string name="offline_title">Waiting for the network</string>
     <string name="offline_message">StockMed needs a connection to show reliable figures. Counting stock against possibly outdated numbers would do more harm than waiting.</string>
     <string name="offline_hint">The application resumes on its own once the connection is back.</string>
+    <!-- Theme -->
+    <string name="theme_menu">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_active">Selected appearance</string>
 </resources>

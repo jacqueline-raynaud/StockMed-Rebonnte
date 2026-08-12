@@ -1,7 +1,9 @@
 package com.openclassrooms.rebonnte.ui
 
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.preferences.ThemeMode
 import com.openclassrooms.rebonnte.fake.FakeNetworkMonitor
+import com.openclassrooms.rebonnte.fake.FakeThemeRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.ui.model.toUi
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
@@ -21,7 +23,7 @@ class MainViewModelTest {
 
     @Test
     fun `an open session is visible immediately without waiting for the flow`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeNetworkMonitor())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeThemeRepository(), FakeNetworkMonitor())
 
         // Valeur initiale lue de maniere synchrone : c'est ce qui evite le
         // passage eclair par l'ecran de connexion au demarrage.
@@ -33,7 +35,7 @@ class MainViewModelTest {
 
     @Test
     fun `no session exposes a null user`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository(initialUser = null), InMemoryAisleRepository(), FakeNetworkMonitor())
+        val viewModel = MainViewModel(FakeUserRepository(initialUser = null), InMemoryAisleRepository(), FakeThemeRepository(), FakeNetworkMonitor())
 
         assertNull(viewModel.uiState.value.user)
     }
@@ -44,14 +46,14 @@ class MainViewModelTest {
      */
     @Test
     fun `the welcome screen starts unacknowledged`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeNetworkMonitor())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeThemeRepository(), FakeNetworkMonitor())
 
         assertFalse(viewModel.uiState.value.welcomeAcknowledged)
     }
 
     @Test
     fun `acknowledging the welcome screen opens the stock`() = runTest {
-        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeNetworkMonitor())
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeThemeRepository(), FakeNetworkMonitor())
 
         viewModel.acknowledgeWelcome()
 
@@ -65,7 +67,7 @@ class MainViewModelTest {
     @Test
     fun `signing out resets the welcome acknowledgement`() = runTest {
         val userRepository = FakeUserRepository()
-        val viewModel = MainViewModel(userRepository, InMemoryAisleRepository(), FakeNetworkMonitor())
+        val viewModel = MainViewModel(userRepository, InMemoryAisleRepository(), FakeThemeRepository(), FakeNetworkMonitor())
         viewModel.acknowledgeWelcome()
 
         viewModel.signOut()
@@ -85,7 +87,7 @@ class MainViewModelTest {
     @Test
     fun `losing the network switches the application to offline`() = runTest {
         val network = FakeNetworkMonitor(initiallyOnline = true)
-        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), network)
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeThemeRepository(), network)
         backgroundScope.launch { viewModel.uiState.collect { } }
         assertEquals(AppState.READY, viewModel.uiState.value.appState)
 
@@ -98,12 +100,63 @@ class MainViewModelTest {
     @Test
     fun `recovering the network switches back to ready`() = runTest {
         val network = FakeNetworkMonitor(initiallyOnline = false)
-        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), network)
+        val viewModel = MainViewModel(FakeUserRepository(), InMemoryAisleRepository(), FakeThemeRepository(), network)
         backgroundScope.launch { viewModel.uiState.collect { } }
         assertEquals(AppState.OFFLINE, viewModel.uiState.value.appState)
 
         network.setOnline(true)
 
         assertEquals(AppState.READY, viewModel.uiState.value.appState)
+    }
+
+    // --- Theme (T-32) ---------------------------------------------------------
+
+    /** Le defaut retenu : suivre le telephone, qui est deja un reglage d'accessibilite. */
+    @Test
+    fun `the theme follows the system by default`() = runTest {
+        val viewModel = MainViewModel(
+            FakeUserRepository(),
+            InMemoryAisleRepository(),
+            FakeThemeRepository(),
+            FakeNetworkMonitor()
+        )
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        assertEquals(ThemeMode.SYSTEM, viewModel.uiState.value.themeMode)
+    }
+
+    /**
+     * Le choix doit survivre au redemarrage : un operateur qui a besoin du mode
+     * clair ne doit pas le redemander chaque matin. Ici le depot tient lieu de
+     * stockage persistant.
+     */
+    @Test
+    fun `choosing a mode is kept and exposed`() = runTest {
+        val themeRepository = FakeThemeRepository()
+        val viewModel = MainViewModel(
+            FakeUserRepository(),
+            InMemoryAisleRepository(),
+            themeRepository,
+            FakeNetworkMonitor()
+        )
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        viewModel.setThemeMode(ThemeMode.LIGHT)
+
+        assertEquals(ThemeMode.LIGHT, viewModel.uiState.value.themeMode)
+    }
+
+    /** Un reglage deja enregistre est relu au demarrage. */
+    @Test
+    fun `a stored mode is restored`() = runTest {
+        val viewModel = MainViewModel(
+            FakeUserRepository(),
+            InMemoryAisleRepository(),
+            FakeThemeRepository(initialMode = ThemeMode.DARK),
+            FakeNetworkMonitor()
+        )
+        backgroundScope.launch { viewModel.uiState.collect { } }
+
+        assertEquals(ThemeMode.DARK, viewModel.uiState.value.themeMode)
     }
 }

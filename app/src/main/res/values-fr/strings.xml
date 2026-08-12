@@ -113,4 +113,10 @@
     <string name="offline_title">En attente du réseau</string>
     <string name="offline_message">StockMed a besoin du réseau pour afficher des chiffres fiables. Compter un stock sur des données peut-être périmées ferait plus de dégâts que d\'attendre.</string>
     <string name="offline_hint">L\'application reprend d\'elle-même dès le retour du réseau.</string>
+    <!-- Theme -->
+    <string name="theme_menu">Apparence</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_active">Apparence sélectionnée</string>
 </resources>

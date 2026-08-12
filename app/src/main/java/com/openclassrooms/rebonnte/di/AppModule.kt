@@ -4,6 +4,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.openclassrooms.rebonnte.data.network.ConnectivityNetworkMonitor
 import com.openclassrooms.rebonnte.data.network.NetworkMonitor
+import com.openclassrooms.rebonnte.data.preferences.SharedPreferencesThemeRepository
+import com.openclassrooms.rebonnte.data.preferences.ThemeRepository
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.UserRepositoryImpl
 import com.openclassrooms.rebonnte.data.repository.impl.AisleRepositoryImpl
@@ -47,6 +49,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
+
+    @Binds
+    @Singleton
+    abstract fun bindThemeRepository(impl: SharedPreferencesThemeRepository): ThemeRepository
 
     @Binds
     @Singleton
