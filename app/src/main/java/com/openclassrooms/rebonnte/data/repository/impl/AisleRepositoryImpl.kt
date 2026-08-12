@@ -1,24 +1,25 @@
-package com.openclassrooms.rebonnte.data.repository
+package com.openclassrooms.rebonnte.data.repository.impl
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.StorageLocations
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
+import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.tasks.await
 
 @Singleton
-class FirestoreAisleRepository @Inject constructor(
+class AisleRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : AisleRepository {
 
     private val aisles get() = firestore.collection(COLLECTION_AISLES)
 
-    override fun observeAisles(): Flow<List<Aisle>> = callbackFlow {
+    override fun observeAisles(): Flow<List<AisleDto>> = callbackFlow {
         val registration = aisles.orderBy(FIELD_NAME).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
@@ -26,27 +27,27 @@ class FirestoreAisleRepository @Inject constructor(
             }
             trySend(
                 snapshot?.documents.orEmpty().mapNotNull { document ->
-                    document.toObject(Aisle::class.java)?.copy(id = document.id)
+                    document.toObject(AisleDto::class.java)?.copy(id = document.id)
                 }
             )
         }
         awaitClose { registration.remove() }
     }
 
-    override fun observeAisle(id: String): Flow<Aisle?> = callbackFlow {
+    override fun observeAisle(id: String): Flow<AisleDto?> = callbackFlow {
         val registration = aisles.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
-            trySend(snapshot?.toObject(Aisle::class.java)?.copy(id = snapshot.id))
+            trySend(snapshot?.toObject(AisleDto::class.java)?.copy(id = snapshot.id))
         }
         awaitClose { registration.remove() }
     }
 
-    override suspend fun addAisle(name: String): Aisle {
+    override suspend fun addAisle(name: String): AisleDto {
         val document = aisles.document()
-        val aisle = Aisle(id = document.id, name = name.trim())
+        val aisle = AisleDto(id = document.id, name = name.trim())
         document.set(mapOf(FIELD_NAME to aisle.name)).await()
         return aisle
     }

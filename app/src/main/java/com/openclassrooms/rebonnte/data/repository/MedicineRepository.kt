@@ -1,7 +1,7 @@
 package com.openclassrooms.rebonnte.data.repository
 
-import com.openclassrooms.rebonnte.data.model.History
-import com.openclassrooms.rebonnte.data.model.Medicine
+import com.openclassrooms.rebonnte.data.model.HistoryDto
+import com.openclassrooms.rebonnte.data.model.MedicineDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
  * finissait par l'oublier, d'ou les manques signales par le service qualite.
  * Ici l'oubli est impossible, la trace fait partie de l'operation.
  *
- * L'historique est expose separement de [Medicine] pour deux raisons : une
+ * L'historique est expose separement de [MedicineDto] pour deux raisons : une
  * suppression doit rester tracee alors que le medicament disparait, et un
  * historique embarque dans le document grossirait sans limite.
  */
@@ -21,18 +21,18 @@ interface MedicineRepository {
     fun observeMedicines(
         query: String = "",
         sort: MedicineSort = MedicineSort.NONE
-    ): Flow<List<Medicine>>
+    ): Flow<List<MedicineDto>>
 
-    fun observeMedicine(id: String): Flow<Medicine?>
+    fun observeMedicine(id: String): Flow<MedicineDto?>
 
-    fun observeHistory(medicineId: String): Flow<List<History>>
+    fun observeHistory(medicineId: String): Flow<List<HistoryDto>>
 
     suspend fun addMedicine(
         name: String,
         stock: Int,
         aisleId: String,
         userEmail: String
-    ): Medicine
+    ): MedicineDto
 
     /** Applique [delta] au stock, borne a zero, et trace l'operation. */
     suspend fun updateStock(id: String, delta: Int, userEmail: String)

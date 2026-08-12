@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
@@ -44,7 +44,7 @@ class MedicineFormViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Alimente la liste deroulante : on choisit parmi ce qui existe. */
-    val aisles: StateFlow<List<Aisle>> = aisleRepository.observeAisles()
+    val aisles: StateFlow<List<AisleDto>> = aisleRepository.observeAisles()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

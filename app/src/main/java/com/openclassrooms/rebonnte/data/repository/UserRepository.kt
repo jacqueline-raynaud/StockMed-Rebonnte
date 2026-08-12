@@ -1,6 +1,6 @@
 package com.openclassrooms.rebonnte.data.repository
 
-import com.openclassrooms.rebonnte.data.model.User
+import com.openclassrooms.rebonnte.data.model.UserDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -13,14 +13,14 @@ import kotlinx.coroutines.flow.Flow
 interface UserRepository {
 
     /** Emet a chaque connexion ou deconnexion. `null` si personne n'est connecte. */
-    val currentUser: Flow<User?>
+    val currentUser: Flow<UserDto?>
 
     /** Lecture synchrone, pour les cas ou l'on ne peut pas attendre le flux. */
-    fun currentUserOrNull(): User?
+    fun currentUserOrNull(): UserDto?
 
-    suspend fun signIn(email: String, password: String): Result<User>
+    suspend fun signIn(email: String, password: String): Result<UserDto>
 
-    suspend fun signUp(email: String, password: String, displayName: String): Result<User>
+    suspend fun signUp(email: String, password: String, displayName: String): Result<UserDto>
 
     fun signOut()
 }

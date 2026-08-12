@@ -1,8 +1,8 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.HistoryAction
-import com.openclassrooms.rebonnte.data.repository.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
@@ -24,7 +24,7 @@ class MedicineViewModelTest {
     private lateinit var userRepository: FakeUserRepository
     private lateinit var viewModel: MedicineViewModel
 
-    private val aisle = Aisle(id = "aisle-1", name = "Rayon principal")
+    private val aisle = AisleDto(id = "aisle-1", name = "Rayon principal")
 
     @Before
     fun setUp() {

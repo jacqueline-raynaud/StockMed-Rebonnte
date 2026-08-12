@@ -197,7 +197,7 @@ lieu d'un `Color.Gray` en dur illisible en mode sombre.
 **Problème.** Toutes les données vivaient en mémoire : elles disparaissaient à
 la fermeture de l'application.
 
-**Fait.** `FirestoreMedicineRepository` et `FirestoreAisleRepository` derrière
+**Fait.** `MedicineRepositoryImpl` et `AisleRepositoryImpl` derrière
 les interfaces existantes. Collections `medicines`, `aisles` et `history`.
 
 **Détail.** Les mouvements de stock passent par une transaction, pas deux
@@ -230,7 +230,7 @@ au stock.
 **Problème.** L'historique affichait un identifiant technique (`efeza56f1e65f`,
 codé en dur), une date en chaîne de caractères, et aucun détail chiffré.
 
-**Fait.** `History` porte l'e-mail de l'opérateur, un horodatage `Long`, une
+**Fait.** `HistoryDto` porte l'e-mail de l'opérateur, un horodatage `Long`, une
 action typée, et les valeurs de stock avant et après. L'affichage est intégré au
 contenu défilant de la fiche détail.
 
@@ -287,14 +287,14 @@ sécurisé pour les stupéfiants et les produits coûteux.
 `addAisle(nom)` permet d'en ajouter d'autres, par un dialogue qui remplace la
 numérotation automatique.
 
-**Détail.** Le modèle n'a pas changé : `Aisle` était déjà la bonne abstraction —
+**Détail.** Le modèle n'a pas changé : `AisleDto` était déjà la bonne abstraction —
 un emplacement de stockage. Seules les données étaient fausses. Ce sont des
 **données et non une énumération** : un établissement peut avoir besoin d'un
 froid négatif ou d'une quarantaine sans qu'on recompile.
 
 !!! danger "Un bug que le double de test masquait"
 
-    `FirestoreAisleRepository` ne créait **aucun** emplacement. L'implémentation
+    `AisleRepositoryImpl` ne créait **aucun** emplacement. L'implémentation
     en mémoire, elle, en semait un — ce qui a masqué le défaut pendant tous les
     tests.
 

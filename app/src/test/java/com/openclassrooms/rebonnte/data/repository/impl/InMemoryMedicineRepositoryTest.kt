@@ -1,6 +1,8 @@
-package com.openclassrooms.rebonnte.data.repository
+package com.openclassrooms.rebonnte.data.repository.impl
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
+import com.openclassrooms.rebonnte.data.repository.MedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

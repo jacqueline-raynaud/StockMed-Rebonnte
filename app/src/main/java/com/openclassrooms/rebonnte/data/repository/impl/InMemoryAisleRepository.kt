@@ -1,13 +1,14 @@
-package com.openclassrooms.rebonnte.data.repository
+package com.openclassrooms.rebonnte.data.repository.impl
 
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.StorageLocations
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Pendant de [InMemoryMedicineRepository] pour les emplacements de stockage. */
 @Singleton
@@ -15,13 +16,13 @@ class InMemoryAisleRepository @Inject constructor() : AisleRepository {
 
     private val aisles = MutableStateFlow(StorageLocations.DEFAULTS)
 
-    override fun observeAisles(): Flow<List<Aisle>> = aisles
+    override fun observeAisles(): Flow<List<AisleDto>> = aisles
 
-    override fun observeAisle(id: String): Flow<Aisle?> =
+    override fun observeAisle(id: String): Flow<AisleDto?> =
         aisles.map { list -> list.firstOrNull { it.id == id } }
 
-    override suspend fun addAisle(name: String): Aisle {
-        val aisle = Aisle(id = UUID.randomUUID().toString(), name = name.trim())
+    override suspend fun addAisle(name: String): AisleDto {
+        val aisle = AisleDto(id = UUID.randomUUID().toString(), name = name.trim())
         aisles.value = aisles.value + aisle
         return aisle
     }

@@ -23,7 +23,7 @@ import androidx.annotation.Keep
  * valeur par defaut, **sans aucune erreur**. La liste s'afficherait vide.
  */
 @Keep
-data class Medicine(
+data class MedicineDto(
     val id: String = "",
     val name: String = "",
     val stock: Int = 0,

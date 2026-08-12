@@ -2,7 +2,7 @@ package com.openclassrooms.rebonnte.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.rebonnte.data.model.User
+import com.openclassrooms.rebonnte.data.model.UserDto
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +30,7 @@ class MainViewModel @Inject constructor(
     private val aisleRepository: AisleRepository
 ) : ViewModel() {
 
-    val currentUser: StateFlow<User?> = userRepository.currentUser
+    val currentUser: StateFlow<UserDto?> = userRepository.currentUser
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,

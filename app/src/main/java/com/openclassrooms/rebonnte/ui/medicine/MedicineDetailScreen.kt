@@ -41,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.History
+import com.openclassrooms.rebonnte.data.model.HistoryDto
 import com.openclassrooms.rebonnte.ui.aisle.AisleViewModel
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -260,7 +260,7 @@ fun MedicineDetailScreen(
 }
 
 @Composable
-fun HistoryItem(history: History) {
+fun HistoryItem(history: HistoryDto) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

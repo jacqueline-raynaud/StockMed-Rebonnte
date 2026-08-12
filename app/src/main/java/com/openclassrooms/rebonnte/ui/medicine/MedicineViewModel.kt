@@ -2,8 +2,8 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.rebonnte.data.model.History
-import com.openclassrooms.rebonnte.data.model.Medicine
+import com.openclassrooms.rebonnte.data.model.HistoryDto
+import com.openclassrooms.rebonnte.data.model.MedicineDto
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.data.repository.UserRepository
@@ -41,7 +41,7 @@ class MedicineViewModel @Inject constructor(
     val currentSort: StateFlow<MedicineSort> = sort.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val medicines: StateFlow<List<Medicine>> =
+    val medicines: StateFlow<List<MedicineDto>> =
         combine(query, sort) { query, sort -> query to sort }
             .flatMapLatest { (query, sort) -> repository.observeMedicines(query, sort) }
             .stateIn(
@@ -50,9 +50,9 @@ class MedicineViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    fun observeMedicine(id: String): Flow<Medicine?> = repository.observeMedicine(id)
+    fun observeMedicine(id: String): Flow<MedicineDto?> = repository.observeMedicine(id)
 
-    fun observeHistory(medicineId: String): Flow<List<History>> =
+    fun observeHistory(medicineId: String): Flow<List<HistoryDto>> =
         repository.observeHistory(medicineId)
 
     /**

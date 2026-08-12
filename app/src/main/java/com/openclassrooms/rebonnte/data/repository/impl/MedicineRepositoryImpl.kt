@@ -1,17 +1,19 @@
-package com.openclassrooms.rebonnte.data.repository
+package com.openclassrooms.rebonnte.data.repository.impl
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.data.model.HistoryAction
-import com.openclassrooms.rebonnte.data.model.Medicine
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
+import com.openclassrooms.rebonnte.data.model.HistoryDto
+import com.openclassrooms.rebonnte.data.model.MedicineDto
+import com.openclassrooms.rebonnte.data.repository.MedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.tasks.await
 
 /**
  * Implementation Firestore de [MedicineRepository].
@@ -22,14 +24,14 @@ import javax.inject.Singleton
  * parcourir chaque medicament.
  */
 @Singleton
-class FirestoreMedicineRepository @Inject constructor(
+class MedicineRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : MedicineRepository {
 
     private val medicines get() = firestore.collection(COLLECTION_MEDICINES)
     private val history get() = firestore.collection(COLLECTION_HISTORY)
 
-    override fun observeMedicines(query: String, sort: MedicineSort): Flow<List<Medicine>> {
+    override fun observeMedicines(query: String, sort: MedicineSort): Flow<List<MedicineDto>> {
         val needle = query.trim().lowercase()
 
         val request: Query = when {
@@ -74,7 +76,7 @@ class FirestoreMedicineRepository @Inject constructor(
         }
     }
 
-    override fun observeMedicine(id: String): Flow<Medicine?> = callbackFlow {
+    override fun observeMedicine(id: String): Flow<MedicineDto?> = callbackFlow {
         val registration = medicines.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
@@ -85,7 +87,7 @@ class FirestoreMedicineRepository @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    override fun observeHistory(medicineId: String): Flow<List<History>> = callbackFlow {
+    override fun observeHistory(medicineId: String): Flow<List<HistoryDto>> = callbackFlow {
         val registration = history
             .whereEqualTo(FIELD_MEDICINE_ID, medicineId)
             .orderBy(FIELD_DATE, Query.Direction.DESCENDING)
@@ -96,7 +98,7 @@ class FirestoreMedicineRepository @Inject constructor(
                 }
                 trySend(
                     snapshot?.documents.orEmpty().mapNotNull { document ->
-                        document.toObject(History::class.java)?.copy(id = document.id)
+                        document.toObject(HistoryDto::class.java)?.copy(id = document.id)
                     }
                 )
             }
@@ -108,9 +110,9 @@ class FirestoreMedicineRepository @Inject constructor(
         stock: Int,
         aisleId: String,
         userEmail: String
-    ): Medicine {
+    ): MedicineDto {
         val document = medicines.document()
-        val medicine = Medicine(id = document.id, name = name, stock = stock, aisleId = aisleId)
+        val medicine = MedicineDto(id = document.id, name = name, stock = stock, aisleId = aisleId)
 
         // Le medicament et sa trace de creation partent dans le meme lot :
         // aucun des deux ne peut exister sans l'autre.
@@ -192,7 +194,7 @@ class FirestoreMedicineRepository @Inject constructor(
     }
 
     private fun historyDocument(
-        medicine: Medicine,
+        medicine: MedicineDto,
         action: HistoryAction,
         stockBefore: Int,
         stockAfter: Int,
@@ -228,17 +230,17 @@ class FirestoreMedicineRepository @Inject constructor(
  * `nameLowercase` n'appartient pas au modele : c'est un champ technique, ajoute
  * uniquement pour rendre la recherche par prefixe insensible a la casse.
  */
-private fun Medicine.toDocument(): Map<String, Any> = mapOf(
+private fun MedicineDto.toDocument(): Map<String, Any> = mapOf(
     "name" to name,
     "nameLowercase" to name.lowercase(),
     "stock" to stock,
     "aisleId" to aisleId
 )
 
-private fun DocumentSnapshot.toMedicine(): Medicine? =
-    toObject(Medicine::class.java)?.copy(id = id)
+private fun DocumentSnapshot.toMedicine(): MedicineDto? =
+    toObject(MedicineDto::class.java)?.copy(id = id)
 
-private fun List<Medicine>.sortedBy(sort: MedicineSort): List<Medicine> = when (sort) {
+private fun List<MedicineDto>.sortedBy(sort: MedicineSort): List<MedicineDto> = when (sort) {
     MedicineSort.NONE -> this
     MedicineSort.NAME_ASC -> sortedBy { it.name.lowercase() }
     MedicineSort.NAME_DESC -> sortedByDescending { it.name.lowercase() }

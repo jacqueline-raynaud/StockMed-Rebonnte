@@ -1,6 +1,6 @@
 package com.openclassrooms.rebonnte.fake
 
-import com.openclassrooms.rebonnte.data.model.User
+import com.openclassrooms.rebonnte.data.model.UserDto
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * proprietes plutot que sur des verifications d'appels.
  */
 class FakeUserRepository(
-    initialUser: User? = SIGNED_IN_USER
+    initialUser: UserDto? = SIGNED_IN_USER
 ) : UserRepository {
 
     private val userFlow = MutableStateFlow(initialUser)
 
     /** Resultat renvoye par [signIn] et [signUp]. Modifiable par le test. */
-    var authResult: Result<User> = Result.success(SIGNED_IN_USER)
+    var authResult: Result<UserDto> = Result.success(SIGNED_IN_USER)
 
     var signInCount = 0
         private set
@@ -26,11 +26,11 @@ class FakeUserRepository(
     var signOutCount = 0
         private set
 
-    override val currentUser: Flow<User?> = userFlow
+    override val currentUser: Flow<UserDto?> = userFlow
 
-    override fun currentUserOrNull(): User? = userFlow.value
+    override fun currentUserOrNull(): UserDto? = userFlow.value
 
-    override suspend fun signIn(email: String, password: String): Result<User> {
+    override suspend fun signIn(email: String, password: String): Result<UserDto> {
         signInCount++
         return authResult.onSuccess { userFlow.value = it }
     }
@@ -39,7 +39,7 @@ class FakeUserRepository(
         email: String,
         password: String,
         displayName: String
-    ): Result<User> {
+    ): Result<UserDto> {
         signUpCount++
         return authResult.onSuccess { userFlow.value = it }
     }
@@ -50,7 +50,7 @@ class FakeUserRepository(
     }
 
     companion object {
-        val SIGNED_IN_USER = User(
+        val SIGNED_IN_USER = UserDto(
             id = "uid-1",
             email = "operateur@rebonnte.fr",
             displayName = "Operateur"

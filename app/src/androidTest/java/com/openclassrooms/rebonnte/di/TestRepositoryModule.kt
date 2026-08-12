@@ -1,8 +1,8 @@
 package com.openclassrooms.rebonnte.di
 
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
-import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository

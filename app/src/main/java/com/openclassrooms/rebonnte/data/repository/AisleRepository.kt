@@ -1,16 +1,16 @@
 package com.openclassrooms.rebonnte.data.repository
 
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.data.model.AisleDto
 import kotlinx.coroutines.flow.Flow
 
 /** Acces aux emplacements de stockage. */
 interface AisleRepository {
 
-    fun observeAisles(): Flow<List<Aisle>>
+    fun observeAisles(): Flow<List<AisleDto>>
 
-    fun observeAisle(id: String): Flow<Aisle?>
+    fun observeAisle(id: String): Flow<AisleDto?>
 
-    suspend fun addAisle(name: String): Aisle
+    suspend fun addAisle(name: String): AisleDto
 
     /**
      * Cree les emplacements standards s'ils n'existent pas encore.

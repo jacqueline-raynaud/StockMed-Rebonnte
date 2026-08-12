@@ -1,14 +1,16 @@
-package com.openclassrooms.rebonnte.data.repository
+package com.openclassrooms.rebonnte.data.repository.impl
 
-import com.openclassrooms.rebonnte.data.model.History
 import com.openclassrooms.rebonnte.data.model.HistoryAction
-import com.openclassrooms.rebonnte.data.model.Medicine
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import com.openclassrooms.rebonnte.data.model.HistoryDto
+import com.openclassrooms.rebonnte.data.model.MedicineDto
+import com.openclassrooms.rebonnte.data.repository.MedicineRepository
+import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Implementation en memoire, utilisee tant que Firestore n'est pas branche et
@@ -19,18 +21,18 @@ import javax.inject.Inject
  */
 class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
 
-    private val medicines = MutableStateFlow<List<Medicine>>(emptyList())
-    private val histories = MutableStateFlow<List<History>>(emptyList())
+    private val medicines = MutableStateFlow<List<MedicineDto>>(emptyList())
+    private val histories = MutableStateFlow<List<HistoryDto>>(emptyList())
 
-    override fun observeMedicines(query: String, sort: MedicineSort): Flow<List<Medicine>> =
+    override fun observeMedicines(query: String, sort: MedicineSort): Flow<List<MedicineDto>> =
         medicines.map { list ->
             list.filterByName(query).sortedBy(sort)
         }
 
-    override fun observeMedicine(id: String): Flow<Medicine?> =
+    override fun observeMedicine(id: String): Flow<MedicineDto?> =
         medicines.map { list -> list.firstOrNull { it.id == id } }
 
-    override fun observeHistory(medicineId: String): Flow<List<History>> =
+    override fun observeHistory(medicineId: String): Flow<List<HistoryDto>> =
         histories.map { list ->
             list.filter { it.medicineId == medicineId }.sortedByDescending { it.date }
         }
@@ -40,8 +42,8 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
         stock: Int,
         aisleId: String,
         userEmail: String
-    ): Medicine {
-        val medicine = Medicine(
+    ): MedicineDto {
+        val medicine = MedicineDto(
             id = UUID.randomUUID().toString(),
             name = name,
             stock = stock,
@@ -80,14 +82,14 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
     }
 
     private fun record(
-        medicine: Medicine,
+        medicine: MedicineDto,
         action: HistoryAction,
         stockBefore: Int,
         stockAfter: Int,
         userEmail: String,
         details: String
     ) {
-        histories.value = histories.value + History(
+        histories.value = histories.value + HistoryDto(
             id = UUID.randomUUID().toString(),
             medicineId = medicine.id,
             medicineName = medicine.name,
@@ -101,13 +103,13 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
     }
 }
 
-private fun List<Medicine>.filterByName(query: String): List<Medicine> {
+private fun List<MedicineDto>.filterByName(query: String): List<MedicineDto> {
     if (query.isBlank()) return this
     val needle = query.lowercase(Locale.getDefault())
     return filter { it.name.lowercase(Locale.getDefault()).contains(needle) }
 }
 
-private fun List<Medicine>.sortedBy(sort: MedicineSort): List<Medicine> = when (sort) {
+private fun List<MedicineDto>.sortedBy(sort: MedicineSort): List<MedicineDto> = when (sort) {
     MedicineSort.NONE -> this
     // lowercase() : meme ordre alphabetique que l'implementation Firestore, qui
     // trie sur le champ en minuscules.

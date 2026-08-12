@@ -12,10 +12,10 @@ import androidx.annotation.Keep
  * [date] est un horodatage epoch en millisecondes, et non une chaine : une
  * chaine ne se trie pas et depend de la locale de celui qui l'a ecrite.
  *
- * Voir [Medicine] pour la raison d'etre de [Keep].
+ * Voir [MedicineDto] pour la raison d'etre de [Keep].
  */
 @Keep
-data class History(
+data class HistoryDto(
     val id: String = "",
     val medicineId: String = "",
     val medicineName: String = "",

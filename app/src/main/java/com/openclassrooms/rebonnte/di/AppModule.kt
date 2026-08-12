@@ -3,9 +3,9 @@ package com.openclassrooms.rebonnte.di
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
-import com.openclassrooms.rebonnte.data.repository.FirebaseUserRepository
-import com.openclassrooms.rebonnte.data.repository.FirestoreAisleRepository
-import com.openclassrooms.rebonnte.data.repository.FirestoreMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.impl.UserRepositoryImpl
+import com.openclassrooms.rebonnte.data.repository.impl.AisleRepositoryImpl
+import com.openclassrooms.rebonnte.data.repository.impl.MedicineRepositoryImpl
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import dagger.Binds
@@ -44,13 +44,13 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: FirebaseUserRepository): UserRepository
+    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
     @Binds
     @Singleton
-    abstract fun bindMedicineRepository(impl: FirestoreMedicineRepository): MedicineRepository
+    abstract fun bindMedicineRepository(impl: MedicineRepositoryImpl): MedicineRepository
 
     @Binds
     @Singleton
-    abstract fun bindAisleRepository(impl: FirestoreAisleRepository): AisleRepository
+    abstract fun bindAisleRepository(impl: AisleRepositoryImpl): AisleRepository
 }

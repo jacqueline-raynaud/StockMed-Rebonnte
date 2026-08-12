@@ -1,6 +1,6 @@
 package com.openclassrooms.rebonnte.ui
 
-import com.openclassrooms.rebonnte.data.repository.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
