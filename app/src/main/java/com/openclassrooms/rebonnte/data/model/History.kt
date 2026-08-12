@@ -1,5 +1,7 @@
 package com.openclassrooms.rebonnte.data.model
 
+import androidx.annotation.Keep
+
 /**
  * Une entree d'historique : qui a fait quoi, quand, et avec quel effet.
  *
@@ -9,7 +11,10 @@ package com.openclassrooms.rebonnte.data.model
  *
  * [date] est un horodatage epoch en millisecondes, et non une chaine : une
  * chaine ne se trie pas et depend de la locale de celui qui l'a ecrite.
+ *
+ * Voir [Medicine] pour la raison d'etre de [Keep].
  */
+@Keep
 data class History(
     val id: String = "",
     val medicineId: String = "",

@@ -1,5 +1,7 @@
 package com.openclassrooms.rebonnte.data.model
 
+import androidx.annotation.Keep
+
 /**
  * Un medicament du stock.
  *
@@ -14,7 +16,13 @@ package com.openclassrooms.rebonnte.data.model
  *
  * Toutes les proprietes ont une valeur par defaut : Firestore a besoin d'un
  * constructeur sans argument pour deserialiser.
+ *
+ * [Keep] protege les noms de champs de l'obfuscation. Firestore remplit cette
+ * classe par reflexion, en comparant le nom du champ a la cle du document : si
+ * R8 renomme `stock` en `a`, la correspondance est perdue et le champ garde sa
+ * valeur par defaut, **sans aucune erreur**. La liste s'afficherait vide.
  */
+@Keep
 data class Medicine(
     val id: String = "",
     val name: String = "",
