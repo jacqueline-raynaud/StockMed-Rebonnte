@@ -1,10 +1,12 @@
 package com.openclassrooms.rebonnte.di
 
+import com.openclassrooms.rebonnte.data.network.NetworkMonitor
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.fake.FakeNetworkMonitor
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import dagger.Binds
 import dagger.Module
@@ -24,6 +26,10 @@ import javax.inject.Singleton
     replaces = [RepositoryModule::class]
 )
 abstract class TestRepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindNetworkMonitor(impl: FakeNetworkMonitor): NetworkMonitor
 
     @Binds
     @Singleton

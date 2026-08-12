@@ -22,7 +22,7 @@ class AisleRepositoryImpl @Inject constructor(
     override fun observeAisles(): Flow<List<AisleDto>> = callbackFlow {
         val registration = aisles.orderBy(FIELD_NAME).addSnapshotListener { snapshot, error ->
             if (error != null) {
-                close(error)
+                close(error.toStockException())
                 return@addSnapshotListener
             }
             trySend(
@@ -37,7 +37,7 @@ class AisleRepositoryImpl @Inject constructor(
     override fun observeAisle(id: String): Flow<AisleDto?> = callbackFlow {
         val registration = aisles.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
-                close(error)
+                close(error.toStockException())
                 return@addSnapshotListener
             }
             trySend(snapshot?.toObject(AisleDto::class.java)?.copy(id = snapshot.id))
@@ -48,7 +48,7 @@ class AisleRepositoryImpl @Inject constructor(
     override suspend fun addAisle(name: String): AisleDto {
         val document = aisles.document()
         val aisle = AisleDto(id = document.id, name = name.trim())
-        document.set(mapOf(FIELD_NAME to aisle.name)).await()
+        firestoreWrite { document.set(mapOf(FIELD_NAME to aisle.name)).await() }
         return aisle
     }
 
@@ -69,7 +69,7 @@ class AisleRepositoryImpl @Inject constructor(
                 SetOptions.merge()
             )
         }
-        batch.commit().await()
+        firestoreWrite { batch.commit().await() }
     }
 
     private companion object {

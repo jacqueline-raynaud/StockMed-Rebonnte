@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+      Lecture seule de l'etat du reseau, pour signaler le mode hors ligne.
+      Elle n'ouvre aucune connexion : INTERNET est deja requise par Firebase.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".RebonnteApplication"
         android:allowBackup="true"

@@ -2,6 +2,8 @@ package com.openclassrooms.rebonnte.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.openclassrooms.rebonnte.data.network.ConnectivityNetworkMonitor
+import com.openclassrooms.rebonnte.data.network.NetworkMonitor
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.UserRepositoryImpl
 import com.openclassrooms.rebonnte.data.repository.impl.AisleRepositoryImpl
@@ -41,6 +43,10 @@ object FirebaseModule {
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
 
     @Binds
     @Singleton

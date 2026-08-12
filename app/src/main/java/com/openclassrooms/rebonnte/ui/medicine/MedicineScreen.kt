@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,6 +9,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.component.ErrorState
+import com.openclassrooms.rebonnte.ui.component.LoadingState
 import com.openclassrooms.rebonnte.ui.component.MedicineItem
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
@@ -22,6 +26,8 @@ fun MedicineScreen(
 
     MedicineContent(
         medicines = uiState.medicines,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
         onMedicineClick = onMedicineClick,
         modifier = modifier
     )
@@ -35,8 +41,19 @@ fun MedicineScreen(
 fun MedicineContent(
     medicines: List<MedicineUi>,
     onMedicineClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    @StringRes errorMessage: Int? = null
 ) {
+    if (isLoading) {
+        LoadingState(modifier)
+        return
+    }
+    if (errorMessage != null) {
+        ErrorState(errorMessage, modifier)
+        return
+    }
+
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(
             items = medicines,
@@ -84,6 +101,26 @@ private fun MedicineContentPreview() {
                 )
             ),
             onMedicineClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineContentLoadingPreview() {
+    RebonnteTheme {
+        MedicineContent(medicines = emptyList(), onMedicineClick = {}, isLoading = true)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineContentErrorPreview() {
+    RebonnteTheme {
+        MedicineContent(
+            medicines = emptyList(),
+            onMedicineClick = {},
+            errorMessage = R.string.error_permission
         )
     }
 }

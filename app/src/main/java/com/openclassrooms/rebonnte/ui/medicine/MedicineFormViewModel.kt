@@ -7,6 +7,7 @@ import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.toMessageRes
 import com.openclassrooms.rebonnte.ui.whileSignedIn
 import com.openclassrooms.rebonnte.ui.model.AisleUi
 import com.openclassrooms.rebonnte.ui.model.toUi
@@ -29,6 +30,8 @@ data class MedicineFormUiState(
     @StringRes val nameError: Int? = null,
     @StringRes val stockError: Int? = null,
     @StringRes val aisleError: Int? = null,
+    /** Echec de l'enregistrement lui-meme, par opposition aux erreurs de saisie. */
+    @StringRes val submitError: Int? = null,
     val isSubmitting: Boolean = false,
     val isSaved: Boolean = false
 )
@@ -89,17 +92,27 @@ class MedicineFormViewModel @Inject constructor(
             return
         }
 
-        _uiState.update { it.copy(isSubmitting = true) }
+        _uiState.update { it.copy(isSubmitting = true, submitError = null) }
 
         viewModelScope.launch {
-            medicineRepository.addMedicine(
-                name = state.name.trim(),
-                stock = requireNotNull(stock),
-                aisleId = state.aisleId,
-                userEmail = userRepository.currentUserOrNull()?.email.orEmpty()
+            runCatching {
+                medicineRepository.addMedicine(
+                    name = state.name.trim(),
+                    stock = requireNotNull(stock),
+                    aisleId = state.aisleId,
+                    userEmail = userRepository.currentUserOrNull()?.email.orEmpty()
+                )
+            }.fold(
+                // L'ecran observe isSaved pour revenir a la liste.
+                onSuccess = { _uiState.update { it.copy(isSubmitting = false, isSaved = true) } },
+                // On reste sur le formulaire : la saisie est conservee, le geste
+                // peut etre repete sans tout retaper.
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(isSubmitting = false, submitError = error.toMessageRes())
+                    }
+                }
             )
-            // L'ecran observe isSaved pour revenir a la liste.
-            _uiState.update { it.copy(isSubmitting = false, isSaved = true) }
         }
     }
 }

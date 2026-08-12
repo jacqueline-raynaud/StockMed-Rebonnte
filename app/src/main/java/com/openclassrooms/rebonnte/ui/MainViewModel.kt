@@ -3,6 +3,7 @@ package com.openclassrooms.rebonnte.ui
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openclassrooms.rebonnte.data.network.NetworkMonitor
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import com.openclassrooms.rebonnte.ui.model.UserUi
@@ -28,6 +29,16 @@ import javax.inject.Inject
  * doit repasser par « Bonjour X, si ce n'est pas vous, deconnectez-vous ».
  */
 /**
+ * L'etat general de l'application, celui qui vaut pour tous les ecrans.
+ *
+ * [OFFLINE] n'est pas une erreur : l'application fonctionne, Firestore sert son
+ * cache et met les ecritures en attente. C'est justement pourquoi il faut le
+ * dire — sans indication, un stock vide faute de cache se lit comme un stock
+ * reellement vide.
+ */
+enum class AppState { READY, OFFLINE }
+
+/**
  * L'etat qui commande la navigation : qui est connecte, et l'accueil a-t-il
  * ete valide.
  *
@@ -38,13 +49,15 @@ import javax.inject.Inject
 @Immutable
 data class MainUiState(
     val user: UserUi? = null,
-    val welcomeAcknowledged: Boolean = false
+    val welcomeAcknowledged: Boolean = false,
+    val appState: AppState = AppState.READY
 )
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val aisleRepository: AisleRepository
+    private val aisleRepository: AisleRepository,
+    networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val currentUser: StateFlow<UserUi?> = userRepository.currentUser
@@ -60,8 +73,16 @@ class MainViewModel @Inject constructor(
     private val _welcomeAcknowledged = MutableStateFlow(false)
 
     val uiState: StateFlow<MainUiState> =
-        combine(currentUser, _welcomeAcknowledged) { user, acknowledged ->
-            MainUiState(user = user, welcomeAcknowledged = acknowledged)
+        combine(
+            currentUser,
+            _welcomeAcknowledged,
+            networkMonitor.isOnline
+        ) { user, acknowledged, isOnline ->
+            MainUiState(
+                user = user,
+                welcomeAcknowledged = acknowledged,
+                appState = if (isOnline) AppState.READY else AppState.OFFLINE
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,

@@ -63,7 +63,7 @@ class MedicineRepositoryImpl @Inject constructor(
         return callbackFlow {
             val registration = request.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    close(error.toStockException())
                     return@addSnapshotListener
                 }
                 val result = snapshot?.documents.orEmpty().mapNotNull { it.toMedicine() }
@@ -79,7 +79,7 @@ class MedicineRepositoryImpl @Inject constructor(
     override fun observeMedicine(id: String): Flow<MedicineDto?> = callbackFlow {
         val registration = medicines.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
-                close(error)
+                close(error.toStockException())
                 return@addSnapshotListener
             }
             trySend(snapshot?.toMedicine())
@@ -93,7 +93,7 @@ class MedicineRepositoryImpl @Inject constructor(
             .orderBy(FIELD_DATE, Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    close(error.toStockException())
                     return@addSnapshotListener
                 }
                 trySend(
@@ -129,7 +129,7 @@ class MedicineRepositoryImpl @Inject constructor(
                     details = "Medicament cree"
                 )
             )
-        }.commit().await()
+        }.let { batch -> firestoreWrite { batch.commit().await() } }
 
         return medicine
     }
@@ -167,7 +167,7 @@ class MedicineRepositoryImpl @Inject constructor(
                 )
             )
             null
-        }.await()
+        }.let { task -> firestoreTransaction { task.await() } }
     }
 
     override suspend fun deleteMedicine(id: String, userEmail: String) {
@@ -190,7 +190,7 @@ class MedicineRepositoryImpl @Inject constructor(
                 )
             )
             null
-        }.await()
+        }.let { task -> firestoreTransaction { task.await() } }
     }
 
     private fun historyDocument(

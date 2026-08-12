@@ -42,6 +42,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.component.ErrorState
+import com.openclassrooms.rebonnte.ui.component.LoadingState
 import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
@@ -70,11 +72,8 @@ fun MedicineDetailScreen(
 ) {
     // remember(medicineId) : sans cela, un nouveau Flow serait cree a chaque
     // recomposition.
-    val medicineFlow = remember(medicineId) { medicineViewModel.observeMedicine(medicineId) }
-    val historyFlow = remember(medicineId) { medicineViewModel.observeHistory(medicineId) }
-
-    val medicine by medicineFlow.collectAsState(initial = null)
-    val histories by historyFlow.collectAsState(initial = emptyList())
+    val detailFlow = remember(medicineId) { medicineViewModel.observeDetail(medicineId) }
+    val uiState by detailFlow.collectAsState(initial = MedicineDetailUiState())
 
     var quantity by rememberSaveable { mutableStateOf(EMPTY_QUANTITY) }
 
@@ -101,10 +100,20 @@ fun MedicineDetailScreen(
         }
     }
 
-    val currentMedicine = medicine
+    if (uiState.isLoading) {
+        LoadingState(modifier)
+        return
+    }
+    uiState.errorMessage?.let { message ->
+        ErrorState(message, modifier)
+        return
+    }
+
+    val currentMedicine = uiState.medicine
     if (currentMedicine == null) {
         // L'ancien code faisait un `return` au milieu du composable : ecran
-        // blanc sans explication.
+        // blanc sans explication. Ce cas ne se confond plus avec un chargement
+        // en cours ni avec une lecture qui a echoue.
         Text(
             text = stringResource(R.string.detail_not_found),
             modifier = modifier.padding(16.dp)
@@ -114,7 +123,7 @@ fun MedicineDetailScreen(
 
     MedicineDetailContent(
         medicine = currentMedicine,
-        histories = histories,
+        histories = uiState.histories,
         quantity = quantity,
         onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
         onRemove = { applyMovement(-it, R.string.detail_units_removed, it) },

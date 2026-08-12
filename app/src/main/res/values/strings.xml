@@ -107,4 +107,13 @@
 
     <!-- Medicine list -->
     <string name="medicine_stock">Stock: %1$d</string>
+    <!-- Erreurs -->
+    <string name="error_permission">You are not allowed to do this. Sign in again.</string>
+    <string name="error_network">Connection lost. Check your network.</string>
+    <string name="error_unavailable">Service temporarily unavailable. Please try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="offline_banner">No network connection</string>
+    <string name="offline_title">Waiting for the network</string>
+    <string name="offline_message">StockMed needs a connection to show reliable figures. Counting stock against possibly outdated numbers would do more harm than waiting.</string>
+    <string name="offline_hint">The application resumes on its own once the connection is back.</string>
 </resources>

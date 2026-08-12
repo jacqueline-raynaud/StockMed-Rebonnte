@@ -146,6 +146,17 @@ fun MedicineFormContent(
             Text(stringResource(R.string.form_submit))
         }
 
+        // L'echec d'enregistrement s'affiche sous le bouton, la ou l'operateur
+        // vient de regarder. Un snackbar disparaitrait pendant qu'il retape.
+        state.submitError?.let { error ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = stringResource(error),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
         if (aisles.isEmpty()) {
             Spacer(Modifier.height(16.dp))
             Text(

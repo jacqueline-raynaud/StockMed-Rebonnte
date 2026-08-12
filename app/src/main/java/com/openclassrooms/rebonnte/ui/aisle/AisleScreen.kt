@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.component.ErrorState
+import com.openclassrooms.rebonnte.ui.component.LoadingState
 import com.openclassrooms.rebonnte.ui.model.AisleUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
@@ -37,6 +41,8 @@ fun AisleScreen(
 
     AisleContent(
         aisles = uiState.aisles,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
         onAisleClick = onAisleClick,
         modifier = modifier
     )
@@ -52,8 +58,19 @@ fun AisleScreen(
 fun AisleContent(
     aisles: List<AisleUi>,
     onAisleClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    @StringRes errorMessage: Int? = null
 ) {
+    if (isLoading) {
+        LoadingState(modifier)
+        return
+    }
+    if (errorMessage != null) {
+        ErrorState(errorMessage, modifier)
+        return
+    }
+
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(
             items = aisles,
@@ -112,5 +129,25 @@ private fun AisleContentPreview() {
 private fun AisleContentEmptyPreview() {
     RebonnteTheme {
         AisleContent(aisles = emptyList(), onAisleClick = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentLoadingPreview() {
+    RebonnteTheme {
+        AisleContent(aisles = emptyList(), onAisleClick = {}, isLoading = true)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentErrorPreview() {
+    RebonnteTheme {
+        AisleContent(
+            aisles = emptyList(),
+            onAisleClick = {},
+            errorMessage = R.string.error_network
+        )
     }
 }
