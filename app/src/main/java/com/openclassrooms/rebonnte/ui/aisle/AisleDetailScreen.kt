@@ -1,15 +1,20 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.openclassrooms.rebonnte.ui.component.MedicineItem
+import com.openclassrooms.rebonnte.ui.medicine.MedicineContent
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 
+/**
+ * Les medicaments d'un emplacement.
+ *
+ * Aucune composable propre : c'est la meme liste que l'ecran des medicaments,
+ * restreinte a un emplacement. Elle reutilise donc [MedicineContent] — et sa
+ * previsualisation par la meme occasion.
+ */
 @Composable
 fun AisleDetailScreen(
     aisleId: String,
@@ -17,15 +22,17 @@ fun AisleDetailScreen(
     onMedicineClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val medicines by medicineViewModel.medicines.collectAsState()
-    val filteredMedicines = medicines.filter { it.aisleId == aisleId }
+    val uiState by medicineViewModel.uiState.collectAsState()
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(filteredMedicines, key = { it.id }) { medicine ->
-            MedicineItem(
-                medicine = medicine,
-                onClick = { onMedicineClick(medicine.id) }
-            )
-        }
+    // remember : le filtrage ne se refait que si la liste ou l'emplacement
+    // changent, pas a chaque recomposition.
+    val medicines = remember(uiState.medicines, aisleId) {
+        uiState.medicines.filter { it.aisleId == aisleId }
     }
+
+    MedicineContent(
+        medicines = medicines,
+        onMedicineClick = onMedicineClick,
+        modifier = modifier
+    )
 }

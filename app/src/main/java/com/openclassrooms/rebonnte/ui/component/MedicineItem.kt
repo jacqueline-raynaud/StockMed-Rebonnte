@@ -15,9 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
-import com.openclassrooms.rebonnte.data.model.Medicine
+import com.openclassrooms.rebonnte.ui.model.MedicineUi
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
  * Ligne de liste d'un medicament.
@@ -32,7 +34,7 @@ import com.openclassrooms.rebonnte.data.model.Medicine
  */
 @Composable
 fun MedicineItem(
-    medicine: Medicine,
+    medicine: MedicineUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -60,6 +62,23 @@ fun MedicineItem(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineItemPreview() {
+    RebonnteTheme {
+        MedicineItem(
+            medicine = MedicineUi(
+                id = "1",
+                name = "Doliprane 1000 mg",
+                stock = 42,
+                aisleId = "standard",
+                locationName = "Stockage standard"
+            ),
+            onClick = {}
         )
     }
 }

@@ -41,7 +41,7 @@ Ce n'était pas gratuit à écrire. Voici ce que ça a rapporté, concrètement 
 
 - **Le passage de la mémoire à Firestore a demandé trois lignes** dans
   `AppModule` — changer `InMemoryMedicineRepository` en
-  `FirestoreMedicineRepository` dans les liaisons. Aucun ViewModel, aucun écran,
+  `MedicineRepositoryImpl` dans les liaisons. Aucun ViewModel, aucun écran,
   aucun test n'a bougé.
 - **Les implémentations en mémoire servent aujourd'hui de doubles de test.**
   Elles ne sont pas du code mort : elles font tourner les tests unitaires et les
@@ -62,7 +62,7 @@ et le transportait entre écrans par `putExtra("nameMedicine")`.
 Deux médicaments homonymes étaient indiscernables, et corriger une faute de
 frappe dans un nom cassait toutes les références.
 
-`Medicine` et `Aisle` portent désormais un `id` fourni par la source de données —
+`MedicineDto` et `AisleDto` portent désormais un `id` fourni par la source de données —
 l'identifiant du document Firestore. Un médicament référence son rayon par
 `aisleId` et non par son libellé : **renommer un rayon ne détache plus les
 médicaments qu'il contient.**
@@ -77,7 +77,7 @@ tous les paramètres ont une valeur par défaut en génère un automatiquement.
 
 ### L'historique vit hors du médicament
 
-`Medicine` ne porte pas ses entrées d'historique. Elles sont dans une
+`MedicineDto` ne porte pas ses entrées d'historique. Elles sont dans une
 **collection racine `history`**, avec un champ `medicineId`.
 
 Deux raisons :
@@ -266,7 +266,7 @@ l'implémentation réelle ne fera jamais.
 !!! warning "La limite de l'approche"
 
     Un double reste un double. `InMemoryAisleRepository` créait un emplacement
-    de stockage au démarrage ; `FirestoreAisleRepository` n'en créait aucun.
+    de stockage au démarrage ; `AisleRepositoryImpl` n'en créait aucun.
     Tous les tests passaient, et l'application était pourtant inutilisable sur
     une base neuve — impossible de créer un médicament faute d'endroit où le
     ranger.

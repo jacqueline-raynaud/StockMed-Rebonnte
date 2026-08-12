@@ -25,8 +25,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 @Composable
 fun AuthScreen(
@@ -34,6 +36,28 @@ fun AuthScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    AuthContent(
+        state = state,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onDisplayNameChange = viewModel::onDisplayNameChange,
+        onSubmit = viewModel::submit,
+        onToggleMode = viewModel::toggleMode,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun AuthContent(
+    state: AuthUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onDisplayNameChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onToggleMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val isSignUp = state.mode == AuthMode.SIGN_UP
 
     Column(
@@ -55,7 +79,7 @@ fun AuthScreen(
         if (isSignUp) {
             OutlinedTextField(
                 value = state.displayName,
-                onValueChange = viewModel::onDisplayNameChange,
+                onValueChange = onDisplayNameChange,
                 label = { Text(stringResource(R.string.auth_field_name)) },
                 singleLine = true,
                 isError = state.displayNameError != null,
@@ -68,7 +92,7 @@ fun AuthScreen(
 
         OutlinedTextField(
             value = state.email,
-            onValueChange = viewModel::onEmailChange,
+            onValueChange = onEmailChange,
             label = { Text(stringResource(R.string.auth_field_email)) },
             singleLine = true,
             isError = state.emailError != null,
@@ -83,7 +107,7 @@ fun AuthScreen(
 
         OutlinedTextField(
             value = state.password,
-            onValueChange = viewModel::onPasswordChange,
+            onValueChange = onPasswordChange,
             label = { Text(stringResource(R.string.auth_field_password)) },
             singleLine = true,
             isError = state.passwordError != null,
@@ -107,7 +131,7 @@ fun AuthScreen(
 
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = viewModel::submit,
+            onClick = onSubmit,
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -131,7 +155,7 @@ fun AuthScreen(
         }
 
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = viewModel::toggleMode, enabled = !state.isSubmitting) {
+        TextButton(onClick = onToggleMode, enabled = !state.isSubmitting) {
             Text(
                 stringResource(
                     if (isSignUp) {
@@ -142,5 +166,43 @@ fun AuthScreen(
                 )
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AuthContentSignInPreview() {
+    RebonnteTheme {
+        AuthContent(
+            state = AuthUiState(email = "operateur@rebonnte.fr"),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onDisplayNameChange = {},
+            onSubmit = {},
+            onToggleMode = {}
+        )
+    }
+}
+
+/** Le cas qui compte le plus : les erreurs de saisie affichees. */
+@Preview(showBackground = true)
+@Composable
+private fun AuthContentErrorsPreview() {
+    RebonnteTheme {
+        AuthContent(
+            state = AuthUiState(
+                mode = AuthMode.SIGN_UP,
+                email = "operateur",
+                emailError = R.string.auth_error_email_invalid,
+                passwordError = R.string.auth_error_password_too_short,
+                displayNameError = R.string.auth_error_name_required,
+                formError = R.string.auth_error_network
+            ),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onDisplayNameChange = {},
+            onSubmit = {},
+            onToggleMode = {}
+        )
     }
 }

@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!--
+      Variante claire. La variante sombre est dans values-night, choisie par le
+      systeme selon son mode nuit.
+
+      Ce theme XML ne colore que la fenetre avant que Compose ne dessine :
+      arriere-plan de lancement et barres systeme. Fige sur Light, il produisait
+      un flash blanc au demarrage sur un telephone en mode sombre.
+
+      android:Theme.DeviceDefault.DayNight aurait ete plus direct, mais il
+      n'existe qu'a partir de l'API 29 — l'application descend a l'API 24.
+    -->
     <style name="Theme.Rebonnte" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
-    <style name="Theme.Rebonnte.ActionBar" parent="android:Theme.Material.Light.DarkActionBar"/>
 
 </resources>

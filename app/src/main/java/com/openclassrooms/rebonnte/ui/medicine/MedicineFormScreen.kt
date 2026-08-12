@@ -28,10 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.model.AisleUi
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineFormScreen(
     viewModel: MedicineFormViewModel,
@@ -40,11 +42,34 @@ fun MedicineFormScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val aisles by viewModel.aisles.collectAsState()
-    var expanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) onSaved()
     }
+
+    MedicineFormContent(
+        state = state,
+        aisles = aisles,
+        onNameChange = viewModel::onNameChange,
+        onAisleChange = viewModel::onAisleChange,
+        onStockChange = viewModel::onStockChange,
+        onSubmit = viewModel::submit,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MedicineFormContent(
+    state: MedicineFormUiState,
+    aisles: List<AisleUi>,
+    onNameChange: (String) -> Unit,
+    onAisleChange: (String) -> Unit,
+    onStockChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -54,7 +79,7 @@ fun MedicineFormScreen(
     ) {
         OutlinedTextField(
             value = state.name,
-            onValueChange = viewModel::onNameChange,
+            onValueChange = onNameChange,
             label = { Text(stringResource(R.string.form_medicine_name)) },
             singleLine = true,
             isError = state.nameError != null,
@@ -89,7 +114,7 @@ fun MedicineFormScreen(
                     DropdownMenuItem(
                         text = { Text(aisle.name) },
                         onClick = {
-                            viewModel.onAisleChange(aisle.id)
+                            onAisleChange(aisle.id)
                             expanded = false
                         }
                     )
@@ -100,7 +125,7 @@ fun MedicineFormScreen(
 
         OutlinedTextField(
             value = state.stock,
-            onValueChange = viewModel::onStockChange,
+            onValueChange = onStockChange,
             label = { Text(stringResource(R.string.form_initial_quantity)) },
             singleLine = true,
             isError = state.stockError != null,
@@ -114,11 +139,22 @@ fun MedicineFormScreen(
 
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = viewModel::submit,
+            onClick = onSubmit,
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.form_submit))
+        }
+
+        // L'echec d'enregistrement s'affiche sous le bouton, la ou l'operateur
+        // vient de regarder. Un snackbar disparaitrait pendant qu'il retape.
+        state.submitError?.let { error ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = stringResource(error),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
         if (aisles.isEmpty()) {
@@ -129,5 +165,45 @@ fun MedicineFormScreen(
                 color = MaterialTheme.colorScheme.error
             )
         }
+    }
+}
+
+private val previewAisles = listOf(
+    AisleUi(id = "standard", name = "Stockage standard"),
+    AisleUi(id = "cold", name = "Stockage froid"),
+    AisleUi(id = "secured", name = "Stockage securise")
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineFormContentPreview() {
+    RebonnteTheme {
+        MedicineFormContent(
+            state = MedicineFormUiState(name = "Doliprane", stock = "20", aisleId = "standard"),
+            aisles = previewAisles,
+            onNameChange = {},
+            onAisleChange = {},
+            onStockChange = {},
+            onSubmit = {}
+        )
+    }
+}
+
+/**
+ * Base vide : le formulaire doit expliquer pourquoi il ne sert a rien plutot
+ * que d'afficher une liste deroulante sans options.
+ */
+@Preview(showBackground = true)
+@Composable
+private fun MedicineFormContentNoAislePreview() {
+    RebonnteTheme {
+        MedicineFormContent(
+            state = MedicineFormUiState(aisleError = R.string.form_error_aisle_required),
+            aisles = emptyList(),
+            onNameChange = {},
+            onAisleChange = {},
+            onStockChange = {},
+            onSubmit = {}
+        )
     }
 }

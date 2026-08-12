@@ -14,8 +14,8 @@ package com.openclassrooms.rebonnte.data.model
 object StorageLocations {
 
     val DEFAULTS = listOf(
-        Aisle(id = "standard", name = "Stockage standard"),
-        Aisle(id = "cold", name = "Stockage froid"),
-        Aisle(id = "secured", name = "Stockage securise")
+        AisleDto(id = "standard", name = "Stockage standard"),
+        AisleDto(id = "cold", name = "Stockage froid"),
+        AisleDto(id = "secured", name = "Stockage securise")
     )
 }

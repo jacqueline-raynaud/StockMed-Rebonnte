@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -18,19 +19,67 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.openclassrooms.rebonnte.data.model.Aisle
+import com.openclassrooms.rebonnte.R
+import com.openclassrooms.rebonnte.ui.component.ErrorState
+import com.openclassrooms.rebonnte.ui.component.LoadingState
+import com.openclassrooms.rebonnte.ui.model.AisleUi
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
+/**
+ * Partie « avec etat » : elle connait le ViewModel et ne fait que lui prendre
+ * son etat.
+ */
 @Composable
 fun AisleScreen(
     viewModel: AisleViewModel,
     onAisleClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val aisles by viewModel.aisles.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    AisleContent(
+        aisles = uiState.aisles,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
+        onAisleClick = onAisleClick,
+        modifier = modifier
+    )
+}
+
+/**
+ * Partie « sans etat » : des donnees et des lambdas, rien d'autre.
+ *
+ * C'est ce qui la rend previsualisable — un ViewModel demanderait Hilt, donc
+ * une application lancee. C'est aussi ce qui la rend testable sans emulateur.
+ */
+@Composable
+fun AisleContent(
+    aisles: List<AisleUi>,
+    onAisleClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    @StringRes errorMessage: Int? = null
+) {
+    if (isLoading) {
+        LoadingState(modifier)
+        return
+    }
+    if (errorMessage != null) {
+        ErrorState(errorMessage, modifier)
+        return
+    }
 
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(aisles, key = { it.id }) { aisle ->
+        items(
+            items = aisles,
+            key = { it.id },
+            // Toutes les lignes ont la meme mise en page : en le declarant,
+            // Compose reutilise les composables au defilement au lieu d'en
+            // reconstruire.
+            contentType = { CONTENT_TYPE_AISLE }
+        ) { aisle ->
             AisleItem(
                 aisle = aisle,
                 onClick = { onAisleClick(aisle.id) }
@@ -39,8 +88,10 @@ fun AisleScreen(
     }
 }
 
+private const val CONTENT_TYPE_AISLE = "aisle"
+
 @Composable
-fun AisleItem(aisle: Aisle, onClick: () -> Unit) {
+fun AisleItem(aisle: AisleUi, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -53,6 +104,50 @@ fun AisleItem(aisle: Aisle, onClick: () -> Unit) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentPreview() {
+    RebonnteTheme {
+        AisleContent(
+            aisles = listOf(
+                AisleUi(id = "standard", name = "Stockage standard"),
+                AisleUi(id = "cold", name = "Stockage froid"),
+                AisleUi(id = "secured", name = "Stockage securise")
+            ),
+            onAisleClick = {}
+        )
+    }
+}
+
+/** Le cas vide se regarde aussi : c'est ce que voit un premier lancement. */
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentEmptyPreview() {
+    RebonnteTheme {
+        AisleContent(aisles = emptyList(), onAisleClick = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentLoadingPreview() {
+    RebonnteTheme {
+        AisleContent(aisles = emptyList(), onAisleClick = {}, isLoading = true)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AisleContentErrorPreview() {
+    RebonnteTheme {
+        AisleContent(
+            aisles = emptyList(),
+            onAisleClick = {},
+            errorMessage = R.string.error_network
         )
     }
 }

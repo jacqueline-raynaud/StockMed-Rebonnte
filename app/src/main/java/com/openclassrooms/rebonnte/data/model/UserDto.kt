@@ -7,7 +7,7 @@ package com.openclassrooms.rebonnte.data.model
  * qualite sait relier a une personne, contrairement a [id] qui est l'UID
  * Firebase.
  */
-data class User(
+data class UserDto(
     val id: String = "",
     val email: String = "",
     val displayName: String = ""

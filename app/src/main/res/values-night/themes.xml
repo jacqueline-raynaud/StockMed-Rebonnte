@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Variante sombre, appliquee quand le systeme est en mode nuit. -->
+    <style name="Theme.Rebonnte" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+</resources>

@@ -107,4 +107,25 @@
 
     <!-- Medicine list -->
     <string name="medicine_stock">Stock: %1$d</string>
+    <!-- Erreurs -->
+    <string name="error_permission">You are not allowed to do this. Sign in again.</string>
+    <string name="error_network">Connection lost. Check your network.</string>
+    <string name="error_unavailable">Service temporarily unavailable. Please try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="offline_banner">No network connection</string>
+    <string name="offline_title">Waiting for the network</string>
+    <string name="offline_message">StockMed needs a connection to show reliable figures. Counting stock against possibly outdated numbers would do more harm than waiting.</string>
+    <string name="offline_hint">The application resumes on its own once the connection is back.</string>
+    <!-- Theme -->
+    <string name="theme_menu">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_active">Selected appearance</string>
+    <!-- Suppression de compte -->
+    <string name="account_delete">Delete my account</string>
+    <string name="account_delete_title">Delete your account?</string>
+    <string name="account_delete_message">Your account will be removed and you will be signed out. This cannot be undone.</string>
+    <string name="account_delete_history_notice">The stock history stays untouched: the entries you signed remain readable, with your email address. A stock audit trail cannot be rewritten.</string>
+    <string name="account_delete_password">Confirm your password</string>
 </resources>
