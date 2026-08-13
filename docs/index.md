@@ -45,8 +45,16 @@ Product Owner** et la finition.
 | S'identifier | Absent | :material-check: Fait |
 | Gérer les rayons | Partiel, en mémoire | :material-check: Emplacements réels : standard, froid, sécurisé |
 | Gérer les médicaments | Partiel, en mémoire | :material-check: Création guidée et suppression |
-| Gérer le stock | Plantage systématique | :material-check: Fait — saisie par quantité |
+| Gérer le stock | Plantage systématique | :material-check: Fait — saisie par quantité, retrait excessif refusé |
 | Historique | Jamais enregistré | :material-check: Fait, fiable et signé |
+
+### Au-delà du cahier des charges
+
+Une revue technique externe a conduit à un lot de mise en conformité, et trois
+défauts sérieux ont été trouvés en la menant — une application qui mourait sur
+la moindre erreur Firestore, un stock plafonné en silence, un message de succès
+affiché avant l'opération. Le détail est dans le
+[lot 5](taches.md#lot-5-reprise-apres-revue-technique).
 
 ### Les quatre livrables
 
@@ -64,7 +72,7 @@ captures d'écran et à un export PDF, plus aux durées réelles à renseigner.
 
 | | |
 |---|---|
-| Tests unitaires | 51 |
+| Tests unitaires | 72 |
 | Tests d'interface | 9 |
 | Couverture (indicateur SonarCloud) | 16,2 % |
 | Intégration continue | Trois workflows : vérification, tests instrumentés, documentation |

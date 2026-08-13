@@ -24,9 +24,10 @@ d'implémentation quand il éclaire le choix.
 | 2 | Architecture | Terminé |
 | 3 | Persistance et fonctionnalités | Terminé |
 | 4 | Qualité, CI et livrables | Terminé |
-| 5 | Finition | À faire |
+| 5 | Reprise après revue technique | Terminé |
+| 6 | Accessibilité et confort | À faire |
 
-**Réalisé : 27 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 35 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---
@@ -360,7 +361,8 @@ qu'il serait illisible. Corriger un défaut a rendu le suivant visible.
 
 **Problème.** Aucun test sur une application critique pour l'entreprise.
 
-**Fait.** 51 tests sur les repositories et les cinq `ViewModel`.
+**Fait.** 51 tests sur les repositories et les cinq `ViewModel` à la fin de ce
+lot — **72 aujourd'hui**, le lot 5 en ayant ajouté vingt et un.
 
 **Détail.** Chaque test de régression correspond à un défaut réellement
 rencontré : le stock qui vise le bon médicament, l'historique effectivement
@@ -445,6 +447,270 @@ pour que ça s'exécute même après un échec.
 
 ---
 
+## Lot 5 — Reprise après revue technique
+
+Ce lot regroupe la mise en conformité demandée lors d'une revue de code
+externe, plus trois défauts découverts en la menant.
+
+### T-34 · Externalisation des chaînes · 0,75 j
+
+**Problème.** Tous les libellés étaient écrits en dur dans les composables.
+`strings.xml` ne contenait qu'une entrée, `app_name`.
+
+**Fait.** 89 chaînes extraites, `values/` en anglais et `values-fr/` en
+français.
+
+**Détail.** Les messages d'erreur vivaient dans les ViewModels, qui n'ont pas
+de `Context` pour résoudre une ressource. Plutôt que d'y injecter un `Context`
+— chemin classique vers la fuite mémoire, et fin de la testabilité hors
+émulateur — l'état porte un **identifiant de ressource** :
+
+```kotlin
+@StringRes val emailError: Int? = null
+```
+
+L'écran résout le libellé. Effet de bord : trois tests qui comparaient des
+phrases françaises comparent maintenant des identifiants, et ne peuvent plus
+casser à cause d'une traduction.
+
+!!! warning "Les tests d'interface auraient cassé en CI, pas en local"
+
+    Les 24 assertions de `NavigationFlowTest` comparaient des chaînes
+    françaises en dur. Elles passaient tant que `values/` était français ;
+    elles auraient toutes échoué le jour du basculement en anglais, sur
+    l'émulateur `en-US` de l'intégration continue.
+
+    D'où l'ordre d'exécution : extraire à valeurs constantes, convertir les
+    tests, **puis** traduire. Vérifié dans les deux langues, mêmes tests sans
+    retouche.
+
+**Contrainte découverte.** Le titre de la barre supérieure et le libellé de
+l'onglet sont affichés en même temps. Un texte identique rendrait les deux
+nœuds indiscernables pour les tests comme pour TalkBack — d'où « Stock des
+médicaments » et « Médicaments ».
+
+### T-47 · Structure de la couche data · 1 j
+
+**Demande.** Nommer les modèles `Dto` pour marquer la frontière externe,
+séparer les interfaces de leurs implémentations, suffixer celles-ci en `Impl`.
+
+**Fait.**
+
+```
+data/model/          MedicineDto, AisleDto, HistoryDto, UserDto, HistoryAction
+data/repository/     les interfaces
+       └── impl/     MedicineRepositoryImpl, AisleRepositoryImpl, UserRepositoryImpl
+                     InMemoryMedicineRepository, InMemoryAisleRepository
+```
+
+Le préfixe `Firestore` a disparu : `MedicineRepositoryImpl` ne nomme plus sa
+technologie, ce qui est précisément l'intérêt d'une interface.
+
+**Détail — l'obfuscation.** La demande initiale associait `java.io.Serializable`
+à une protection contre l'obfuscation. Ce n'en est pas une : c'est un marqueur
+de sérialisation Java, que R8 ignore. Le risque est réel mais ailleurs —
+**Firestore remplit les modèles par réflexion sur le nom des champs** :
+
+```kotlin
+toObject(MedicineDto::class.java)
+```
+
+`isMinifyEnabled = true` renommerait `stockAfter` en `a`, la clé du document
+resterait `stockAfter`, et le champ garderait sa valeur par défaut. **Sans
+aucune erreur** : une liste de médicaments sans nom et à zéro.
+
+D'où `@Keep` sur les trois classes lues par réflexion et sur l'énumération
+qu'elles contiennent. Pas sur `UserDto`, construit à la main depuis
+`FirebaseUser` : R8 renomme alors le champ et son appel de façon cohérente.
+
+### T-48 · Modèles d'affichage · 1 j
+
+**Demande.** Ne pas exposer d'objets de la base à l'affichage.
+
+**Fait.** Quatre modèles `Ui` immuables, avec le mapping dans les ViewModels —
+et non dans les dépôts, qui devraient alors connaître l'affichage.
+
+**Détail.** Ils ne sont pas des copies : chacun retire ou ajoute quelque chose.
+
+| Modèle | Ce qui change |
+|---|---|
+| `MedicineUi` | Porte `locationName` déjà résolu ; l'écran ne croise plus deux listes |
+| `HistoryUi` | Porte `dateLabel` déjà formaté ; le `DateFormat` ne s'exécute plus à chaque recomposition |
+| `UserUi` | Ne porte **pas** l'UID Firebase : aucun écran ne l'affiche |
+
+Conséquence directe : `MedicineDetailScreen` n'a plus besoin de
+l'`AisleViewModel`.
+
+Les libellés de remplacement restent nullables plutôt que résolus dans le
+ViewModel — sinon celui-ci devrait connaître la langue du téléphone, et le
+bénéfice de T-34 serait perdu.
+
+### T-49 · UiState, composables sans état et previews · 2 j
+
+**Demande.** Un `UiState` par ViewModel, séparer les composables avec et sans
+état, ajouter des previews et des `contentType`.
+
+**Fait.** `MainUiState`, `MedicineUiState`, `AisleUiState` ; chaque écran se
+découpe en `XScreen` (connaît le ViewModel) et `XContent` (données et lambdas) ;
+neuf previews ; `contentType` sur les trois listes.
+
+**Détail.** Trois flux séparés peuvent être observés dans des états qui se
+contredisent — une liste déjà triée pendant que le menu affiche l'ancien
+critère. Un objet unique ne le peut pas.
+
+Un doublon a disparu au passage : le texte recherché vivait à la fois dans un
+`rememberSaveable` de `MainActivity` et dans le flux du ViewModel.
+
+Les previews portent sur les cas qu'on ne voit jamais en lançant
+l'application : les quatre erreurs de saisie ensemble, une base sans
+emplacement, un médicament dont l'emplacement a été supprimé, une entrée
+d'historique sans auteur ni date, les listes vides.
+
+### T-24 · États de chargement et gestion des erreurs · 1 j
+
+**Problème.** Une erreur Firestore **tuait l'application** : le `callbackFlow`
+se fermait sur l'exception, qui remontait jusqu'au collecteur. Une liste vide
+voulait dire trois choses — stock vide, chargement en cours, lecture échouée.
+
+**Fait.** Une exception métier dans la couche data, un état de chargement et
+un état d'erreur dans chaque `UiState`, une fenêtre à valider pour les échecs
+d'écriture.
+
+```
+Firestore → StockException(PERMISSION|NETWORK|UNAVAILABLE|INSUFFICIENT_STOCK|UNKNOWN)
+          → UiState → écran
+```
+
+Un seul fichier connaît les codes d'erreur de Firestore. Au-dessus, tout le
+monde raisonne sur des raisons métier — choisies parce que ce sont les
+réactions possibles pour un opérateur : il n'a pas le droit, il n'a pas de
+réseau, il doit réessayer, ou il faut appeler quelqu'un.
+
+**Détail — deux natures d'erreur.** Les lectures produisent un état d'écran,
+affiché à la place de la liste. Les écritures produisent un message à part,
+montré dans une **fenêtre à valider** : un snackbar s'efface tout seul et rien
+ne garantit qu'il ait été lu. Un mouvement de stock refusé dont l'opérateur
+n'a rien vu se solde par un écart d'inventaire.
+
+!!! danger "Le double d'essai ne pouvait pas révéler ce défaut"
+
+    Les implémentations en mémoire ne tombent jamais en panne. Aucun test ne
+    pouvait donc montrer que l'application mourait sur une erreur Firestore.
+
+    D'où `FailingMedicineRepository`, qui échoue toujours avec la raison
+    demandée. Les sept tests qu'il porte ne rateraient pas une assertion sur
+    la version précédente : ils planteraient.
+
+### T-51 · Blocage hors ligne · 0,5 j
+
+**Problème.** Hors ligne, Firestore ne signale aucune erreur : il sert son
+cache et met les écritures en attente. La panne est donc **invisible** — un
+stock vide faute de cache se lit comme un stock réellement vide.
+
+**Décision métier.** Sans réseau, l'application n'affiche aucune donnée et
+n'autorise aucune action. Deux raisons, tranchées avec le métier :
+
+- Les **transactions** Firestore, dont dépendent les mouvements de stock, ne
+  fonctionnent pas hors ligne. Laisser les boutons actifs promettrait des
+  opérations qui n'auraient pas lieu.
+- Un comptage manuel effectué sur des chiffres périmés est pire que pas de
+  comptage : il produit un écart que personne ne sait ensuite expliquer.
+
+L'entreprise équipe ses opérateurs et fournit la couverture réseau : le
+hors-ligne est un incident, pas un mode de travail.
+
+**Détail.** Un bandeau permanent en haut, un écran d'attente en dessous, et
+les barres de navigation retirées. Le `NavHost` reste composé sous une surface
+opaque : la pile de navigation survit à la coupure, et l'opérateur retrouve son
+écran au retour du réseau.
+
+Le contenu masqué est retiré de l'arbre d'accessibilité — le cacher à l'œil
+ne suffit pas, TalkBack continuait d'annoncer les stocks.
+
+**Deux plantages corrigés au passage**, tous deux liés au cycle de vie des
+écouteurs :
+
+| Moment | Cause |
+|---|---|
+| Avant connexion | Un état d'écran observé en permanence ouvrait les écouteurs dès l'écran de connexion, où les règles refusent la lecture |
+| À la déconnexion | Les états sont partagés en `WhileSubscribed(5 s)` : l'écouteur survit cinq secondes à l'écran, et la session est révoquée pendant cette fenêtre |
+
+La correction est unique — `whileSignedIn` gèle les flux sur l'état de session
+— et traite la cause plutôt que les symptômes écran par écran.
+
+### T-32 · Thème clair, sombre et système · 0,5 j {#t-32}
+
+**Problème.** Le thème XML était figé sur `Material.Light` : le mode sombre ne
+pouvait pas fonctionner, d'où un flash blanc au démarrage et des barres
+système claires au-dessus d'une interface sombre.
+
+**Fait.** Trois états au choix de l'utilisateur, **Système par défaut**,
+persistés dans les préférences et relus au démarrage. Voir le
+[cadrage](#cadrage-t-32) pour la raison du défaut retenu.
+
+**Détail.** `dynamicColor` est **supprimé** : il tirait la palette du fond
+d'écran de l'utilisateur, rendant les contrastes imprévisibles et toute
+conformité WCAG invérifiable. Incompatible avec T-31.
+
+`android:Theme.DeviceDefault.DayNight` aurait été plus direct, mais il n'existe
+qu'à partir de l'API 29 alors que l'application descend à l'API 24 — d'où
+`values/` et `values-night/`.
+
+### T-50 · Suppression de compte · 1 j
+
+**Demande.** Permettre à un opérateur de supprimer son compte.
+
+**Fait.** Depuis l'écran d'accueil, avec ré-authentification par mot de passe.
+
+**Détail.** Firebase refuse `delete()` si la connexion n'est pas récente. Le
+mot de passe lève la contrainte et sert de confirmation : sur un téléphone
+laissé déverrouillé, il évite qu'un tiers supprime le compte de son
+propriétaire.
+
+**L'historique n'est pas touché**, et l'opérateur en est averti *avant* de
+valider. Voir la [question ouverte](#rgpd) sur le sort de cette donnée
+personnelle.
+
+### T-21 · Retrait supérieur au stock · 0,5 j
+
+**Problème.** Le stock était plafonné en silence :
+
+```kotlin
+val stockAfter = (medicine.stock + delta).coerceAtLeast(0)
+```
+
+Dix boîtes en stock, cinquante demandées : le stock tombait à zéro,
+l'historique enregistrait « de 10 à 0 », et **rien ne signalait que quarante
+unités demandées n'existaient pas**. L'opérateur repartait en croyant les avoir
+sorties.
+
+**Fait.** Le mouvement est **refusé**, avec le stock disponible dans le
+message : « Retrait refusé : il ne reste que 10 unité(s) en stock. »
+
+**Détail.** Le contrôle est dans la transaction, pas dans l'écran : c'est le
+seul endroit qui lit le stock réel au moment de l'écriture. Un contrôle sur la
+valeur affichée travaillerait sur un chiffre peut-être périmé, si un autre
+opérateur a servi le même médicament entre-temps.
+
+Le refus est traduit **hors** de la transaction : une exception levée dedans
+serait enveloppée par Firestore et perdrait sa raison.
+
+!!! warning "Un message de confirmation qui mentait"
+
+    L'écran affichait « 50 unité(s) retirée(s) » **juste après avoir appelé**
+    l'opération, sans attendre son résultat. Le message s'affichait donc même
+    quand le retrait était refusé, et le refus n'arrivait qu'ensuite — dans un
+    second message que l'opérateur pouvait ne jamais voir.
+
+    La confirmation vient désormais du ViewModel, une fois le mouvement
+    enregistré. Le champ n'est vidé qu'à ce moment : un retrait refusé conserve
+    la saisie.
+
+**Reste ouvert dans T-21** : les doublons de noms et l'absence de longueur
+maximale. Voir le [reste à faire](#reste-a-faire).
+
+---
+
 ## Reste à faire {#reste-a-faire}
 
 Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches.
@@ -459,22 +725,61 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 
 | | Tâche |
 |---|---|
-| **T-21** | Validation des saisies au-delà du formulaire d'authentification |
+| **T-21** | Reste de la validation : doublons de noms — rien n'empêche deux emplacements « Stockage froid », indiscernables dans la liste déroulante — et absence de longueur maximale |
 | **T-23** | Chargement paresseux des listes |
-| **T-24** | États de chargement et gestion des erreurs réseau — `NetworkRepository` est encore une coquille vide |
+| **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
 
 ### Livrables et finition
 
-| | Tâche                                                                       |
-|---|-----------------------------------------------------------------------------|
-| **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes               |
-| **T-32** | Thème clair/sombre — voir le [cadrage](#cadrage-t-32) ci-dessous            |
-| **T-34** | Externalisation des chaînes — `strings.xml` ne contient qu'une seule entrée |
+| | Tâche |
+|---|---|
+| **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes |
+| **T-53** | Monter le BOM Compose pour réactiver `StateFlowValueCalledInComposition` — voir les [limites connues](#limites-connues) |
+
+### Limites connues {#limites-connues}
+
+Deux comportements assumés, à connaître avant de les rencontrer.
+
+**Le hors-ligne dépend de ce qu'Android déclare.** `ConnectivityManager` répond
+à « le téléphone a-t-il une connexion », pas à « puis-je joindre Firestore ».
+Relevé trois fois sur l'émulateur de développement :
+
+| Moment | Ce qu'Android déclarait | Réalité |
+|---|---|---|
+| Matin | `VALIDATED` | DNS mort, `Network is unreachable` |
+| Mode avion | `none` | hors ligne — blocage correct |
+| Après-midi | actif | réseau revenu |
+
+Un wifi d'hôtel avec portail captif produit le même écart. Le signal fiable
+existe et vient de Firestore lui-même : `snapshot.metadata.isFromCache`, vrai
+quand les données servies viennent du cache. C'est l'objet de **T-52**.
+
+En attendant, le délai d'attente borné des transactions protège le cas
+ambigu : une écriture sans réponse du serveur est signalée comme telle, jamais
+annoncée comme réussie.
+
+**Le thème de l'écran de lancement suit le système, pas le choix manuel.** Le
+thème XML colore la fenêtre avant que Compose ne dessine. Si le téléphone est
+en clair et que l'opérateur force le sombre, l'arrière-plan de lancement reste
+clair une fraction de seconde. Le corriger demanderait `AppCompatDelegate`,
+donc la dépendance AppCompat que le projet n'a pas, ou
+`UiModeManager.setApplicationNightMode`, réservé à l'API 31+.
+
+**Une règle de lint est désactivée.** `StateFlowValueCalledInComposition` ne
+signale rien : son détecteur *plante*. Le lint de Compose fourni par le BOM
+`2024.04.01` embarque une bibliothèque incapable de lire les métadonnées
+Kotlin 2.1. Désactivation ciblée plutôt que `abortOnError = false` — les autres
+règles continuent de bloquer la construction. C'est **T-53**.
 
 ### Cadrage de T-32 — thème clair/sombre {#cadrage-t-32}
 
-L'audit demandait de « maintenir le respect du mode sombre ». Le thème est
-aujourd'hui figé sur `android:Theme.Material.Light` : le mode sombre ne peut pas
+!!! success "Réalisé"
+
+    Ce cadrage a servi de base à [T-32](#t-32). Il est conservé pour la trace
+    du raisonnement.
+
+L'audit demandait de « maintenir le respect du mode sombre ». Le thème était
+alors figé sur `android:Theme.Material.Light` : le mode sombre ne pouvait pas
 fonctionner.
 
 **Le mode ne doit pas être imposé.** On ne connaît pas les besoins visuels des
@@ -513,8 +818,36 @@ mieux dans un mode différent du reste du téléphone.
 
 ### Questions ouvertes pour le Product Owner
 
-Deux points relèvent d'une **règle métier**, pas d'un choix technique. Ils sont
+Trois points relèvent d'une **règle métier**, pas d'un choix technique. Ils sont
 signalés ici plutôt que tranchés unilatéralement.
+
+#### L'adresse e-mail dans l'historique après suppression du compte {#rgpd}
+
+Celui-ci dépasse le Product Owner : il engage la **politique RGPD de
+l'entreprise**.
+
+Chaque entrée d'historique porte l'adresse de son auteur, et les règles de
+sécurité déclarent le journal en ajout seul :
+
+```
+allow update, delete: if false;
+```
+
+Supprimer un compte ne peut donc pas effacer ces traces — et ne le doit pas :
+un journal d'audit dont on peut retirer son propre nom ne vaut rien. Mais
+conserver l'adresse d'une personne partie est une donnée personnelle
+conservée sans limite.
+
+**Trois politiques possibles :**
+
+| Politique | Conséquence |
+|---|---|
+| Conserver l'e-mail tel quel | Traçabilité intacte. État actuel, choisi comme mesure conservatoire : c'est le seul qui ne détruit rien de façon irréversible en attendant l'arbitrage |
+| Anonymiser en gardant un identifiant | « Opérateur #4127 » : on sait que c'est la même personne sur toutes les lignes, sans la nommer. Demande une table de correspondance, qui est elle-même une donnée personnelle |
+| Remplacer par « compte supprimé » | Le plus simple, mais le lien entre les mouvements d'un même opérateur est perdu |
+
+L'opérateur est averti **avant** de valider la suppression que ses mouvements
+resteront signés de son adresse.
 
 #### Supprimer un médicament encore en stock
 

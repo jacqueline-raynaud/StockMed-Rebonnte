@@ -154,9 +154,9 @@ non traitées sont signalées comme telles : voir le
 | Absence de tests | T-25, T-26 | Fait |
 | Intégration continue | T-27 | Fait |
 | Capture Android Profiler | T-29 | Fait |
+| Gestion des erreurs et indicateurs de chargement | T-24, T-51 | Fait |
+| Maintien du mode sombre | T-32 | Fait |
 | Chargement paresseux | T-23 | **À faire** |
-| Gestion des erreurs et indicateurs de chargement | T-24 | **À faire** |
-| Maintien du mode sombre | T-32 | **À faire** |
 
 ### Service qualité
 
@@ -178,7 +178,7 @@ non traitées sont signalées comme telles : voir le
 | Liste détaillée du travail effectué | T-30 | Fait |
 | Ajout de médicament aléatoire | T-15 | Fait |
 | Suppression d'un médicament | T-16 | Fait |
-| Validation des saisies | T-21 | Partiel |
+| Validation des saisies | T-21 | Partiel — le retrait excessif est refusé, les doublons de noms restent possibles |
 | Accessibilité (TalkBack, contrastes) | T-31 | **À faire** |
 | APK sur Firebase App Distribution | T-28 | Fait |
 
@@ -190,6 +190,22 @@ non traitées sont signalées comme telles : voir le
 | Historique consultable seulement médicament par médicament | T-45 | **À faire** |
 | Rayons créés au hasard, sans rapport avec les règles de stockage | T-46 | Fait |
 | Base de données ouverte sans règles de sécurité | T-43 | Fait |
+| Un retrait supérieur au stock était plafonné en silence | T-21 | Fait |
+| Une erreur Firestore fermait l'application | T-24 | Fait |
+| Hors ligne, un stock vide faute de cache se lisait comme un stock réel | T-51 | Fait |
+
+### Demandé par la revue technique externe
+
+| Remarque | Tâches | État |
+|---|---|---|
+| Nommer les modèles `Dto`, protéger de l'obfuscation | T-47 | Fait |
+| Séparer interfaces et implémentations, suffixe `Impl` | T-47 | Fait |
+| Ne pas exposer d'objets Firebase à l'affichage | T-48 | Fait |
+| Un `UiState` par ViewModel | T-49 | Fait |
+| Composables sans état et previews | T-49 | Fait |
+| `key` et `contentType` dans les listes | T-49 | Fait |
+| Suppression du compte utilisateur | T-50 | Fait |
+| Externalisation des chaînes | T-34 | Fait |
 
 !!! note "T-44 ne figurait dans aucune note"
 

@@ -230,6 +230,145 @@ utilisés par différentes personnes ».
 
 ---
 
+## Frontières entre les couches
+
+### Trois familles d'objets, pas une
+
+`MedicineDto` décrit la forme du document Firestore. `MedicineUi` décrit ce que
+l'écran affiche. Le ViewModel convertit l'un en l'autre.
+
+L'alternative — un seul modèle traversant toute l'application — coûte moins
+cher à écrire et se paie plus tard : un changement de schéma de base remonte
+jusqu'à l'affichage, et l'écran finit par porter des champs qui n'ont de sens
+que pour la base.
+
+Le mapping est **dans le ViewModel**, pas dans le dépôt. Un dépôt qui
+fabriquerait des objets d'affichage devrait connaître l'affichage, ce qui
+annulerait la séparation.
+
+Chaque modèle `Ui` justifie son existence en retirant ou en ajoutant quelque
+chose : `UserUi` ne porte pas l'UID Firebase, `HistoryUi` porte une date déjà
+formatée, `MedicineUi` porte le libellé de son emplacement — que le document
+Firestore ne contient pas.
+
+### Les messages sont des identifiants de ressource, pas des chaînes
+
+Un ViewModel n'a pas de `Context`. Lui en injecter un pour résoudre des
+libellés en ferait une classe dépendante d'Android, donc non testable sans
+émulateur — et un `Context` retenu par un objet à longue vie est un classique
+de la fuite mémoire.
+
+L'état porte donc `@StringRes val emailError: Int?`, et l'écran résout. Quand
+un message a besoin d'un argument — « il ne reste que 10 unité(s) » —
+`UiMessage(res, args)` transporte la valeur, l'écran met en forme.
+
+### `@Keep` sur les modèles lus par réflexion
+
+Firestore remplit les objets en comparant **le nom du champ** à la clé du
+document. L'obfuscation renommerait `stockAfter` en `a` : plus aucune
+correspondance, le champ garde sa valeur par défaut, et **aucune erreur n'est
+levée**.
+
+L'annotation ne va que sur les classes concernées — celles passées à
+`toObject()` et l'énumération qu'elles contiennent. `UserDto`, construit à la
+main depuis `FirebaseUser`, n'en a pas besoin : R8 renomme le champ et son
+appel de façon cohérente.
+
+`java.io.Serializable`, parfois cité pour cet usage, ne protège de rien ici :
+c'est un mécanisme de sérialisation Java, que R8 ignore et que Firestore
+n'utilise pas.
+
+---
+
+## Erreurs et disponibilité
+
+### Une erreur métier, pas une exception Firebase
+
+Les dépôts n'exposent que `StockException`, avec cinq raisons. L'écran ne
+connaît donc pas Firestore, et changer de base de données ne demanderait pas de
+réécrire l'affichage des erreurs.
+
+Les raisons sont choisies sur les **réactions possibles** de l'opérateur — il
+n'a pas le droit, il n'a pas de réseau, il doit réessayer, le stock est
+insuffisant, ou il faut appeler quelqu'un — et non sur la taxonomie technique
+du fournisseur.
+
+### Un refus se valide, une réussite s'annonce
+
+Les échecs d'écriture passent par une **fenêtre à valider**, les confirmations
+par un message éphémère.
+
+Un snackbar s'efface tout seul, en bas de l'écran, et rien ne garantit qu'il
+ait été lu. Pour un mouvement de stock refusé, l'opérateur repartirait en
+croyant son retrait enregistré, et l'écart n'apparaîtrait qu'à l'inventaire.
+Une opération réussie, elle, n'a pas besoin d'être acquittée — et interrompre
+cinquante mouvements par jour serait pénible.
+
+### La confirmation vient du résultat, pas du geste
+
+L'écran affichait « 50 unité(s) retirée(s) » juste après avoir appelé
+l'opération, sans attendre. Le message s'affichait donc même quand le mouvement
+était refusé.
+
+La confirmation est maintenant émise par le ViewModel **après** l'écriture. Le
+champ de saisie n'est vidé qu'à ce moment : un retrait refusé conserve la
+saisie.
+
+### Les transactions ne tolèrent pas le silence, les écritures simples si
+
+Deux enveloppes différentes autour des appels Firestore :
+
+| | Comportement sans réponse du serveur |
+|---|---|
+| Écriture simple (création) | Considérée acquise : Firestore l'a appliquée localement et la rejouera |
+| Transaction (mouvement, suppression) | Considérée **échouée** : une transaction relit côté serveur, sans réponse elle n'a pas eu lieu |
+
+Traiter les deux pareil annoncerait un mouvement de stock qui ne s'est pas
+produit — c'est ce que faisait une première version de la correction, et
+c'était pire que le blocage qu'elle remplaçait.
+
+### Le contrôle de stock est dans la transaction
+
+Un retrait supérieur au stock est refusé là où le stock réel est lu, au moment
+de l'écriture. Un contrôle dans l'écran travaillerait sur la valeur affichée,
+peut-être périmée si un autre opérateur a servi le même médicament entre-temps.
+
+Refus plutôt que plafonnement : sur un stock pharmaceutique, l'écart entre ce
+qui a été demandé et ce qui a été fait doit remonter, pas disparaître.
+
+### Hors ligne, l'application se bloque
+
+Firestore sert son cache sans rien signaler. La panne est donc invisible, et un
+stock vide faute de cache se lit comme un stock réellement vide.
+
+Deux raisons de tout bloquer plutôt que de laisser travailler :
+
+- Les transactions ne fonctionnent pas hors ligne. Les boutons actifs
+  promettraient des opérations qui n'auraient pas lieu.
+- Un comptage manuel sur des chiffres périmés produit un écart d'inventaire que
+  personne ne sait ensuite expliquer.
+
+L'entreprise fournit la couverture réseau à ses opérateurs : le hors-ligne est
+un incident, pas un mode de travail.
+
+Le `NavHost` reste composé sous une surface opaque, pour que la pile de
+navigation survive à la coupure — et le contenu masqué est retiré de l'arbre
+d'accessibilité, faute de quoi TalkBack continuerait d'annoncer les stocks
+qu'on a décidé de ne pas montrer.
+
+### Les flux sont gelés sur l'état de session
+
+`whileSignedIn` annule les écouteurs Firestore dès que la session tombe.
+
+Sans cela, deux moments provoquaient un plantage : avant la connexion, et
+surtout **à la déconnexion** — les états sont partagés en
+`WhileSubscribed(5 s)`, donc l'écouteur survit cinq secondes à l'écran qui
+l'observait, et Firebase révoque la session pendant cette fenêtre.
+
+Une correction unique à la source, plutôt qu'un traitement écran par écran.
+
+---
+
 ## Limites acceptées
 
 ### La recherche est un « commence par », pas un « contient »

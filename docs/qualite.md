@@ -153,16 +153,17 @@ lu. Sa valeur était fausse depuis toujours.
 
 ## Tests unitaires
 
-**51 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
+**72 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
 sans émulateur ni réseau.
 
 | Classe testée | Tests |
 |---|---|
 | `AuthViewModel` | 11 |
 | `MedicineFormViewModel` | 8 |
-| `InMemoryMedicineRepository` | 11 |
+| `InMemoryMedicineRepository` | 13 |
 | `MedicineViewModel` | 11 |
-| `MainViewModel` | 5 |
+| `MedicineViewModel` — chemins d'échec | 9 |
+| `MainViewModel` | 15 |
 | `AisleViewModel` | 5 |
 
 ### Ce qu'ils verrouillent
@@ -178,6 +179,23 @@ réellement rencontré**, et échouerait sur le code d'origine.
 | `deleting a medicine keeps its history` | La trace qui disparaissait avec le médicament |
 | `a stock change is signed with the signed in operator` | L'identifiant technique codé en dur |
 | `signing out resets the welcome acknowledgement` | Le garde-fou des téléphones partagés |
+| `a failed stock movement is reported without crashing` | L'exception Firestore qui tuait le processus |
+| `a removal larger than the stock is refused` | Le plafonnement silencieux à zéro |
+| `a refused movement produces no confirmation` | Le message de succès affiché avant l'opération |
+| `losing the network switches the application to offline` | Le stock périmé pris pour un stock réel |
+
+### Un double d'essai qui échoue exprès
+
+Les implémentations en mémoire ne tombent jamais en panne — c'est leur intérêt,
+et c'est aussi pourquoi elles n'ont jamais révélé que l'application mourait sur
+une erreur Firestore.
+
+`FailingMedicineRepository` échoue toujours, avec la raison demandée. Les neuf
+tests qu'il porte ne rateraient pas une assertion sur la version précédente :
+ils **planteraient**.
+
+Même logique pour `FakeNetworkMonitor` : aucun test unitaire ne peut couper le
+wifi, d'où l'interface `NetworkMonitor`.
 
 ### Deux pièges de mise en place
 
