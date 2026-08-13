@@ -5,6 +5,8 @@ import com.openclassrooms.rebonnte.data.model.HistoryDto
 import com.openclassrooms.rebonnte.data.model.MedicineDto
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import com.openclassrooms.rebonnte.data.repository.StockErrorReason
+import com.openclassrooms.rebonnte.data.repository.StockException
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
@@ -57,7 +59,15 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) {
         val medicine = medicines.value.firstOrNull { it.id == id } ?: return
 
-        val stockAfter = (medicine.stock + delta).coerceAtLeast(0)
+        // Meme regle que l'implementation Firestore : un retrait superieur au
+        // stock est refuse, pas rabote. Voir MedicineRepositoryImpl.
+        val stockAfter = medicine.stock + delta
+        if (stockAfter < 0) {
+            throw StockException(
+                reason = StockErrorReason.INSUFFICIENT_STOCK,
+                available = medicine.stock
+            )
+        }
         if (stockAfter == medicine.stock) return
 
         medicines.value = medicines.value.map {

@@ -3,9 +3,13 @@ package com.openclassrooms.rebonnte.data.repository.impl
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import com.openclassrooms.rebonnte.data.repository.StockErrorReason
+import com.openclassrooms.rebonnte.data.repository.StockException
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -37,9 +41,43 @@ class InMemoryMedicineRepositoryTest {
         assertEquals(10, repository.observeMedicine(last.id).first()!!.stock)
     }
 
+    /**
+     * T-21 : le retrait est **refuse**, pas rabote a zero.
+     *
+     * L'ancienne version ramenait le stock a zero en silence : l'operateur qui
+     * demandait cinq unites sur une disponible repartait en croyant en avoir
+     * sorti cinq, et l'historique enregistrait « de 1 a 0 » sans mentionner
+     * l'ecart.
+     */
     @Test
-    fun `updateStock never lets the stock fall below zero`() = runTest {
+    fun `a removal larger than the stock is refused`() = runTest {
         val medicine = repository.addMedicine("Doliprane", stock = 1, aisleId = AISLE, userEmail = USER)
+
+        val failure = assertThrows(StockException::class.java) {
+            runBlocking { repository.updateStock(medicine.id, delta = -5, userEmail = USER) }
+        }
+
+        assertEquals(StockErrorReason.INSUFFICIENT_STOCK, failure.reason)
+        // Le stock disponible accompagne le refus : l'ecran peut le dire.
+        assertEquals(1, failure.available)
+    }
+
+    /** Le stock reste intact, et rien n'est journalise : l'operation n'a pas eu lieu. */
+    @Test
+    fun `a refused removal leaves the stock and the history untouched`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 1, aisleId = AISLE, userEmail = USER)
+
+        runCatching { repository.updateStock(medicine.id, delta = -5, userEmail = USER) }
+
+        assertEquals(1, repository.observeMedicine(medicine.id).first()!!.stock)
+        val history = repository.observeHistory(medicine.id).first()
+        assertTrue(history.none { it.action == HistoryAction.STOCK_CHANGE })
+    }
+
+    /** Le retrait qui vide exactement le stock reste autorise. */
+    @Test
+    fun `a removal down to exactly zero is allowed`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 5, aisleId = AISLE, userEmail = USER)
 
         repository.updateStock(medicine.id, delta = -5, userEmail = USER)
 
@@ -96,7 +134,7 @@ class InMemoryMedicineRepositoryTest {
     fun `a stock change that has no effect is not recorded`() = runTest {
         val medicine = repository.addMedicine("Doliprane", stock = 0, aisleId = AISLE, userEmail = USER)
 
-        repository.updateStock(medicine.id, delta = -1, userEmail = USER)
+        repository.updateStock(medicine.id, delta = 0, userEmail = USER)
 
         val history = repository.observeHistory(medicine.id).first()
         assertTrue(history.none { it.action == HistoryAction.STOCK_CHANGE })

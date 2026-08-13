@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.UiMessage
 import com.openclassrooms.rebonnte.ui.toMessageRes
+import com.openclassrooms.rebonnte.ui.toUiMessage
 import com.openclassrooms.rebonnte.ui.whileSignedIn
 import com.openclassrooms.rebonnte.ui.model.AisleUi
 import com.openclassrooms.rebonnte.ui.model.toUi
@@ -35,8 +37,8 @@ class AisleViewModel @Inject constructor(
     userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _actionError = MutableStateFlow<Int?>(null)
-    val actionError: StateFlow<Int?> = _actionError.asStateFlow()
+    private val _actionError = MutableStateFlow<UiMessage?>(null)
+    val actionError: StateFlow<UiMessage?> = _actionError.asStateFlow()
 
     val uiState: StateFlow<AisleUiState> = repository.observeAisles()
         .map { aisles -> AisleUiState(aisles.map { it.toUi() }, isLoading = false) }
@@ -58,7 +60,7 @@ class AisleViewModel @Inject constructor(
         if (name.isBlank()) return
         viewModelScope.launch {
             runCatching { repository.addAisle(name) }
-                .onFailure { _actionError.value = it.toMessageRes() }
+                .onFailure { _actionError.value = it.toUiMessage() }
         }
     }
 

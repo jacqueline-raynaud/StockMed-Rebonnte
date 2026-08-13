@@ -85,20 +85,23 @@ fun MedicineDetailScreen(
     val context = LocalContext.current
 
     /**
-     * Confirme le mouvement et vide le champ.
+     * La confirmation vient du ViewModel, une fois le mouvement **enregistre**.
      *
      * Sans retour visible, l'operateur doute d'avoir appuye et recommence — un
      * double retrait de cinquante boites passe inapercu jusqu'a l'inventaire.
      *
-     * Vider le champ desactive les deux boutons : le geste doit etre repris
-     * deliberement, il ne peut pas se repeter par inadvertance.
+     * Le champ n'est vide qu'a ce moment-la : un retrait refuse conserve la
+     * saisie, l'operateur n'a pas a la retaper. Et le vider desactive les deux
+     * boutons, pour que le geste doive etre repris deliberement.
      */
-    fun applyMovement(delta: Int, messageRes: Int, amount: Int) {
-        medicineViewModel.updateStock(medicineId, delta)
+    val confirmation by medicineViewModel.movementConfirmed.collectAsState()
+    LaunchedEffect(confirmation) {
+        val message = confirmation ?: return@LaunchedEffect
         quantity = EMPTY_QUANTITY
-        scope.launch {
-            snackbarHostState.showSnackbar(context.getString(messageRes, amount))
-        }
+        medicineViewModel.movementConfirmationShown()
+        snackbarHostState.showSnackbar(
+            context.getString(message.res, *message.args.toTypedArray())
+        )
     }
 
     if (uiState.isLoading) {
@@ -127,8 +130,8 @@ fun MedicineDetailScreen(
         histories = uiState.histories,
         quantity = quantity,
         onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
-        onRemove = { applyMovement(-it, R.string.detail_units_removed, it) },
-        onAdd = { applyMovement(it, R.string.detail_units_added, it) },
+        onRemove = { medicineViewModel.updateStock(medicineId, -it) },
+        onAdd = { medicineViewModel.updateStock(medicineId, it) },
         onDelete = {
             medicineViewModel.deleteMedicine(currentMedicine.id)
             onDeleted()

@@ -77,6 +77,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.openclassrooms.rebonnte.ui.AppState
 import com.openclassrooms.rebonnte.ui.MainViewModel
+import com.openclassrooms.rebonnte.ui.component.ActionErrorDialog
 import com.openclassrooms.rebonnte.ui.component.OfflineBanner
 import com.openclassrooms.rebonnte.ui.component.OfflineContent
 import com.openclassrooms.rebonnte.ui.aisle.AisleDetailScreen
@@ -269,19 +270,18 @@ fun MyApp() {
      */
     val medicineActionError by medicineViewModel.actionError.collectAsState()
     val aisleActionError by aisleViewModel.actionError.collectAsState()
-    val context = LocalContext.current
 
-    LaunchedEffect(medicineActionError) {
-        medicineActionError?.let { message ->
-            snackbarHostState.showSnackbar(context.getString(message))
-            medicineViewModel.actionErrorShown()
-        }
-    }
-    LaunchedEffect(aisleActionError) {
-        aisleActionError?.let { message ->
-            snackbarHostState.showSnackbar(context.getString(message))
-            aisleViewModel.actionErrorShown()
-        }
+    // Une fenetre a valider, et non un snackbar : un message qui s'efface tout
+    // seul en bas de l'ecran ne garantit pas d'avoir ete lu. Un retrait refuse
+    // dont l'operateur n'a rien vu se solde par un ecart d'inventaire.
+    (medicineActionError ?: aisleActionError)?.let { message ->
+        ActionErrorDialog(
+            message = message,
+            onDismiss = {
+                medicineViewModel.actionErrorShown()
+                aisleViewModel.actionErrorShown()
+            }
+        )
     }
 
     // Le mode choisi l'emporte sur celui du telephone ; « Systeme » le suit.

@@ -77,11 +77,10 @@ internal suspend fun firestoreWrite(block: suspend () -> Unit) {
  * mouvement de stock qui ne s'est pas produit — exactement le genre d'ecart
  * que le service qualite ne peut pas rattraper apres coup.
  */
-internal suspend fun firestoreTransaction(block: suspend () -> Unit) {
+internal suspend fun <T : Any> firestoreTransaction(block: suspend () -> T): T =
     try {
         withTimeoutOrNull(ACKNOWLEDGEMENT_TIMEOUT_MS) { block() }
             ?: throw StockException(StockErrorReason.UNAVAILABLE)
     } catch (error: Exception) {
         throw error.toStockException()
     }
-}
