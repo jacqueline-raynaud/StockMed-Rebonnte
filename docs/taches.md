@@ -83,7 +83,7 @@ une **copie** aussitôt jetée. Aucune trace n'était conservée.
 un plantage, le service qualité un historique lacunaire : deux services
 décrivaient le même bug.
 
-### T-06 · Fuite mémoire du BroadcastReceiver · 0,5 j
+### T-06 · Fuite mémoire du BroadcastReceiver · 0,5 j {#t-06}
 
 **Problème.** `startBroadcastReceiver()` enregistrait un receiver puis
 programmait à 200 ms `startMyBroadcast()`, qui rappelait
@@ -735,6 +735,28 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 |---|---|
 | **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes |
 | **T-53** | Monter le BOM Compose pour réactiver `StateFlowValueCalledInComposition` — voir les [limites connues](#limites-connues) |
+| **T-54** | Retirer la diffusion interne, devenue du code mort — voir ci-dessous |
+
+#### T-54 · Le `BroadcastReceiver` n'a plus d'objet {#t-54}
+
+L'application s'envoie un message à elle-même 200 ms après le démarrage, le
+reçoit, et affiche « Mise à jour reçue ». Personne d'autre n'émet cette action,
+personne d'autre ne l'écoute, et le message ne transporte aucune donnée.
+
+C'était le support de la fuite mémoire de [T-06](#t-06) :
+le code livré réenregistrait un receiver toutes les 200 ms sans jamais
+désenregistrer le précédent. La fuite est corrigée, le mécanisme est resté.
+
+**Deux raisons de le retirer** : c'est une vingtaine de lignes de code mort, et
+le Toast s'affiche à chaque lancement alors qu'aucune mise à jour n'a eu lieu —
+un opérateur qui le voit tous les matins finira par se demander ce qui s'est
+mis à jour.
+
+**Pourquoi seulement après la soutenance.** C'est aujourd'hui la seule trace
+*dans le code* du livrable « fuites mémoire » : un lecteur qui ouvre
+`MainActivity` y voit l'enregistrement corrigé et le commentaire qui explique
+le défaut d'origine. Une fois supprimé, la démonstration ne vit plus que dans
+l'historique git, cette page et les captures du Profiler.
 
 ### Limites connues {#limites-connues}
 

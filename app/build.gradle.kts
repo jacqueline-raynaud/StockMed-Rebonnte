@@ -78,7 +78,15 @@ android {
             enableUnitTestCoverage = true
         }
         release {
-            isMinifyEnabled = false
+            // R8 supprime le code inatteignable et renomme le reste. Les
+            // modeles lus par reflexion sont protreges par @Keep : sans elle,
+            // Firestore ne retrouverait plus ses champs et rendrait des objets
+            // vides, **sans lever d'erreur**.
+            isMinifyEnabled = true
+            // Le retrait des ressources inutilisees ne peut s'activer qu'avec
+            // la reduction de code. Aucune ressource n'est resolue par son nom
+            // a l'execution ici, donc rien ne peut etre supprime a tort.
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
