@@ -78,7 +78,7 @@ class MedicineViewModelErrorTest {
 
             viewModel.updateStock("any-id", delta = -5)
 
-            assertEquals(R.string.error_network, viewModel.actionError.value)
+            assertEquals(R.string.error_network, viewModel.actionError.value?.res)
         }
 
     @Test
@@ -88,7 +88,7 @@ class MedicineViewModelErrorTest {
 
             viewModel.deleteMedicine("any-id")
 
-            assertEquals(R.string.error_permission, viewModel.actionError.value)
+            assertEquals(R.string.error_permission, viewModel.actionError.value?.res)
         }
 
     /** Sans cet acquittement, le meme message reviendrait a chaque recomposition. */
@@ -99,7 +99,7 @@ class MedicineViewModelErrorTest {
 
         viewModel.actionErrorShown()
 
-        assertNull(viewModel.actionError.value)
+        assertNull(viewModel.actionError.value?.res)
     }
 
     /** Le chemin nominal ne doit evidemment rien signaler. */
@@ -115,6 +115,72 @@ class MedicineViewModelErrorTest {
         val state = viewModel.uiState.first { !it.isLoading }
 
         assertNull(state.errorMessage)
-        assertNull(viewModel.actionError.value)
+        assertNull(viewModel.actionError.value?.res)
     }
+
+    /**
+     * T-21 : le refus remonte jusqu'a l'ecran, avec la quantite disponible.
+     *
+     * C'est le chiffre qui manquait a l'operateur : sans lui, le message dirait
+     * seulement que le retrait a echoue, sans dire de combien il s'est trompe.
+     */
+    @Test
+    fun `a removal larger than the stock is reported with the remaining quantity`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = InMemoryMedicineRepository()
+            val viewModel = MedicineViewModel(
+                repository,
+                FakeUserRepository(),
+                InMemoryAisleRepository()
+            )
+            val medicine = repository.addMedicine("Doliprane", 10, "aisle-1", "")
+
+            viewModel.updateStock(medicine.id, delta = -50)
+
+            assertEquals(R.string.error_insufficient_stock, viewModel.actionError.value?.res)
+            assertEquals(listOf(10), viewModel.actionError.value?.args)
+            // Le stock n'a pas bouge : l'operation a bien ete refusee.
+            assertEquals(10, repository.observeMedicine(medicine.id).first()!!.stock)
+        }
+
+    /** Un mouvement enregistre produit une confirmation, et une seule. */
+    @Test
+    fun `a successful movement is confirmed with its quantity`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = InMemoryMedicineRepository()
+            val viewModel = MedicineViewModel(
+                repository,
+                FakeUserRepository(),
+                InMemoryAisleRepository()
+            )
+            val medicine = repository.addMedicine("Doliprane", 60, "aisle-1", "")
+
+            viewModel.updateStock(medicine.id, delta = -50)
+
+            assertEquals(R.string.detail_units_removed, viewModel.movementConfirmed.value?.res)
+            assertEquals(listOf(50), viewModel.movementConfirmed.value?.args)
+            assertNull(viewModel.actionError.value)
+        }
+
+    /**
+     * Le point de depart de la correction : un retrait refuse ne doit produire
+     * **aucune** confirmation. L'ecran en affichait une avant meme de savoir si
+     * l'operation avait abouti.
+     */
+    @Test
+    fun `a refused movement produces no confirmation`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = InMemoryMedicineRepository()
+            val viewModel = MedicineViewModel(
+                repository,
+                FakeUserRepository(),
+                InMemoryAisleRepository()
+            )
+            val medicine = repository.addMedicine("Doliprane", 10, "aisle-1", "")
+
+            viewModel.updateStock(medicine.id, delta = -50)
+
+            assertNull(viewModel.movementConfirmed.value)
+            assertEquals(R.string.error_insufficient_stock, viewModel.actionError.value?.res)
+        }
 }

@@ -4,11 +4,14 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.ui.UiMessage
 import com.openclassrooms.rebonnte.ui.toMessageRes
+import com.openclassrooms.rebonnte.ui.toUiMessage
 import com.openclassrooms.rebonnte.ui.whileSignedIn
 import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 /**
  * Ce que l'ecran de la liste affiche, en un seul objet.
@@ -123,8 +127,8 @@ class MedicineViewModel @Inject constructor(
      * liste. Ce flux ne touche pas Firestore : l'observer en permanence n'ouvre
      * aucun ecouteur.
      */
-    private val _actionError = MutableStateFlow<Int?>(null)
-    val actionError: StateFlow<Int?> = _actionError.asStateFlow()
+    private val _actionError = MutableStateFlow<UiMessage?>(null)
+    val actionError: StateFlow<UiMessage?> = _actionError.asStateFlow()
 
     val uiState: StateFlow<MedicineUiState> =
         combine(medicinesLoad, query, sort) { load, query, sort ->
@@ -156,9 +160,25 @@ class MedicineViewModel @Inject constructor(
                 emit(MedicineDetailUiState(isLoading = false, errorMessage = it.toMessageRes()))
             }
 
+    /**
+     * Confirmation d'un mouvement **effectivement enregistre**.
+     *
+     * L'ecran affichait son message de confirmation juste apres avoir appele
+     * [updateStock], sans attendre : l'operation etant asynchrone, « 50 unites
+     * retirees » s'affichait meme quand le retrait etait refuse. Le refus
+     * arrivait ensuite, dans un second message que l'operateur pouvait ne
+     * jamais voir.
+     */
+    private val _movementConfirmed = MutableStateFlow<UiMessage?>(null)
+    val movementConfirmed: StateFlow<UiMessage?> = _movementConfirmed.asStateFlow()
+
     /** Appele une fois le message affiche, pour qu'il ne revienne pas. */
     fun actionErrorShown() {
         _actionError.value = null
+    }
+
+    fun movementConfirmationShown() {
+        _movementConfirmed.value = null
     }
 
     /**
@@ -173,14 +193,24 @@ class MedicineViewModel @Inject constructor(
             // processus : un mouvement de stock hors reseau fermait
             // l'application.
             runCatching { repository.updateStock(medicineId, delta, currentUserEmail()) }
-                .onFailure { _actionError.value = it.toMessageRes() }
+                .onSuccess {
+                    _movementConfirmed.value = UiMessage(
+                        res = if (delta < 0) {
+                            R.string.detail_units_removed
+                        } else {
+                            R.string.detail_units_added
+                        },
+                        args = listOf(abs(delta))
+                    )
+                }
+                .onFailure { _actionError.value = it.toUiMessage() }
         }
     }
 
     fun deleteMedicine(medicineId: String) {
         viewModelScope.launch {
             runCatching { repository.deleteMedicine(medicineId, currentUserEmail()) }
-                .onFailure { _actionError.value = it.toMessageRes() }
+                .onFailure { _actionError.value = it.toUiMessage() }
         }
     }
 

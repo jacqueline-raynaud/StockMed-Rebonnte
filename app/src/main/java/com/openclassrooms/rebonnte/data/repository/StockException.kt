@@ -21,6 +21,14 @@ enum class StockErrorReason {
     /** Service momentanement indisponible, quota atteint, ecriture concurrente. */
     UNAVAILABLE,
 
+    /**
+     * Le retrait demande depasse le stock reel.
+     *
+     * Ce n'est pas une panne : l'operation a ete refusee volontairement. Le
+     * stock disponible accompagne l'erreur, pour que l'ecran puisse le dire.
+     */
+    INSUFFICIENT_STOCK,
+
     /** Tout le reste, y compris un index manquant — un defaut de configuration. */
     UNKNOWN
 }
@@ -28,5 +36,7 @@ enum class StockErrorReason {
 /** L'exception que les depots exposent, quelle que soit leur technologie. */
 class StockException(
     val reason: StockErrorReason,
-    cause: Throwable? = null
+    cause: Throwable? = null,
+    /** Renseigne pour [StockErrorReason.INSUFFICIENT_STOCK] uniquement. */
+    val available: Int? = null
 ) : Exception(cause?.message, cause)

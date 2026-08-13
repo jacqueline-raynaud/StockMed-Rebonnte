@@ -8,6 +8,8 @@ import com.openclassrooms.rebonnte.data.model.HistoryDto
 import com.openclassrooms.rebonnte.data.model.MedicineDto
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import com.openclassrooms.rebonnte.data.repository.StockErrorReason
+import com.openclassrooms.rebonnte.data.repository.StockException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.channels.awaitClose
@@ -145,14 +147,27 @@ class MedicineRepositoryImpl @Inject constructor(
      * transaction en perdrait une ; Firestore relit et reessaie.
      */
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) {
-        firestore.runTransaction { transaction ->
+        val outcome = firestore.runTransaction { transaction ->
             val reference = medicines.document(id)
             // Toutes les lectures avant toutes les ecritures : Firestore l'impose.
             val medicine = transaction.get(reference).toMedicine()
-                ?: return@runTransaction null
+                ?: return@runTransaction StockChange.Applied
 
-            val stockAfter = (medicine.stock + delta).coerceAtLeast(0)
-            if (stockAfter == medicine.stock) return@runTransaction null
+            val stockAfter = medicine.stock + delta
+
+            // Le controle est ici et non dans l'ecran : c'est le seul endroit
+            // qui lit le stock reel au moment de l'ecriture. Un controle sur la
+            // valeur affichee travaillerait sur un chiffre peut-etre perime —
+            // un autre operateur a pu servir le meme medicament entre-temps.
+            //
+            // Refus plutot que plafonnement : l'ancien coerceAtLeast(0) ramenait
+            // le stock a zero et journalisait « de 10 a 0 » sans dire que 40
+            // unites demandees n'existaient pas. L'operateur repartait en
+            // croyant en avoir sorti 50.
+            if (stockAfter < 0) {
+                return@runTransaction StockChange.Insufficient(medicine.stock)
+            }
+            if (stockAfter == medicine.stock) return@runTransaction StockChange.Applied
 
             transaction.update(reference, FIELD_STOCK, stockAfter)
             transaction.set(
@@ -166,14 +181,31 @@ class MedicineRepositoryImpl @Inject constructor(
                     details = "Stock modifie de ${medicine.stock} a $stockAfter"
                 )
             )
-            null
+            StockChange.Applied
         }.let { task -> firestoreTransaction { task.await() } }
+
+        // Le refus est traduit hors de la transaction : une exception levee
+        // dedans serait enveloppee par Firestore et perdrait sa raison.
+        if (outcome is StockChange.Insufficient) {
+            throw StockException(
+                reason = StockErrorReason.INSUFFICIENT_STOCK,
+                available = outcome.available
+            )
+        }
     }
+
+    /** Resultat de la transaction de mouvement de stock. */
+    private sealed interface StockChange {
+        data object Applied : StockChange
+        data class Insufficient(val available: Int) : StockChange
+    }
+
 
     override suspend fun deleteMedicine(id: String, userEmail: String) {
         firestore.runTransaction { transaction ->
             val reference = medicines.document(id)
-            val medicine = transaction.get(reference).toMedicine() ?: return@runTransaction null
+            val medicine = transaction.get(reference).toMedicine()
+                ?: return@runTransaction DELETED
 
             transaction.delete(reference)
             // La trace est ecrite dans la meme transaction que la suppression,
@@ -189,7 +221,7 @@ class MedicineRepositoryImpl @Inject constructor(
                     details = "Medicament supprime"
                 )
             )
-            null
+            DELETED
         }.let { task -> firestoreTransaction { task.await() } }
     }
 
@@ -212,6 +244,15 @@ class MedicineRepositoryImpl @Inject constructor(
     )
 
     private companion object {
+        /**
+         * Valeur de retour de la transaction de suppression.
+         *
+         * Firestore accepte `null`, mais l'enveloppe qui borne l'attente s'en
+         * sert pour signaler un depassement de delai : rendre `null` serait
+         * pris pour un serveur muet.
+         */
+        const val DELETED = true
+
         const val COLLECTION_MEDICINES = "medicines"
         const val COLLECTION_HISTORY = "history"
 
