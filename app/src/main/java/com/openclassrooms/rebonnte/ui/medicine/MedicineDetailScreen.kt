@@ -69,6 +69,7 @@ fun MedicineDetailScreen(
     medicineViewModel: MedicineViewModel,
     snackbarHostState: SnackbarHostState,
     onDeleted: () -> Unit,
+    onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // remember(medicineId) : sans cela, un nouveau Flow serait cree a chaque
@@ -136,6 +137,7 @@ fun MedicineDetailScreen(
             medicineViewModel.deleteMedicine(currentMedicine.id)
             onDeleted()
         },
+        onEdit = onEdit,
         modifier = modifier
     )
 }
@@ -149,6 +151,7 @@ fun MedicineDetailContent(
     onRemove: (Int) -> Unit,
     onAdd: (Int) -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -239,11 +242,16 @@ fun MedicineDetailContent(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        TextButton(onClick = { confirmDelete = true }) {
-            Text(
-                text = stringResource(R.string.detail_delete_medicine),
-                color = MaterialTheme.colorScheme.error
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = onEdit) {
+                Text(stringResource(R.string.detail_edit_medicine))
+            }
+            TextButton(onClick = { confirmDelete = true }) {
+                Text(
+                    text = stringResource(R.string.detail_delete_medicine),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -406,7 +414,8 @@ private fun MedicineDetailContentPreview() {
             onQuantityChange = {},
             onRemove = {},
             onAdd = {},
-            onDelete = {}
+            onDelete = {},
+            onEdit = {}
         )
     }
 }
@@ -423,7 +432,8 @@ private fun MedicineDetailContentWithQuantityPreview() {
             onQuantityChange = {},
             onRemove = {},
             onAdd = {},
-            onDelete = {}
+            onDelete = {},
+            onEdit = {}
         )
     }
 }

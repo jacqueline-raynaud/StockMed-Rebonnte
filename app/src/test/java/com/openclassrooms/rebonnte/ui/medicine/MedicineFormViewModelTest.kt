@@ -1,7 +1,9 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
+import androidx.lifecycle.SavedStateHandle
 import com.openclassrooms.rebonnte.data.model.StorageLocations
+import com.openclassrooms.rebonnte.ui.navigation.Destinations
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
@@ -36,7 +38,9 @@ class MedicineFormViewModelTest {
         viewModel = MedicineFormViewModel(
             medicineRepository = medicineRepository,
             userRepository = FakeUserRepository(),
-            aisleRepository = InMemoryAisleRepository()
+            aisleRepository = InMemoryAisleRepository(),
+            // Pas d'identifiant dans la route : mode creation.
+            savedStateHandle = SavedStateHandle()
         )
     }
 
@@ -135,4 +139,45 @@ class MedicineFormViewModelTest {
                 viewModel.aisles.first().map { it.name }
             )
         }
+
+    // --- Mode correction ------------------------------------------------------
+
+    /**
+     * En correction, le formulaire arrive prerempli : l'operateur corrige une
+     * lettre, il ne ressaisit pas la fiche.
+     */
+    @Test
+    fun `editing preloads the existing medicine`() = runTest(mainDispatcherRule.dispatcher) {
+        val existing = medicineRepository.addMedicine("Dolipran", 12, standard.id, "")
+        val editing = editingViewModel(existing.id)
+
+        assertTrue(editing.uiState.value.isEditing)
+        assertEquals("Dolipran", editing.uiState.value.name)
+        assertEquals(standard.id, editing.uiState.value.aisleId)
+    }
+
+    /** La correction met a jour la fiche au lieu d'en creer une seconde. */
+    @Test
+    fun `editing updates the medicine instead of creating another`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val existing = medicineRepository.addMedicine("Dolipran", 12, standard.id, "")
+            val editing = editingViewModel(existing.id)
+
+            editing.onNameChange("Doliprane")
+            editing.submit()
+
+            val medicines = medicineRepository.observeMedicines().first()
+            assertEquals(1, medicines.size)
+            assertEquals("Doliprane", medicines.single().name)
+            // Le stock n'a pas ete touche par la correction.
+            assertEquals(12, medicines.single().stock)
+        }
+
+    private fun editingViewModel(medicineId: String) = MedicineFormViewModel(
+        medicineRepository = medicineRepository,
+        userRepository = FakeUserRepository(),
+        aisleRepository = InMemoryAisleRepository(),
+        // Ce que la route « medicine/{id}/edit » fournit au ViewModel.
+        savedStateHandle = SavedStateHandle(mapOf(Destinations.MEDICINE_ID_ARG to medicineId))
+    )
 }

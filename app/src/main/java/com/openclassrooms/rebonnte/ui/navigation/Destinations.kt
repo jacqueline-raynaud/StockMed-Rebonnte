@@ -27,9 +27,17 @@ object Destinations {
     const val MEDICINE_ID_ARG = "medicineId"
     const val MEDICINE_DETAIL = "medicine/{$MEDICINE_ID_ARG}"
 
+    /**
+     * Correction d'une fiche existante. Le segment final la distingue du
+     * detail : « medicine/abc » et « medicine/abc/edit » ne se confondent pas.
+     */
+    const val MEDICINE_EDIT = "medicine/{$MEDICINE_ID_ARG}/edit"
+
     fun aisleDetail(aisleId: String) = "aisle/$aisleId"
 
     fun medicineDetail(medicineId: String) = "medicine/$medicineId"
+
+    fun medicineEdit(medicineId: String) = "medicine/$medicineId/edit"
 
     /** Les detail masquent la barre de navigation et le bouton d'ajout. */
     fun isDetail(route: String?) = route == AISLE_DETAIL || route == MEDICINE_DETAIL
@@ -40,6 +48,6 @@ object Destinations {
      */
     fun isOutsideApp(route: String?) = route == AUTH || route == WELCOME
 
-    /** Le formulaire masque aussi les barres : on y entre pour une seule tache. */
-    fun isForm(route: String?) = route == MEDICINE_NEW
+    /** Les formulaires masquent aussi les barres : on y entre pour une seule tache. */
+    fun isForm(route: String?) = route == MEDICINE_NEW || route == MEDICINE_EDIT
 }

@@ -56,6 +56,35 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
         return medicine
     }
 
+    override suspend fun updateMedicine(
+        id: String,
+        name: String,
+        aisleId: String,
+        aisleName: String,
+        userEmail: String
+    ) {
+        val medicine = medicines.value.firstOrNull { it.id == id } ?: return
+
+        val newName = name.trim()
+        if (newName.isEmpty()) return
+
+        val changes = describeChanges(medicine, newName, aisleId, aisleName)
+        if (changes == null) return
+
+        medicines.value = medicines.value.map {
+            if (it.id == id) it.copy(name = newName, aisleId = aisleId) else it
+        }
+        // Le stock ne bouge pas : avant et apres portent la meme valeur.
+        record(
+            medicine.copy(name = newName),
+            HistoryAction.UPDATE,
+            medicine.stock,
+            medicine.stock,
+            userEmail,
+            changes
+        )
+    }
+
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) {
         val medicine = medicines.value.firstOrNull { it.id == id } ?: return
 

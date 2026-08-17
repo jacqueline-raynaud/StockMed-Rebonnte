@@ -131,4 +131,7 @@
     <string name="error_insufficient_stock">Removal refused: only %1$d unit(s) left in stock.</string>
     <string name="action_failed_title">Operation refused</string>
     <string name="action_ok">OK</string>
+    <string name="aisle_error_duplicate">This storage location already exists.</string>
+    <string name="form_save">Save changes</string>
+    <string name="detail_edit_medicine">Edit</string>
 </resources>

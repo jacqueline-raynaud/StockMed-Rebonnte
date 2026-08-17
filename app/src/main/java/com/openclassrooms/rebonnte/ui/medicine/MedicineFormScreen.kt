@@ -123,19 +123,24 @@ fun MedicineFormContent(
         }
         Spacer(Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = state.stock,
-            onValueChange = onStockChange,
-            label = { Text(stringResource(R.string.form_initial_quantity)) },
-            singleLine = true,
-            isError = state.stockError != null,
-            supportingText = { state.stockError?.let { Text(stringResource(it)) } },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
+        // La quantite n'apparait qu'a la creation. Corriger un stock ici
+        // contournerait la tracabilite : il ne bouge que par un mouvement, qui
+        // laisse une entree d'historique.
+        if (!state.isEditing) {
+            OutlinedTextField(
+                value = state.stock,
+                onValueChange = onStockChange,
+                label = { Text(stringResource(R.string.form_initial_quantity)) },
+                singleLine = true,
+                isError = state.stockError != null,
+                supportingText = { state.stockError?.let { Text(stringResource(it)) } },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Spacer(Modifier.height(24.dp))
         Button(
@@ -143,7 +148,11 @@ fun MedicineFormContent(
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.form_submit))
+            Text(
+                stringResource(
+                    if (state.isEditing) R.string.form_save else R.string.form_submit
+                )
+            )
         }
 
         // L'echec d'enregistrement s'affiche sous le bouton, la ou l'operateur
