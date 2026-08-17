@@ -15,17 +15,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
-/**
- * Creation d'un emplacement de stockage.
- *
- * Remplace l'ancien bouton qui fabriquait « Aisle 2 », « Aisle 3 » : un
- * emplacement porte un nom choisi, pas un numero.
- *
- * La fenetre **ne se ferme pas d'elle-meme** : un nom refuse doit rester
- * affiche avec son erreur, sinon l'operateur perd sa saisie et ne sait pas
- * pourquoi rien ne s'est passe. C'est l'appelant qui la ferme, une fois la
- * creation aboutie.
- */
 @Composable
 fun AddAisleDialog(
     onDismiss: () -> Unit,
@@ -43,9 +32,6 @@ fun AddAisleDialog(
                 value = name,
                 onValueChange = {
                     name = it
-                    // L'erreur ne survit pas a la correction : la garder
-                    // affichee pendant que l'operateur retape serait un
-                    // reproche permanent.
                     onNameChange()
                 },
                 label = { Text(stringResource(R.string.aisle_dialog_name)) },
@@ -57,10 +43,6 @@ fun AddAisleDialog(
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(name) },
-                // Un nom fait d'espaces ne passe deja pas ce garde : isNotBlank
-                // est faux pour une suite d'espaces. La regle est verifiee une
-                // seconde fois dans le ViewModel, ou elle ne depend pas de
-                // l'affichage.
                 enabled = name.isNotBlank()
             ) {
                 Text(stringResource(R.string.action_create))
@@ -80,7 +62,6 @@ private fun AddAisleDialogPreview() {
     }
 }
 
-/** Le cas qui compte : un nom deja pris, refuse sous le champ. */
 @Preview
 @Composable
 private fun AddAisleDialogDuplicatePreview() {

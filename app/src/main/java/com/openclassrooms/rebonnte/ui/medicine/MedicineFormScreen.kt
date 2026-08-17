@@ -89,8 +89,6 @@ fun MedicineFormContent(
         )
         Spacer(Modifier.height(8.dp))
 
-        // Liste deroulante alimentee par les emplacements existants : on ne
-        // saisit pas un rayon librement, on en choisit un.
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it }
@@ -123,9 +121,7 @@ fun MedicineFormContent(
         }
         Spacer(Modifier.height(8.dp))
 
-        // La quantite n'apparait qu'a la creation. Corriger un stock ici
-        // contournerait la tracabilite : il ne bouge que par un mouvement, qui
-        // laisse une entree d'historique.
+
         if (!state.isEditing) {
             OutlinedTextField(
                 value = state.stock,
@@ -155,8 +151,6 @@ fun MedicineFormContent(
             )
         }
 
-        // L'echec d'enregistrement s'affiche sous le bouton, la ou l'operateur
-        // vient de regarder. Un snackbar disparaitrait pendant qu'il retape.
         state.submitError?.let { error ->
             Spacer(Modifier.height(12.dp))
             Text(
@@ -198,10 +192,7 @@ private fun MedicineFormContentPreview() {
     }
 }
 
-/**
- * Base vide : le formulaire doit expliquer pourquoi il ne sert a rien plutot
- * que d'afficher une liste deroulante sans options.
- */
+
 @Preview(showBackground = true)
 @Composable
 private fun MedicineFormContentNoAislePreview() {

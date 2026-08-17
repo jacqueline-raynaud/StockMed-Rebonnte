@@ -15,11 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * Implementation en memoire, utilisee tant que Firestore n'est pas branche et
- * comme double dans les tests unitaires.
- *
- * Elle definit le comportement attendu du contrat : c'est cette implementation
- * qui sert de reference quand l'implementation Firestore arrivera.
+ * In-memory implementation as a double in unit and instrumented tests.
  */
 class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
 
@@ -88,8 +84,6 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) {
         val medicine = medicines.value.firstOrNull { it.id == id } ?: return
 
-        // Meme regle que l'implementation Firestore : un retrait superieur au
-        // stock est refuse, pas rabote. Voir MedicineRepositoryImpl.
         val stockAfter = medicine.stock + delta
         if (stockAfter < 0) {
             throw StockException(

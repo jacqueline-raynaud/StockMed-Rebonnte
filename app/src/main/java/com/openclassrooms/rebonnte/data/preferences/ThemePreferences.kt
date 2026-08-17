@@ -11,16 +11,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Les trois etats du reglage de theme.
- *
- * [SYSTEM] est le defaut : une personne ayant des besoins visuels particuliers
- * a le plus souvent deja regle son telephone en consequence, et ce reglage est
- * lui-meme un choix d'accessibilite. Demarrer sur « Sombre » l'ecraserait.
- *
- * Le reglage manuel existe parce qu'on ne peut pas imposer un mode sans
- * connaitre les besoins de l'operateur : le sombre n'est pas universellement
- * plus lisible — les personnes astigmates lisent souvent moins bien du clair
- * sur fond sombre, a cause du halo autour des caracteres.
+ * Manually setting the theme is an accessibility choice.
+ * We can't force a dark theme on a user who would struggle to read light text on a dark background,
+ * nor can you assume the user knows the specific steps required to change the theme on their device.
  */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -30,13 +23,8 @@ interface ThemeRepository {
 }
 
 /**
- * Persiste le choix dans les preferences partagees.
- *
- * Sans persistance, le reglage serait perdu a chaque lancement — un utilisateur
- * qui a besoin du mode clair devrait le redemander tous les matins.
- *
- * `callbackFlow` sur l'ecouteur de changement plutot qu'une simple lecture :
- * le theme doit s'appliquer au moment du choix, sans redemarrage.
+ * The last choice is persisted in the shared preferences.
+ * If users use the same phones, they will not have to select the theme again.
  */
 @Singleton
 class SharedPreferencesThemeRepository @Inject constructor(
@@ -60,8 +48,7 @@ class SharedPreferencesThemeRepository @Inject constructor(
     }
 
     /**
-     * Une valeur inconnue — reglage ecrit par une version anterieure, ou fichier
-     * abime — retombe sur le defaut plutot que de faire planter le demarrage.
+     * Upon startup, if nothing has been configured, the theme used is the device's theme.
      */
     private fun read(): ThemeMode {
         val stored = preferences.getString(KEY_THEME_MODE, null) ?: return ThemeMode.SYSTEM

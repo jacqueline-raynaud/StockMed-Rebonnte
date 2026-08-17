@@ -100,6 +100,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
+/**
+ * Warning : BroadcastReceiver
+ * As it stands, the broadcast receiver is dead code;
+ * the application does not receive any external information.
+ * Check if the repositories are sending anything; otherwise, delete the code.
+ */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -119,20 +126,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /**
-     * Un enregistrement unique pour toute la duree de vie de l'Activity, avec
-     * un desenregistrement symetrique dans onDestroy.
-     *
-     * L'ancien code enregistrait un nouveau receiver toutes les 200 ms sans
-     * jamais desenregistrer le precedent : startBroadcastReceiver programmait
-     * startMyBroadcast, qui rappelait startBroadcastReceiver. Le nombre de
-     * receivers vivants croissait indefiniment, chacun retenant l'Activity, et
-     * le thread principal etait reveille cinq fois par seconde pour afficher un
-     * Toast.
-     *
-     * ContextCompat.registerReceiver applique le flag d'export sur toutes les
-     * versions, la ou l'ancienne branche pre-Tiramisu l'omettait.
-     */
     private fun registerUpdateReceiver() {
         ContextCompat.registerReceiver(
             this,
@@ -142,11 +135,6 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    /**
-     * lifecycleScope est annule avec l'Activity : la closure ne peut plus lui
-     * survivre. Le Handler() precedent laissait au contraire son message en
-     * file avec une reference vers une Activity potentiellement detruite.
-     */
     private fun scheduleUpdateBroadcast() {
         lifecycleScope.launch {
             delay(BROADCAST_DELAY_MS)
@@ -159,8 +147,6 @@ class MainActivity : ComponentActivity() {
 
     class MyBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            // Le contexte fourni par le systeme, et non une reference statique
-            // vers l'Activity.
             val target = context ?: return
             Toast.makeText(target, R.string.broadcast_update_received, Toast.LENGTH_SHORT).show()
         }
@@ -176,10 +162,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
-    // Fournis par Hilt et portes par le ViewModelStore de l'Activity, donc
-    // partages par toutes les destinations du graphe. C'est ce qui remplace la
-    // reference statique vers MainActivity dont les anciennes Activity de
-    // detail avaient besoin.
+
     val mainViewModel: MainViewModel = hiltViewModel()
     val medicineViewModel: MedicineViewModel = hiltViewModel()
     val aisleViewModel: AisleViewModel = hiltViewModel()
@@ -194,37 +177,22 @@ fun MyApp() {
     val isOutsideApp = Destinations.isOutsideApp(route)
     val isMedicineList = route == Destinations.MEDICINE_LIST
     val isForm = Destinations.isForm(route)
-    // Hors ligne, la barre d'onglets et le bouton d'ajout disparaissent aussi :
-    // rien ne doit rester actionnable au-dessus de l'ecran de blocage.
+
     val isOffline = mainUiState.appState == AppState.OFFLINE
     val hidesAppBars = isDetail || isOutsideApp || isForm || isOffline
 
     var showAddAisleDialog by remember { mutableStateOf(false) }
-    // Partage par toutes les destinations : il servira aussi aux messages
-    // d'erreur reseau (T-24).
+
+    // for all destination for error message
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Seul l'etat « la barre est-elle ouverte » reste ici : c'est de la mise en
-    // forme. Le texte cherche, lui, appartient au ViewModel — il pilote la
-    // requete envoyee a Firestore.
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
 
-    // Calcule une seule fois : la valeur initiale de currentUser est lue de
-    // maniere synchrone, donc pas de passage eclair par l'ecran de connexion
-    // quand une session est deja ouverte.
     val startDestination = remember {
         if (mainViewModel.uiState.value.user == null) Destinations.AUTH else Destinations.WELCOME
     }
 
-    /**
-     * L'acces au stock est conditionne a une session ouverte *et* validee.
-     * La pile est videe a chaque bascule : apres une deconnexion, le bouton
-     * retour ne doit pas ramener sur les ecrans de stock.
-     */
     LaunchedEffect(currentUser, welcomeAcknowledged, route) {
-        // Tant que le NavHost n'a pas publie sa destination, route est null et
-        // le graphe demarre deja sur la bonne. Naviguer ici relancerait l'effet
-        // en boucle : l'interface se fige sans planter.
         if (route == null) return@LaunchedEffect
 
         val target = when {
@@ -237,9 +205,6 @@ fun MyApp() {
         }
         if (target != null && route != target) {
             navController.navigate(target) {
-                // Vider la pile en remontant jusqu'a la destination de depart
-                // incluse, plutot que popUpTo(0) qui detruit aussi l'entree de
-                // graphe et laisse le NavController dans un etat instable.
                 popUpTo(navController.graph.findStartDestination().id) {
                     inclusive = true
                 }
@@ -248,32 +213,15 @@ fun MyApp() {
         }
     }
 
-    /**
-     * Apres une navigation qui vide la pile, il ne reste qu'une seule entree.
-     * Le retour systeme la depilerait a son tour et le NavHost n'aurait plus
-     * rien a afficher : ecran noir, application vivante mais vide.
-     *
-     * Quand il n'y a rien en dessous, le retour doit donc fermer l'application.
-     * Sur un ecran de detail, previousBackStackEntry existe, ce gestionnaire est
-     * desactive et le retour reprend son comportement normal.
-     */
     val activity = LocalContext.current as? Activity
     BackHandler(enabled = navController.previousBackStackEntry == null) {
         activity?.finish()
     }
 
-    /**
-     * Les echecs d'ecriture s'affichent ou que l'on soit.
-     *
-     * Ces deux flux ne touchent pas Firestore : les observer en permanence
-     * n'ouvre aucun ecouteur, contrairement aux etats d'ecran.
-     */
+
     val medicineActionError by medicineViewModel.actionError.collectAsState()
     val aisleActionError by aisleViewModel.actionError.collectAsState()
 
-    // Une fenetre a valider, et non un snackbar : un message qui s'efface tout
-    // seul en bas de l'ecran ne garantit pas d'avoir ete lu. Un retrait refuse
-    // dont l'operateur n'a rien vu se solde par un ecart d'inventaire.
     (medicineActionError ?: aisleActionError)?.let { message ->
         ActionErrorDialog(
             message = message,
@@ -284,7 +232,6 @@ fun MyApp() {
         )
     }
 
-    // Le mode choisi l'emporte sur celui du telephone ; « Systeme » le suit.
     val darkTheme = when (mainUiState.themeMode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false
@@ -296,8 +243,6 @@ fun MyApp() {
             val newAisleError by aisleViewModel.newAisleError.collectAsState()
             val aisleCreated by aisleViewModel.aisleCreated.collectAsState()
 
-            // La fenetre se ferme sur le succes, pas sur le clic : un nom
-            // refuse doit rester a l'ecran avec son erreur.
             LaunchedEffect(aisleCreated) {
                 if (aisleCreated) {
                     showAddAisleDialog = false
@@ -319,9 +264,6 @@ fun MyApp() {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
-                // Le bandeau hors ligne s'affiche aussi sur les ecrans sans
-                // barre superieure : la connexion et le formulaire de creation
-                // en dependent autant que les listes.
                 Column {
                     if (isOffline) {
                         OfflineBanner()
@@ -343,12 +285,11 @@ fun MyApp() {
                             }
                         },
                         actions = {
-                            // La collecte est faite ici, et non en tete de
-                            // MyApp : `uiState` est partage en WhileSubscribed,
-                            // donc l'observer ouvre les ecouteurs Firestore.
-                            // Le faire en permanence les ouvrait des l'ecran de
-                            // connexion, ou les regles de securite refusent
-                            // toute lecture.
+                            // Collection happens here, rather than at the top level of
+                            // MyApp: `uiState` is shared using `WhileSubscribed`,
+                            // so observing it opens the Firestore listeners.
+                            // Doing it at the top level opened them as early as the
+                            // login screen, where security rules deny all read operations.
                             if (isMedicineList) {
                                 val sort by medicineViewModel.uiState
                                     .collectAsState()
@@ -361,9 +302,7 @@ fun MyApp() {
                                 currentMode = mainUiState.themeMode,
                                 onModeSelected = mainViewModel::setThemeMode
                             )
-                            // Deconnexion accessible en permanence : sur un
-                            // telephone partage, l'operateur suivant doit
-                            // pouvoir reprendre la main sans chercher.
+
                             if (!isDetail) {
                                 IconButton(onClick = mainViewModel::signOut) {
                                     Icon(
@@ -430,9 +369,6 @@ fun MyApp() {
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(
-                // Une surface opaque cache l'ecran a l'oeil, pas a TalkBack :
-                // sans cela le lecteur d'ecran continuerait d'annoncer des
-                // stocks que l'on a justement decide de ne pas montrer.
                 modifier = if (isOffline) {
                     Modifier.clearAndSetSemantics { }
                 } else {
@@ -445,8 +381,6 @@ fun MyApp() {
                     AuthScreen(viewModel = hiltViewModel<AuthViewModel>())
                 }
                 composable(Destinations.WELCOME) {
-                    // currentUser ne peut pas etre null ici : l'effet de
-                    // navigation renvoie sur AUTH des qu'il l'est.
                     currentUser?.let { user ->
                         WelcomeScreen(
                             user = user,
@@ -499,9 +433,7 @@ fun MyApp() {
                         }
                     )
                 }
-                // Le formulaire de correction partage sa composable avec celui
-                // de creation : l'identifiant present dans la route suffit a
-                // distinguer les deux modes.
+
                 composable(Destinations.MEDICINE_EDIT) {
                     MedicineFormScreen(
                         viewModel = hiltViewModel<MedicineFormViewModel>(),
@@ -511,12 +443,7 @@ fun MyApp() {
             }
 
             if (isOffline) {
-                // Surface opaque par-dessus la navigation : aucune donnee n'est
-                // lisible et aucun appui n'atteint l'ecran en dessous.
-                //
-                // Le NavHost reste compose plutot que retire : la pile de
-                // navigation survit a la coupure, et l'operateur retrouve son
-                // ecran au retour du reseau au lieu de repartir de l'accueil.
+
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -531,13 +458,7 @@ fun MyApp() {
     }
 }
 
-/**
- * Bascule d'onglet.
- *
- * Sans popUpTo ni launchSingleTop, chaque appui empilait une destination de
- * plus : au bout de dix allers-retours, il fallait dix retours arriere pour
- * quitter l'application.
- */
+
 private fun NavHostController.switchTab(route: String) {
     navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
@@ -552,13 +473,7 @@ private fun titleFor(route: String?): Int = when (route) {
     else -> R.string.title_medicines
 }
 
-/**
- * Choix du theme, accessible depuis tous les ecrans de l'application.
- *
- * Trois etats et non deux : « Systeme » suit le telephone, mais on ne peut pas
- * imposer un mode sans connaitre les besoins visuels de l'operateur. Le sombre
- * n'est pas universellement plus lisible.
- */
+
 @Composable
 private fun ThemeMenu(
     currentMode: ThemeMode,
@@ -608,8 +523,7 @@ private fun SortMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    // Libelles explicites plutot que « Sort by Name » : avec deux sens de tri,
-    // il faut dire lequel.
+
     val options = listOf(
         MedicineSort.NONE to R.string.sort_none,
         MedicineSort.NAME_ASC to R.string.sort_name_asc,
@@ -644,8 +558,6 @@ private fun SortMenu(
                             expanded = false
                         },
                         text = { Text(stringResource(labelRes)) },
-                        // Le critere actif est coche : sans cela, on ne sait pas
-                        // ce qui s'applique.
                         trailingIcon = {
                             if (criterion == currentSort) {
                                 Icon(
@@ -669,8 +581,7 @@ fun EmbeddedSearchBar(
     onActiveChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // L'ancienne version gardait en plus un rememberSaveable interne : deux
-    // sources de verite pour la meme saisie, qui pouvaient diverger.
+
     val activeChanged: (Boolean) -> Unit = { active ->
         onQueryChange("")
         onActiveChanged(active)

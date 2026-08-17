@@ -153,18 +153,18 @@ lu. Sa valeur était fausse depuis toujours.
 
 ## Tests unitaires
 
-**72 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
+**84 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
 sans émulateur ni réseau.
 
 | Classe testée | Tests |
 |---|---|
+| `InMemoryMedicineRepository` | 19 |
+| `MainViewModel` | 14 |
 | `AuthViewModel` | 11 |
-| `MedicineFormViewModel` | 8 |
-| `InMemoryMedicineRepository` | 13 |
-| `MedicineViewModel` | 11 |
-| `MedicineViewModel` — chemins d'échec | 9 |
-| `MainViewModel` | 15 |
-| `AisleViewModel` | 5 |
+| `AisleViewModel` | 10 |
+| `MedicineFormViewModel` | 10 |
+| `MedicineViewModel` | 10 |
+| `MedicineViewModel` — chemins d'échec | 10 |
 
 ### Ce qu'ils verrouillent
 

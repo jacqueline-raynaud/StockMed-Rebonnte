@@ -33,14 +33,8 @@ object FirebaseModule {
 }
 
 /**
- * Les implementations sont liees a leurs interfaces ici, et nulle part ailleurs.
- *
- * Le passage des implementations InMemory* aux implementations Firestore n'a
- * demande que la modification de ces trois lignes : ni les ViewModel, ni les
- * ecrans, ni les tests unitaires n'ont bouge. C'est ce que les interfaces
- * achetent.
- *
- * Les InMemory* restent en place et servent de doubles dans les tests.
+ * interface-implementation link
+ * The InMemory* classes serve as doubles in tests.
  */
 @Module
 @InstallIn(SingletonComponent::class)

@@ -3,16 +3,8 @@ package com.openclassrooms.rebonnte.data.model
 import androidx.annotation.Keep
 
 /**
- * Une entree d'historique : qui a fait quoi, quand, et avec quel effet.
  *
- * Le service qualite doit pouvoir reconstituer l'evolution d'un stock sans
- * interpretation. D'ou [stockBefore] / [stockAfter] plutot qu'un simple
- * libelle, et [userEmail] plutot qu'un identifiant technique illisible.
- *
- * [date] est un horodatage epoch en millisecondes, et non une chaine : une
- * chaine ne se trie pas et depend de la locale de celui qui l'a ecrite.
- *
- * Voir [MedicineDto] pour la raison d'etre de [Keep].
+ * History entry enabling the reconstruction of the detailed history.
  */
 @Keep
 data class HistoryDto(

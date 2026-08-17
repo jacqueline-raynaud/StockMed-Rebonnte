@@ -191,6 +191,8 @@ non traitées sont signalées comme telles : voir le
 | Rayons créés au hasard, sans rapport avec les règles de stockage | T-46 | Fait |
 | Base de données ouverte sans règles de sécurité | T-43 | Fait |
 | Un retrait supérieur au stock était plafonné en silence | T-21 | Fait |
+| Impossible de corriger une faute dans un nom, ou de déplacer un médicament | T-55 | Fait |
+| Rien n'empêchait deux emplacements portant le même nom | T-56 | Fait |
 | Une erreur Firestore fermait l'application | T-24 | Fait |
 | Hors ligne, un stock vide faute de cache se lisait comme un stock réel | T-51 | Fait |
 

@@ -53,32 +53,13 @@ class AisleViewModel @Inject constructor(
             initialValue = AisleUiState()
         )
 
-    /**
-     * Erreur de saisie de la fenetre de creation, exposee a part de
-     * [actionError] : elle s'affiche **sous le champ**, et non dans une fenetre
-     * par-dessus une autre fenetre.
-     */
     private val _newAisleError = MutableStateFlow<Int?>(null)
     val newAisleError: StateFlow<Int?> = _newAisleError.asStateFlow()
 
-    /** Passe a vrai quand la creation a abouti : la fenetre peut se fermer. */
     private val _aisleCreated = MutableStateFlow(false)
     val aisleCreated: StateFlow<Boolean> = _aisleCreated.asStateFlow()
 
-    /**
-     * Remplace l'ancien addRandomAisle, qui fabriquait des « Aisle 2 »,
-     * « Aisle 3 » sans signification. Un emplacement de stockage porte un nom
-     * choisi par l'operateur.
-     *
-     * Deux refus possibles :
-     *
-     * - **un nom vide ou fait d'espaces** — le bouton est deja desactive dans ce
-     *   cas, mais la regle est verifiee ici aussi : elle ne doit pas dependre
-     *   d'un detail d'affichage ;
-     * - **un nom deja pris**, a la casse et aux espaces pres. Deux « Stockage
-     *   froid » seraient indiscernables dans la liste deroulante du formulaire
-     *   de medicament, et l'operateur ne saurait pas lequel il choisit.
-     */
+    //Two possible reasons for rejection: empty or whitespace, duplicates.
     fun addAisle(name: String) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) {
@@ -87,9 +68,7 @@ class AisleViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Lu a la source plutot que dans l'etat de l'ecran : celui-ci est
-            // partage en WhileSubscribed et pourrait etre vide si la liste
-            // n'etait pas observee.
+
             val existing = runCatching { repository.observeAisles().first() }
                 .getOrDefault(emptyList())
 
@@ -107,7 +86,7 @@ class AisleViewModel @Inject constructor(
         }
     }
 
-    /** Appele a chaque frappe : l'erreur ne doit pas survivre a la correction. */
+    // errors cleanup
     fun clearNewAisleError() {
         _newAisleError.value = null
     }

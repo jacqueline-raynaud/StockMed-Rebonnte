@@ -15,14 +15,6 @@ import javax.inject.Inject
 
 enum class AuthMode { SIGN_IN, SIGN_UP }
 
-/**
- * Les erreurs sont portees par un identifiant de ressource, pas par un texte.
- *
- * Le ViewModel n'a alors besoin d'aucun Context pour produire un message
- * localise — c'est l'ecran qui resout le libelle, dans la langue du telephone.
- * Un ViewModel qui detiendrait un Context serait aussi une fuite memoire en
- * puissance et rendrait les tests unitaires dependants d'Android.
- */
 data class AuthUiState(
     val mode: AuthMode = AuthMode.SIGN_IN,
     val email: String = "",
@@ -60,8 +52,8 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
-     * La validation se fait avant tout appel reseau : inutile de solliciter
-     * Firebase pour un champ vide.
+     * Validation before the network call: no need to query
+     * Firebase for an empty field.
      */
     fun submit() {
         val state = _uiState.value
@@ -107,8 +99,7 @@ class AuthViewModel @Inject constructor(
                     userRepository.signUp(state.email, state.password, state.displayName)
             }
 
-            // En cas de succes, rien a faire ici : MainViewModel observe le flux
-            // d'authentification et la navigation suit.
+            // MainViewModel observes the authentication stream, and navigation follows
             _uiState.update {
                 it.copy(
                     isSubmitting = false,

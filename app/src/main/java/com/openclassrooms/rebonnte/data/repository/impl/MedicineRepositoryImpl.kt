@@ -17,14 +17,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 
-/**
- * Implementation Firestore de [MedicineRepository].
- *
- * L'historique vit dans une collection racine et non dans une sous-collection
- * des medicaments : la trace d'une suppression doit survivre au document
- * supprime, et le service qualite doit pouvoir lire le journal complet sans
- * parcourir chaque medicament.
- */
+
 @Singleton
 class MedicineRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
@@ -37,16 +30,13 @@ class MedicineRepositoryImpl @Inject constructor(
         val needle = query.trim().lowercase()
 
         val request: Query = when {
-            // Firestore ne sait pas faire un « contient » : seul un prefixe est
-            // possible, via un intervalle sur le champ en minuscules.
-            // Un vrai moteur de recherche demanderait un service dedie.
+            // Search by text prefix. Firestore does not have a "content" operator..
             needle.isNotEmpty() -> medicines
                 .orderBy(FIELD_NAME_LOWERCASE)
                 .startAt(needle)
                 .endAt(needle + PREFIX_UPPER_BOUND)
 
-            // Le tri par nom porte sur le champ en minuscules : sur le champ
-            // brut, Firestore placerait « Zovirax » avant « aspirine ».
+            // Firefox places uppercase letters before lowercase letters; the sorting is based on the lowercase content.
             sort == MedicineSort.NAME_ASC ->
                 medicines.orderBy(FIELD_NAME_LOWERCASE, Query.Direction.ASCENDING)
 
@@ -69,9 +59,6 @@ class MedicineRepositoryImpl @Inject constructor(
                     return@addSnapshotListener
                 }
                 val result = snapshot?.documents.orEmpty().mapNotNull { it.toMedicine() }
-                // Firestore impose que le premier orderBy porte sur le champ de
-                // l'intervalle : quand une recherche est active, le tri demande
-                // s'applique donc sur le resultat deja restreint.
                 trySend(if (needle.isEmpty()) result else result.sortedBy(sort))
             }
             awaitClose { registration.remove() }
@@ -116,8 +103,7 @@ class MedicineRepositoryImpl @Inject constructor(
         val document = medicines.document()
         val medicine = MedicineDto(id = document.id, name = name, stock = stock, aisleId = aisleId)
 
-        // Le medicament et sa trace de creation partent dans le meme lot :
-        // aucun des deux ne peut exister sans l'autre.
+        // medicine and history
         firestore.batch().apply {
             set(document, medicine.toDocument())
             set(
@@ -193,14 +179,8 @@ class MedicineRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Transaction et non deux ecritures successives, pour deux raisons.
-     *
-     * D'abord l'atomicite : un stock modifie sans trace serait exactement
-     * l'incoherence signalee par le service qualite.
-     *
-     * Ensuite la concurrence : sur des telephones partages, deux operateurs
-     * peuvent retirer une boite au meme instant. Lire puis ecrire sans
-     * transaction en perdrait une ; Firestore relit et reessaie.
+     * The update is performed via a transaction (read and write)
+     * to avoid a conflict if two users operate on the same product.
      */
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) {
         val outcome = firestore.runTransaction { transaction ->
@@ -211,15 +191,7 @@ class MedicineRepositoryImpl @Inject constructor(
 
             val stockAfter = medicine.stock + delta
 
-            // Le controle est ici et non dans l'ecran : c'est le seul endroit
-            // qui lit le stock reel au moment de l'ecriture. Un controle sur la
-            // valeur affichee travaillerait sur un chiffre peut-etre perime —
-            // un autre operateur a pu servir le meme medicament entre-temps.
-            //
-            // Refus plutot que plafonnement : l'ancien coerceAtLeast(0) ramenait
-            // le stock a zero et journalisait « de 10 a 0 » sans dire que 40
-            // unites demandees n'existaient pas. L'operateur repartait en
-            // croyant en avoir sorti 50.
+            // checking the actual stock quantity against the quantity requested by the user
             if (stockAfter < 0) {
                 return@runTransaction StockChange.Insufficient(medicine.stock)
             }
@@ -240,8 +212,6 @@ class MedicineRepositoryImpl @Inject constructor(
             StockChange.Applied
         }.let { task -> firestoreTransaction { task.await() } }
 
-        // Le refus est traduit hors de la transaction : une exception levee
-        // dedans serait enveloppee par Firestore et perdrait sa raison.
         if (outcome is StockChange.Insufficient) {
             throw StockException(
                 reason = StockErrorReason.INSUFFICIENT_STOCK,
@@ -250,7 +220,7 @@ class MedicineRepositoryImpl @Inject constructor(
         }
     }
 
-    /** Resultat de la transaction de mouvement de stock. */
+    /** Result transaction of update stock. */
     private sealed interface StockChange {
         data object Applied : StockChange
         data class Insufficient(val available: Int) : StockChange
@@ -264,8 +234,6 @@ class MedicineRepositoryImpl @Inject constructor(
                 ?: return@runTransaction DELETED
 
             transaction.delete(reference)
-            // La trace est ecrite dans la meme transaction que la suppression,
-            // et survit au document efface.
             transaction.set(
                 history.document(),
                 historyDocument(
@@ -300,13 +268,7 @@ class MedicineRepositoryImpl @Inject constructor(
     )
 
     private companion object {
-        /**
-         * Valeur de retour de la transaction de suppression.
-         *
-         * Firestore accepte `null`, mais l'enveloppe qui borne l'attente s'en
-         * sert pour signaler un depassement de delai : rendre `null` serait
-         * pris pour un serveur muet.
-         */
+        //transaction return value
         const val DELETED = true
 
         /** Meme raison que [DELETED] : la transaction ne doit pas rendre null. */
@@ -322,14 +284,13 @@ class MedicineRepositoryImpl @Inject constructor(
         const val FIELD_MEDICINE_ID = "medicineId"
         const val FIELD_DATE = "date"
 
-        /** Dernier point de code utilisable : borne haute d'une recherche par prefixe. */
         const val PREFIX_UPPER_BOUND = '\uf8ff'
     }
 }
 
 /**
- * `nameLowercase` n'appartient pas au modele : c'est un champ technique, ajoute
- * uniquement pour rendre la recherche par prefixe insensible a la casse.
+ * name Lowercase` is not part of the model;
+ * it is a technical field added solely to make prefix searches case-insensitive.
  */
 private fun MedicineDto.toDocument(): Map<String, Any> = mapOf(
     "name" to name,

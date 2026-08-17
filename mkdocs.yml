@@ -45,6 +45,7 @@ nav:
   - Le travail:
       - Tâches réalisées: taches.md
       - Décisions d'architecture: decisions.md
+      - Parcours utilisateur: parcours.md
   - Qualité:
       - Tests, CI et mesures: qualite.md
       - Mesures Android Profiler: profiler.md

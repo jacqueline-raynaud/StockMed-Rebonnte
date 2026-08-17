@@ -4,18 +4,6 @@ import com.openclassrooms.rebonnte.data.model.HistoryDto
 import com.openclassrooms.rebonnte.data.model.MedicineDto
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Acces aux medicaments du stock.
- *
- * Toutes les operations d'ecriture tracent elles-memes l'historique. C'est
- * volontaire : tant qu'un appelant devait penser a journaliser son action, il
- * finissait par l'oublier, d'ou les manques signales par le service qualite.
- * Ici l'oubli est impossible, la trace fait partie de l'operation.
- *
- * L'historique est expose separement de [MedicineDto] pour deux raisons : une
- * suppression doit rester tracee alors que le medicament disparait, et un
- * historique embarque dans le document grossirait sans limite.
- */
 interface MedicineRepository {
 
     fun observeMedicines(

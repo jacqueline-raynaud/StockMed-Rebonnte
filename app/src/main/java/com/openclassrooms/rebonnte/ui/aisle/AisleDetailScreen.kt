@@ -5,15 +5,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.openclassrooms.rebonnte.ui.medicine.MedicineContent
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
+import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
- * Les medicaments d'un emplacement.
- *
- * Aucune composable propre : c'est la meme liste que l'ecran des medicaments,
- * restreinte a un emplacement. Elle reutilise donc [MedicineContent] — et sa
- * previsualisation par la meme occasion.
+ * Medicines for a specifiqc location
+ * reuse [MedicineContent] and its preview
  */
 @Composable
 fun AisleDetailScreen(
@@ -24,8 +23,6 @@ fun AisleDetailScreen(
 ) {
     val uiState by medicineViewModel.uiState.collectAsState()
 
-    // remember : le filtrage ne se refait que si la liste ou l'emplacement
-    // changent, pas a chaque recomposition.
     val medicines = remember(uiState.medicines, aisleId) {
         uiState.medicines.filter { it.aisleId == aisleId }
     }
@@ -36,3 +33,4 @@ fun AisleDetailScreen(
         modifier = modifier
     )
 }
+

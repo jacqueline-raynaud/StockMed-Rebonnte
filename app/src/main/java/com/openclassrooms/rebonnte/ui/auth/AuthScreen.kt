@@ -184,7 +184,7 @@ private fun AuthContentSignInPreview() {
     }
 }
 
-/** Le cas qui compte le plus : les erreurs de saisie affichees. */
+/** preview avec les erreurs de affichées. */
 @Preview(showBackground = true)
 @Composable
 private fun AuthContentErrorsPreview() {
