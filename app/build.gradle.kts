@@ -115,15 +115,16 @@ android {
         }
     }
     lint {
-        // StateFlowValueCalledInComposition ne signale rien ici : son detecteur
-        // *plante*. Le lint de Compose fourni par le BOM 2024.04.01 embarque
+        // Ces deux regles ne signalent rien ici : leurs detecteurs *plantent*.
+        // Le lint de Compose fourni par le BOM 2024.04.01 embarque
         // kotlinx-metadata-jvm 2.0, qui ne sait pas lire les metadonnees des
         // classes compilees en Kotlin 2.1 — celles du projet.
         //
         // Desactivation ciblee plutot que `abortOnError = false` : les autres
         // regles continuent de bloquer la construction. A retirer lors d'une
-        // montee de version du BOM Compose.
+        // montee de version du BOM Compose (T-53).
         disable += "StateFlowValueCalledInComposition"
+        disable += "CoroutineCreationDuringComposition"
     }
 }
 

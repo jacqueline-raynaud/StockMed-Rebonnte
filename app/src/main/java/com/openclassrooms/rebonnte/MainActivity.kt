@@ -293,9 +293,26 @@ fun MyApp() {
 
     RebonnteTheme(darkTheme = darkTheme) {
         if (showAddAisleDialog) {
+            val newAisleError by aisleViewModel.newAisleError.collectAsState()
+            val aisleCreated by aisleViewModel.aisleCreated.collectAsState()
+
+            // La fenetre se ferme sur le succes, pas sur le clic : un nom
+            // refuse doit rester a l'ecran avec son erreur.
+            LaunchedEffect(aisleCreated) {
+                if (aisleCreated) {
+                    showAddAisleDialog = false
+                    aisleViewModel.aisleCreatedShown()
+                }
+            }
+
             AddAisleDialog(
-                onDismiss = { showAddAisleDialog = false },
-                onConfirm = aisleViewModel::addAisle
+                onDismiss = {
+                    showAddAisleDialog = false
+                    aisleViewModel.clearNewAisleError()
+                },
+                onConfirm = aisleViewModel::addAisle,
+                errorMessage = newAisleError,
+                onNameChange = aisleViewModel::clearNewAisleError
             )
         }
 
@@ -470,12 +487,25 @@ fun MyApp() {
                     )
                 }
                 composable(Destinations.MEDICINE_DETAIL) { entry ->
+                    val medicineId = entry.arguments
+                        ?.getString(Destinations.MEDICINE_ID_ARG).orEmpty()
                     MedicineDetailScreen(
-                        medicineId = entry.arguments
-                            ?.getString(Destinations.MEDICINE_ID_ARG).orEmpty(),
+                        medicineId = medicineId,
                         medicineViewModel = medicineViewModel,
                         snackbarHostState = snackbarHostState,
-                        onDeleted = { navController.navigateUp() }
+                        onDeleted = { navController.navigateUp() },
+                        onEdit = {
+                            navController.navigate(Destinations.medicineEdit(medicineId))
+                        }
+                    )
+                }
+                // Le formulaire de correction partage sa composable avec celui
+                // de creation : l'identifiant present dans la route suffit a
+                // distinguer les deux modes.
+                composable(Destinations.MEDICINE_EDIT) {
+                    MedicineFormScreen(
+                        viewModel = hiltViewModel<MedicineFormViewModel>(),
+                        onSaved = { navController.navigateUp() }
                     )
                 }
             }

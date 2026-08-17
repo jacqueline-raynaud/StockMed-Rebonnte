@@ -128,4 +128,7 @@
     <string name="error_insufficient_stock">Retrait refusé : il ne reste que %1$d unité(s) en stock.</string>
     <string name="action_failed_title">Opération refusée</string>
     <string name="action_ok">OK</string>
+    <string name="aisle_error_duplicate">Cet emplacement de stockage existe déjà.</string>
+    <string name="form_save">Enregistrer les modifications</string>
+    <string name="detail_edit_medicine">Modifier</string>
 </resources>

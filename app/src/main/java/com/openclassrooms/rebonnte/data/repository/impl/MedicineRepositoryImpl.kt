@@ -137,6 +137,62 @@ class MedicineRepositoryImpl @Inject constructor(
     }
 
     /**
+     * Correction d'une fiche : le nom, l'emplacement, jamais le stock.
+     *
+     * En transaction pour la meme raison qu'un mouvement : la fiche et sa trace
+     * doivent changer ensemble ou pas du tout. Et la relecture protege d'une
+     * correction concurrente — deux operateurs qui renomment le meme medicament
+     * au meme instant ne doivent pas produire une trace qui ne correspond a
+     * aucun etat reel.
+     *
+     * `nameLowercase` est mis a jour en meme temps que `name` : c'est lui qui
+     * porte le tri et la recherche. Oublier ce champ ferait disparaitre le
+     * medicament renomme des resultats, sans erreur visible.
+     */
+    override suspend fun updateMedicine(
+        id: String,
+        name: String,
+        aisleId: String,
+        aisleName: String,
+        userEmail: String
+    ) {
+        val newName = name.trim()
+        if (newName.isEmpty()) return
+
+        firestore.runTransaction { transaction ->
+            val reference = medicines.document(id)
+            val medicine = transaction.get(reference).toMedicine()
+                ?: return@runTransaction UPDATED
+
+            val changes = describeChanges(medicine, newName, aisleId, aisleName)
+                ?: return@runTransaction UPDATED
+
+            transaction.update(
+                reference,
+                mapOf(
+                    FIELD_NAME to newName,
+                    FIELD_NAME_LOWERCASE to newName.lowercase(),
+                    FIELD_AISLE_ID to aisleId
+                )
+            )
+            transaction.set(
+                history.document(),
+                historyDocument(
+                    medicine = medicine.copy(name = newName),
+                    action = HistoryAction.UPDATE,
+                    // Le stock ne bouge pas : avant et apres portent la meme
+                    // valeur, et l'entree se distingue par son action.
+                    stockBefore = medicine.stock,
+                    stockAfter = medicine.stock,
+                    userEmail = userEmail,
+                    details = changes
+                )
+            )
+            UPDATED
+        }.let { task -> firestoreTransaction { task.await() } }
+    }
+
+    /**
      * Transaction et non deux ecritures successives, pour deux raisons.
      *
      * D'abord l'atomicite : un stock modifie sans trace serait exactement
@@ -253,11 +309,15 @@ class MedicineRepositoryImpl @Inject constructor(
          */
         const val DELETED = true
 
+        /** Meme raison que [DELETED] : la transaction ne doit pas rendre null. */
+        const val UPDATED = true
+
         const val COLLECTION_MEDICINES = "medicines"
         const val COLLECTION_HISTORY = "history"
 
         const val FIELD_NAME = "name"
         const val FIELD_NAME_LOWERCASE = "nameLowercase"
+        const val FIELD_AISLE_ID = "aisleId"
         const val FIELD_STOCK = "stock"
         const val FIELD_MEDICINE_ID = "medicineId"
         const val FIELD_DATE = "date"

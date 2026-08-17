@@ -36,6 +36,14 @@ class FailingMedicineRepository(
         userEmail: String
     ): MedicineDto = failure()
 
+    override suspend fun updateMedicine(
+        id: String,
+        name: String,
+        aisleId: String,
+        aisleName: String,
+        userEmail: String
+    ) = failure()
+
     override suspend fun updateStock(id: String, delta: Int, userEmail: String) = failure()
 
     override suspend fun deleteMedicine(id: String, userEmail: String) = failure()

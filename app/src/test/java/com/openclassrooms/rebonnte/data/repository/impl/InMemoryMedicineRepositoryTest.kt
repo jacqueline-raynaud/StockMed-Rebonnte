@@ -196,4 +196,85 @@ class InMemoryMedicineRepositoryTest {
         const val USER = "operateur@rebonnte.fr"
         const val AISLE = "aisle-1"
     }
+
+    // --- Correction d'une fiche ----------------------------------------------
+
+    /** Une faute d'orthographe se corrige, et la correction laisse une trace. */
+    @Test
+    fun `renaming a medicine records an update in the history`() = runTest {
+        val medicine = repository.addMedicine("Dolipran", stock = 10, aisleId = AISLE, userEmail = USER)
+
+        repository.updateMedicine(
+            id = medicine.id,
+            name = "Doliprane",
+            aisleId = AISLE,
+            aisleName = "Stockage standard",
+            userEmail = USER
+        )
+
+        assertEquals("Doliprane", repository.observeMedicine(medicine.id).first()!!.name)
+        val update = repository.observeHistory(medicine.id).first()
+            .single { it.action == HistoryAction.UPDATE }
+        assertTrue(update.details.contains("Dolipran"))
+        assertTrue(update.details.contains("Doliprane"))
+        assertEquals(USER, update.userEmail)
+    }
+
+    /** Un changement d'emplacement nomme la destination dans la trace. */
+    @Test
+    fun `moving a medicine records the destination`() = runTest {
+        val medicine = repository.addMedicine("Insuline", stock = 4, aisleId = AISLE, userEmail = USER)
+
+        repository.updateMedicine(
+            id = medicine.id,
+            name = "Insuline",
+            aisleId = "cold",
+            aisleName = "Stockage froid",
+            userEmail = USER
+        )
+
+        assertEquals("cold", repository.observeMedicine(medicine.id).first()!!.aisleId)
+        val update = repository.observeHistory(medicine.id).first()
+            .single { it.action == HistoryAction.UPDATE }
+        assertTrue(update.details.contains("Stockage froid"))
+    }
+
+    /**
+     * Le stock ne bouge pas : une correction de fiche n'est pas un mouvement.
+     * Le confondre ferait apparaitre des variations de stock imaginaires dans
+     * le journal.
+     */
+    @Test
+    fun `an update leaves the stock untouched`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 7, aisleId = AISLE, userEmail = USER)
+
+        repository.updateMedicine(medicine.id, "Doliprane 1000", AISLE, "Stockage standard", USER)
+
+        assertEquals(7, repository.observeMedicine(medicine.id).first()!!.stock)
+        val update = repository.observeHistory(medicine.id).first()
+            .single { it.action == HistoryAction.UPDATE }
+        assertEquals(7, update.stockBefore)
+        assertEquals(7, update.stockAfter)
+    }
+
+    /** Reenregistrer sans rien changer ne doit pas polluer l'historique. */
+    @Test
+    fun `saving without any change records nothing`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 3, aisleId = AISLE, userEmail = USER)
+
+        repository.updateMedicine(medicine.id, "Doliprane", AISLE, "Stockage standard", USER)
+
+        val history = repository.observeHistory(medicine.id).first()
+        assertTrue(history.none { it.action == HistoryAction.UPDATE })
+    }
+
+    /** Un nom vide ne remplace pas un nom valide. */
+    @Test
+    fun `an update with a blank name is ignored`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 3, aisleId = AISLE, userEmail = USER)
+
+        repository.updateMedicine(medicine.id, "   ", AISLE, "Stockage standard", USER)
+
+        assertEquals("Doliprane", repository.observeMedicine(medicine.id).first()!!.name)
+    }
 }
