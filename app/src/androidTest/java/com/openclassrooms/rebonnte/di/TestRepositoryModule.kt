@@ -3,10 +3,10 @@ package com.openclassrooms.rebonnte.di
 import com.openclassrooms.rebonnte.data.network.NetworkMonitor
 import com.openclassrooms.rebonnte.data.preferences.ThemeRepository
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
+import com.openclassrooms.rebonnte.fake.FakeAisleRepository
+import com.openclassrooms.rebonnte.fake.FakeMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeNetworkMonitor
 import com.openclassrooms.rebonnte.fake.FakeThemeRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
@@ -43,9 +43,9 @@ abstract class TestRepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindMedicineRepository(impl: InMemoryMedicineRepository): MedicineRepository
+    abstract fun bindMedicineRepository(impl: FakeMedicineRepository): MedicineRepository
 
     @Binds
     @Singleton
-    abstract fun bindAisleRepository(impl: InMemoryAisleRepository): AisleRepository
+    abstract fun bindAisleRepository(impl: FakeAisleRepository): AisleRepository
 }

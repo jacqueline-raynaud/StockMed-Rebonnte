@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.data.repository.fake
+package com.openclassrooms.rebonnte.fake
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.model.HistoryDto
@@ -16,9 +16,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * In-memory implementation as a double in unit and instrumented tests.
+ * A working, in-memory implementation of [MedicineRepository].
+ *
+ * A *fake*, not a mock: it really stores, really refuses a removal larger than
+ * the stock, really records history. Tests therefore check the ViewModel
+ * against the behaviour the contract promises, not against a script of calls.
+ *
+ * The file is duplicated in `androidTest`: the two test source sets do not
+ * see each other.
  */
-class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
+class FakeMedicineRepository @Inject constructor() : MedicineRepository {
 
     private val medicines = MutableStateFlow<List<MedicineDto>>(emptyList())
     private val histories = MutableStateFlow<List<HistoryDto>>(emptyList())

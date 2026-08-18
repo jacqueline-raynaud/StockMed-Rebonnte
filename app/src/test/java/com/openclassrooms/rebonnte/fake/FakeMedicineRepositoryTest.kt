@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.data.repository.fake
+package com.openclassrooms.rebonnte.fake
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
@@ -20,13 +20,13 @@ import org.junit.Test
  * Ces tests verrouillent les trois defauts remontes par le Product Owner et le
  * service qualite. Chacun echouerait sur le code d'origine.
  */
-class InMemoryMedicineRepositoryTest {
+class FakeMedicineRepositoryTest {
 
     private lateinit var repository: MedicineRepository
 
     @Before
     fun setUp() {
-        repository = InMemoryMedicineRepository()
+        repository = FakeMedicineRepository()
     }
 
     // --- Gestion du stock ----------------------------------------------------

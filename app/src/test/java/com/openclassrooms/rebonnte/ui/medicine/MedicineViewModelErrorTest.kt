@@ -2,8 +2,8 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.StockErrorReason
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.fake.FakeAisleRepository
+import com.openclassrooms.rebonnte.fake.FakeMedicineRepository
 import com.openclassrooms.rebonnte.fake.FailingMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
@@ -31,7 +31,7 @@ class MedicineViewModelErrorTest {
     private fun viewModel(reason: StockErrorReason) = MedicineViewModel(
         FailingMedicineRepository(reason),
         FakeUserRepository(),
-        InMemoryAisleRepository()
+        FakeAisleRepository()
     )
 
     @Test
@@ -106,9 +106,9 @@ class MedicineViewModelErrorTest {
     @Test
     fun `a successful read reports no error`() = runTest(mainDispatcherRule.dispatcher) {
         val viewModel = MedicineViewModel(
-            InMemoryMedicineRepository(),
+            FakeMedicineRepository(),
             FakeUserRepository(),
-            InMemoryAisleRepository()
+            FakeAisleRepository()
         )
         backgroundScope.launch { viewModel.uiState.collect { } }
 
@@ -127,11 +127,11 @@ class MedicineViewModelErrorTest {
     @Test
     fun `a removal larger than the stock is reported with the remaining quantity`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val repository = InMemoryMedicineRepository()
+            val repository = FakeMedicineRepository()
             val viewModel = MedicineViewModel(
                 repository,
                 FakeUserRepository(),
-                InMemoryAisleRepository()
+                FakeAisleRepository()
             )
             val medicine = repository.addMedicine("Doliprane", 10, "aisle-1", "")
 
@@ -147,11 +147,11 @@ class MedicineViewModelErrorTest {
     @Test
     fun `a successful movement is confirmed with its quantity`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val repository = InMemoryMedicineRepository()
+            val repository = FakeMedicineRepository()
             val viewModel = MedicineViewModel(
                 repository,
                 FakeUserRepository(),
-                InMemoryAisleRepository()
+                FakeAisleRepository()
             )
             val medicine = repository.addMedicine("Doliprane", 60, "aisle-1", "")
 
@@ -170,11 +170,11 @@ class MedicineViewModelErrorTest {
     @Test
     fun `a refused movement produces no confirmation`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val repository = InMemoryMedicineRepository()
+            val repository = FakeMedicineRepository()
             val viewModel = MedicineViewModel(
                 repository,
                 FakeUserRepository(),
-                InMemoryAisleRepository()
+                FakeAisleRepository()
             )
             val medicine = repository.addMedicine("Doliprane", 10, "aisle-1", "")
 

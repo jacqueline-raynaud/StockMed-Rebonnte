@@ -32,10 +32,6 @@ object FirebaseModule {
     fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }
 
-/**
- * interface-implementation link
- * The InMemory* classes serve as doubles in tests.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {

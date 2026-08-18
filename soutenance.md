@@ -43,11 +43,11 @@ démonstration : le stock doit être préparé la veille.
 |---|---|---|
 | 1 | Écran de connexion, puis identification | « Créer un compte et s'identifier : c'était absent, c'est la base du reste — sans compte, l'historique ne peut être signé par personne » |
 | 2 | Écran d'accueil qui nomme la session | « Un garde-fou que vous aviez demandé : les téléphones sont partagés. À chaque démarrage on rappelle sous quel compte les mouvements seront enregistrés » |
-| 3 | Liste des emplacements | « Les rayons étaient créés au hasard, "Aisle 2", "Aisle 3". Un médicament se range en standard, froid ou sécurisé : ce sont désormais des emplacements réels, amorcés au premier lancement » |
+| 3 | Liste des emplacements, puis on en ouvre un | « Les rayons étaient créés au hasard, "Aisle 2", "Aisle 3". Un médicament se range en standard, froid ou sécurisé : ce sont désormais des emplacements réels, amorcés au premier lancement. Et cet écran ne lit que les médicaments de cet emplacement — pas tout le stock » |
 | 4 | Création d'un médicament | « Le bouton + ajoutait un médicament aléatoire. Il ouvre maintenant un formulaire, et l'emplacement se **choisit** dans une liste — on ne peut plus inventer un rayon » |
 | 5 | Fiche détail : retrait de 5 unités | « Une quantité se saisit. Retirer cinquante boîtes ne demande plus cinquante appuis, et surtout ne produit plus cinquante lignes d'historique » |
 | 6 | **Retrait de 500 unités → refus** | « Avant, le stock tombait à zéro sans rien dire. L'opérateur repartait en croyant avoir sorti 500 boîtes. Maintenant c'est refusé, avec le stock réel, et il faut valider le message » |
-| 7 | L'historique de la fiche | « Qui, quand, de combien à combien. C'est ce que le service qualité ne pouvait pas obtenir » |
+| 7 | L'historique de la fiche, puis « Voir les entrées plus anciennes » | « Qui, quand, de combien à combien. C'est ce que le service qualité ne pouvait pas obtenir. Et on n'en lit que vingt : les suivantes ne descendent que si on les demande » |
 | 8 | Suppression d'un médicament | « La confirmation rappelle en rouge le stock restant. J'y reviens dans les questions ouvertes » |
 | 9 | Menu Apparence → Sombre | « L'audit demandait de maintenir le mode sombre. J'ai ajouté le choix : on ne peut pas imposer un mode sans connaître les besoins visuels de l'opérateur » |
 | 10 | **Mode avion → écran de blocage** | « Sans réseau, l'application ne montre rien et ne laisse rien faire. C'est un choix, je l'explique si vous voulez » |
@@ -61,7 +61,7 @@ ouverte mais **déconnectez-vous avant** pour montrer l'identification.
 
 Montrez la page **Tâches réalisées** du site, ou le tableau Kanban.
 
-> 35 tâches réalisées, regroupées en six lots. Chaque remarque de vos trois
+> 38 tâches réalisées, regroupées en six lots. Chaque remarque de vos trois
 > listes est reliée à la tâche qui y répond — il y a un tableau de
 > correspondance. Et ce qui n'est pas fait est écrit noir sur blanc, avec les
 > raisons.
@@ -164,7 +164,7 @@ Montrez l'onglet Actions de GitHub, une exécution verte.
 
 | Workflow | Ce qu'il fait |
 |---|---|
-| Vérification | Compilation, 72 tests unitaires, lint, couverture, analyse SonarCloud |
+| Vérification | Compilation, 90 tests unitaires, lint, couverture, analyse SonarCloud |
 | Tests instrumentés | 9 parcours sur émulateur |
 | Documentation | Publication du site |
 | Distribution | Sur tag : APK signé, obfusqué, envoyé sur App Distribution |
@@ -228,12 +228,23 @@ fuites, du chargement paresseux.
 | Un mouvement = une écriture | Retirer 50 boîtes produisait 50 écritures et 50 lignes ; c'est une seule opération |
 | `key` et `contentType` sur les listes | Les lignes sont réutilisées au défilement au lieu d'être reconstruites |
 | Obfuscation et retrait des ressources inutilisées | APK de 2,86 Mo — moins de téléchargement, moins de stockage |
+| **Chargement paresseux** | Un emplacement ne lit plus que ses médicaments ; une fiche ne lit que 20 entrées d'historique, les suivantes à la demande |
+
+**Sur le chargement paresseux, si on creuse :**
+
+> Deux lectures descendaient bien plus que nécessaire. Sur deux cents références
+> dont douze au froid, ouvrir « Stockage froid » téléchargeait cent
+> quatre-vingt-huit documents pour rien — le filtre était fait en mémoire, sur
+> le téléphone. Il est maintenant dans la requête. Et l'historique d'un
+> médicament très manipulé compte des centaines de lignes ; l'opérateur en lit
+> trois.
 
 **Ce qui n'a pas été fait, et dites-le :**
 
-> Le chargement paresseux des listes n'est pas implémenté. Sur un stock de
-> quelques centaines de médicaments, la requête reste raisonnable ; sur
-> plusieurs milliers, il faudra paginer. C'est identifié dans le reste à faire.
+> La liste principale des médicaments n'est pas paginée : elle descend en entier.
+> Sur quelques centaines de références la requête reste raisonnable ; sur
+> plusieurs milliers il faudra une pagination par défilement. C'est identifié
+> dans le reste à faire.
 
 Une phrase qui porte, si l'occasion se présente :
 
@@ -308,8 +319,8 @@ travailler. »** — Le plus probable, et le plus légitime.
 > règle le vérifie.
 
 **« Que reste-t-il à faire ? »** — Ayez la liste courte en tête : accessibilité
-TalkBack, chargement paresseux, journal global du stock, validation des
-doublons de noms.
+TalkBack, journal global du stock, validation des doublons de noms de
+médicaments, pagination de la liste principale.
 
 ---
 

@@ -9,22 +9,47 @@
 
 ## Intégration continue
 
-Deux jobs GitHub Actions, déclenchés sur chaque `push` vers `main` et sur chaque
+Trois jobs GitHub Actions, déclenchés sur chaque `push` vers `main` et sur chaque
 pull request.
 
-| Job | Contenu | Durée |
-|---|---|---|
-| `build-and-test` | Compilation debug, tests unitaires, lint, couverture, analyse SonarCloud | ~3 min |
-| `instrumented-tests` | Tests d'interface sur émulateur API 34 | ~5 min |
+| Job | Contenu | Dépend de | Durée |
+|---|---|---|---|
+| `build-and-test` | Compilation debug, tests unitaires, lint | — | ~3 min |
+| `instrumented-tests` | Tests d'interface sur émulateur API 34 | — | ~5 min |
+| `sonar` | Couverture fusionnée et analyse SonarCloud | `instrumented-tests` | ~4 min |
 
-### Pourquoi deux jobs séparés
+### Pourquoi ce découpage
 
-L'émulateur met plusieurs minutes à démarrer et n'a rien à partager avec
-l'analyse Sonar. En parallèle, il ne retarde pas le retour sur la compilation et
-les tests unitaires — c'est-à-dire sur 90 % des erreurs.
+**Les deux premiers ne dépendent de rien** et tournent en parallèle. L'erreur
+courante — compilation cassée, test unitaire rouge — remonte en trois minutes,
+sans attendre l'émulateur.
 
-Le job émulateur est aussi le plus fragile de la chaîne. Le séparer permet, si
-besoin, de le rendre non bloquant sans toucher au reste.
+**Le troisième attend l'émulateur parce qu'il consomme sa mesure.** La couverture
+d'interface ne peut être relevée que sur un appareil : ce fichier `.ec` est la
+seule chose que le job d'analyse ne sait pas produire lui-même, et il voyage donc
+en artefact d'un job à l'autre. Le reste — classes compilées, `.exec` des tests
+unitaires — est moins coûteux à refaire qu'à transporter.
+
+### Ce que coûterait de ne pas fusionner
+
+| Couverture de lignes | |
+|---|---|
+| Tests unitaires seuls | **25,3 %** |
+| Fusionnée avec les tests d'interface | **64,3 %** |
+
+Ce n'est pas un ajustement, c'est un facteur 2,5. La raison est structurelle :
+les composables représentent l'essentiel des lignes du projet et **aucun test JVM
+ne peut les exécuter**. Sans les tests d'interface, le tableau de bord ne mesure
+que la moitié mesurable en JVM, et le chiffre affiché se lit à tort comme « le
+projet est peu testé ».
+
+!!! warning "Le maillon fragile ne doit pas emporter l'analyse"
+
+    Le job émulateur est le plus instable de la chaîne. `sonar` se déclenche
+    donc sur `!cancelled()` et non sur son succès, et le téléchargement de
+    l'artefact tolère l'échec. Émulateur en panne : JaCoCo ignore en silence un
+    `.ec` absent, et le tableau de bord affiche la couverture unitaire seule —
+    au lieu de ne rien afficher du tout.
 
 ### Les autres workflows
 
@@ -158,7 +183,7 @@ sans émulateur ni réseau.
 
 | Classe testée | Tests |
 |---|---|
-| `InMemoryMedicineRepository` | 21 |
+| `FakeMedicineRepository` | 21 |
 | `MedicineViewModel` | 14 |
 | `MainViewModel` | 14 |
 | `AuthViewModel` | 11 |

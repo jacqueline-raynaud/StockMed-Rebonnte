@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.data.repository.fake
+package com.openclassrooms.rebonnte.fake
 
 import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.StorageLocations
@@ -10,9 +10,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** In-memory implementation as a double in unit and instrumented tests. */
+/**
+ * A working, in-memory implementation of [AisleRepository], seeded with the
+ * standard storage locations.
+ *
+ * `@Singleton` matters: without it every ViewModel would receive its own
+ * instance, and a location created on one screen would be invisible on the
+ * next. Duplicated in `androidTest`, like [FakeMedicineRepository].
+ */
 @Singleton
-class InMemoryAisleRepository @Inject constructor() : AisleRepository {
+class FakeAisleRepository @Inject constructor() : AisleRepository {
 
     private val aisles = MutableStateFlow(StorageLocations.DEFAULTS)
 

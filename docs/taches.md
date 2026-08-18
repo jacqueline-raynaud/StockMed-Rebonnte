@@ -248,7 +248,7 @@ chaque appelant devait penser à écrire l'historique.
 elles-mêmes. **L'oubli devient impossible par construction**, y compris pour du
 code qui n'existe pas encore.
 
-### T-22 · Tri et filtre côté serveur · 0,75 j
+### T-22 · Tri et filtre côté serveur · 0,75 j {#t-22}
 
 **Problème.** Tri et filtre effectués en mémoire sur la liste complète — point
 soulevé par l'audit green code.
@@ -501,7 +501,7 @@ séparer les interfaces de leurs implémentations, suffixer celles-ci en `Impl`.
 data/model/          MedicineDto, AisleDto, HistoryDto, UserDto, HistoryAction
 data/repository/     les interfaces
        └── impl/     MedicineRepositoryImpl, AisleRepositoryImpl, UserRepositoryImpl
-                     InMemoryMedicineRepository, InMemoryAisleRepository
+                     FakeMedicineRepository, FakeAisleRepository
 ```
 
 Le préfixe `Firestore` a disparu : `MedicineRepositoryImpl` ne nomme plus sa
@@ -798,8 +798,8 @@ succès. Sinon un nom refusé disparaîtrait avec son message avant d'avoir ét�
 ### T-23 · Chargement paresseux · 0,5 j {#t-23}
 
 **Demande.** Ne charger une donnée qu'au moment où elle sert. Dernier point
-ouvert de l'audit green code, dont [T-22](#lot-3--persistance-et-fonctionnalités)
-avait traité le tri et le filtre.
+ouvert de l'audit green code, dont [T-22](#t-22) avait traité le tri et le
+filtre.
 
 **Fait.** Deux lectures qui descendaient bien plus que nécessaire :
 
@@ -849,6 +849,7 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 | | Tâche |
 |---|---|
 | **T-21** | Reste de la validation : doublons de noms de **médicaments** — deux « Doliprane » restent possibles — et absence de longueur maximale sur les noms |
+| **T-57** | Pagination de la liste principale des médicaments, qui descend en entier. Raisonnable sur quelques centaines de références, à revoir sur plusieurs milliers — voir [T-23](#t-23) |
 | **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
 
 ### Livrables et finition

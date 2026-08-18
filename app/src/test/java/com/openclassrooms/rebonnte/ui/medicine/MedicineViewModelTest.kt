@@ -2,8 +2,8 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.HistoryAction
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.fake.FakeAisleRepository
+import com.openclassrooms.rebonnte.fake.FakeMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
@@ -22,7 +22,7 @@ class MedicineViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var repository: InMemoryMedicineRepository
+    private lateinit var repository: FakeMedicineRepository
     private lateinit var userRepository: FakeUserRepository
     private lateinit var viewModel: MedicineViewModel
 
@@ -33,9 +33,9 @@ class MedicineViewModelTest {
         // Le depot en memoire sert de double : c'est une implementation reelle
         // du contrat, donc les tests valident le ViewModel contre le vrai
         // comportement attendu.
-        repository = InMemoryMedicineRepository()
+        repository = FakeMedicineRepository()
         userRepository = FakeUserRepository()
-        viewModel = MedicineViewModel(repository, userRepository, InMemoryAisleRepository())
+        viewModel = MedicineViewModel(repository, userRepository, FakeAisleRepository())
     }
 
     /** `medicines` n'emet que tant qu'un collecteur est actif (WhileSubscribed). */
@@ -89,7 +89,7 @@ class MedicineViewModelTest {
     @Test
     fun `a stock change with no session leaves an empty operator`() = runTest(mainDispatcherRule.dispatcher) {
         userRepository = FakeUserRepository(initialUser = null)
-        viewModel = MedicineViewModel(repository, userRepository, InMemoryAisleRepository())
+        viewModel = MedicineViewModel(repository, userRepository, FakeAisleRepository())
         collectMedicines()
         repository.addMedicine("Doliprane", 10, aisle.id, "")
         val medicine = repository.observeMedicines("", MedicineSort.NONE).first().single()

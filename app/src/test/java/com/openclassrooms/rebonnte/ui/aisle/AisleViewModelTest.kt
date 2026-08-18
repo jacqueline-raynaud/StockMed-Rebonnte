@@ -2,14 +2,16 @@ package com.openclassrooms.rebonnte.ui.aisle
 
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.StorageLocations
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.fake.FakeAisleRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -18,11 +20,31 @@ class AisleViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private lateinit var repository: FakeAisleRepository
+    private lateinit var viewModel: AisleViewModel
+
+    @Before
+    fun setUp() {
+        // Une instance neuve par test : JUnit reconstruit la classe a chaque
+        // methode, donc aucun emplacement ne fuit d'un test au suivant.
+        repository = FakeAisleRepository()
+        viewModel = AisleViewModel(repository, FakeUserRepository())
+    }
+
+    /**
+     * `uiState` est partage en `WhileSubscribed` : sans abonne il reste fige sur
+     * sa valeur initiale. Le collecteur ne peut pas monter dans le `@Before`,
+     * `backgroundScope` appartenant au `TestScope` que `runTest` cree.
+     */
+    private fun TestScope.collectAisles() {
+        backgroundScope.launch { viewModel.uiState.collect { } }
+    }
+
+    // --- location ---
     @Test
     fun `the list starts with the standard storage locations`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             assertEquals(
                 StorageLocations.DEFAULTS.map { it.name },
@@ -33,8 +55,7 @@ class AisleViewModelTest {
     @Test
     fun `adding a location appends it with the chosen name`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             viewModel.addAisle("Stupéfiants")
 
@@ -44,8 +65,7 @@ class AisleViewModelTest {
     /** Un nom vide ne doit pas creer d'emplacement fantome. */
     @Test
     fun `a blank name creates nothing`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-        backgroundScope.launch { viewModel.uiState.collect { } }
+        collectAisles()
         val before = viewModel.uiState.value.aisles.size
 
         viewModel.addAisle("   ")
@@ -56,8 +76,7 @@ class AisleViewModelTest {
     @Test
     fun `each location receives a distinct identifier`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             viewModel.addAisle("Froid négatif")
             viewModel.addAisle("Quarantaine")
@@ -70,9 +89,7 @@ class AisleViewModelTest {
     @Test
     fun `seeding twice does not duplicate the standard locations`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val repository = InMemoryAisleRepository()
-            val viewModel = AisleViewModel(repository, FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             repository.ensureDefaultStorageLocations()
             repository.ensureDefaultStorageLocations()
@@ -80,7 +97,7 @@ class AisleViewModelTest {
             assertEquals(StorageLocations.DEFAULTS.size, viewModel.uiState.value.aisles.size)
         }
 
-    // --- Refus de creation ----------------------------------------------------
+    // --- Refus de creation ---
 
     /**
      * Deux « Stockage froid » seraient indiscernables dans la liste deroulante
@@ -88,8 +105,7 @@ class AisleViewModelTest {
      */
     @Test
     fun `a duplicate name is refused`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-        backgroundScope.launch { viewModel.uiState.collect { } }
+        collectAisles()
         val before = viewModel.uiState.value.aisles.size
 
         viewModel.addAisle("Stockage froid")
@@ -102,8 +118,7 @@ class AisleViewModelTest {
     @Test
     fun `a duplicate is detected regardless of case and spacing`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             viewModel.addAisle("   sToCkAgE FrOiD  ")
 
@@ -114,8 +129,7 @@ class AisleViewModelTest {
     @Test
     fun `a whitespace only name is refused with a message`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
             val before = viewModel.uiState.value.aisles.size
 
             viewModel.addAisle("     ")
@@ -128,8 +142,7 @@ class AisleViewModelTest {
     @Test
     fun `a new name is accepted and signals the creation`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-            backgroundScope.launch { viewModel.uiState.collect { } }
+            collectAisles()
 
             viewModel.addAisle("  Quarantaine  ")
 
@@ -142,8 +155,7 @@ class AisleViewModelTest {
     /** L'erreur ne doit pas survivre a la correction de la saisie. */
     @Test
     fun `typing again clears the error`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = AisleViewModel(InMemoryAisleRepository(), FakeUserRepository())
-        backgroundScope.launch { viewModel.uiState.collect { } }
+        collectAisles()
         viewModel.addAisle("Stockage froid")
 
         viewModel.clearNewAisleError()

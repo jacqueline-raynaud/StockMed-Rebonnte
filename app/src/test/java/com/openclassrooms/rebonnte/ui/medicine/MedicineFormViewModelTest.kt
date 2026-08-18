@@ -4,8 +4,8 @@ import com.openclassrooms.rebonnte.data.model.HistoryAction
 import androidx.lifecycle.SavedStateHandle
 import com.openclassrooms.rebonnte.data.model.StorageLocations
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.fake.FakeAisleRepository
+import com.openclassrooms.rebonnte.fake.FakeMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
@@ -27,18 +27,18 @@ class MedicineFormViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var medicineRepository: InMemoryMedicineRepository
+    private lateinit var medicineRepository: FakeMedicineRepository
     private lateinit var viewModel: MedicineFormViewModel
 
     private val standard = StorageLocations.DEFAULTS.first()
 
     @Before
     fun setUp() {
-        medicineRepository = InMemoryMedicineRepository()
+        medicineRepository = FakeMedicineRepository()
         viewModel = MedicineFormViewModel(
             medicineRepository = medicineRepository,
             userRepository = FakeUserRepository(),
-            aisleRepository = InMemoryAisleRepository(),
+            aisleRepository = FakeAisleRepository(),
             // Pas d'identifiant dans la route : mode creation.
             savedStateHandle = SavedStateHandle()
         )
@@ -176,7 +176,7 @@ class MedicineFormViewModelTest {
     private fun editingViewModel(medicineId: String) = MedicineFormViewModel(
         medicineRepository = medicineRepository,
         userRepository = FakeUserRepository(),
-        aisleRepository = InMemoryAisleRepository(),
+        aisleRepository = FakeAisleRepository(),
         // Ce que la route « medicine/{id}/edit » fournit au ViewModel.
         savedStateHandle = SavedStateHandle(mapOf(Destinations.MEDICINE_ID_ARG to medicineId))
     )

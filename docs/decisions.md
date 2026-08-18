@@ -40,7 +40,7 @@ avec deux implémentations chacune : une en mémoire et une Firebase.
 Ce n'était pas gratuit à écrire. Voici ce que ça a rapporté, concrètement :
 
 - **Le passage de la mémoire à Firestore a demandé trois lignes** dans
-  `AppModule` — changer `InMemoryMedicineRepository` en
+  `AppModule` — changer `FakeMedicineRepository` en
   `MedicineRepositoryImpl` dans les liaisons. Aucun ViewModel, aucun écran,
   aucun test n'a bougé.
 - **Les implémentations en mémoire servent aujourd'hui de doubles de test.**
@@ -394,7 +394,7 @@ tri demandé s'applique alors sur le résultat déjà restreint.
 ### Des doubles écrits à la main, pas une bibliothèque de mocks
 
 Aucune dépendance de mocking n'a été ajoutée. Les tests utilisent
-`InMemoryMedicineRepository`, `InMemoryAisleRepository` et un `FakeUserRepository`
+`FakeMedicineRepository`, `FakeAisleRepository` et un `FakeUserRepository`
 écrit à la main.
 
 Les implémentations en mémoire sont de **vraies implémentations du contrat**.
@@ -404,7 +404,7 @@ l'implémentation réelle ne fera jamais.
 
 !!! warning "La limite de l'approche"
 
-    Un double reste un double. `InMemoryAisleRepository` créait un emplacement
+    Un double reste un double. `FakeAisleRepository` créait un emplacement
     de stockage au démarrage ; `AisleRepositoryImpl` n'en créait aucun.
     Tous les tests passaient, et l'application était pourtant inutilisable sur
     une base neuve — impossible de créer un médicament faute d'endroit où le
