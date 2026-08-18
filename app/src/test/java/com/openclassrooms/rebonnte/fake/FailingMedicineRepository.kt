@@ -27,7 +27,11 @@ class FailingMedicineRepository(
 
     override fun observeMedicine(id: String): Flow<MedicineDto?> = flow { failure() }
 
-    override fun observeHistory(medicineId: String): Flow<List<HistoryDto>> = flow { failure() }
+    override fun observeMedicinesInAisle(aisleId: String): Flow<List<MedicineDto>> =
+        flow { failure() }
+
+    override fun observeHistory(medicineId: String, limit: Int): Flow<List<HistoryDto>> =
+        flow { failure() }
 
     override suspend fun addMedicine(
         name: String,

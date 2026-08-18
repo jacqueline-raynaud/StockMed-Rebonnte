@@ -1,6 +1,6 @@
 package com.openclassrooms.rebonnte.ui
 
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.data.preferences.ThemeMode
 import com.openclassrooms.rebonnte.fake.FakeNetworkMonitor
 import com.openclassrooms.rebonnte.fake.FakeThemeRepository

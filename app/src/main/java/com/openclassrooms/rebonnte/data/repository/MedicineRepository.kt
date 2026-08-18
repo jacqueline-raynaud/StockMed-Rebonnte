@@ -11,9 +11,30 @@ interface MedicineRepository {
         sort: MedicineSort = MedicineSort.NONE
     ): Flow<List<MedicineDto>>
 
+    /**
+     * Les medicaments d'un seul emplacement, filtres **par la base**.
+     *
+     * L'ecran d'un emplacement telechargeait auparavant tout le stock pour n'en
+     * afficher qu'une partie. Sur deux cents references dont douze au froid,
+     * cent quatre-vingt-huit documents descendaient pour rien — du reseau, de la
+     * batterie, et des lectures facturees.
+     *
+     * Aucun `orderBy` n'accompagne le filtre : ce serait un index composite a
+     * declarer. Le tri se fait en memoire, sur un ensemble par construction
+     * restreint.
+     */
+    fun observeMedicinesInAisle(aisleId: String): Flow<List<MedicineDto>>
+
     fun observeMedicine(id: String): Flow<MedicineDto?>
 
-    fun observeHistory(medicineId: String): Flow<List<HistoryDto>>
+    /**
+     * Les [limit] entrees les plus recentes.
+     *
+     * L'historique d'un medicament tres manipule compte des centaines de
+     * lignes ; l'operateur en lit trois. Sans borne, ouvrir une fiche les
+     * telechargeait toutes.
+     */
+    fun observeHistory(medicineId: String, limit: Int): Flow<List<HistoryDto>>
 
     suspend fun addMedicine(
         name: String,

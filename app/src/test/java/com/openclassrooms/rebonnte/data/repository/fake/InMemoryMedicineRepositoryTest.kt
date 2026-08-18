@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.data.repository.impl
+package com.openclassrooms.rebonnte.data.repository.fake
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
@@ -70,7 +70,7 @@ class InMemoryMedicineRepositoryTest {
         runCatching { repository.updateStock(medicine.id, delta = -5, userEmail = USER) }
 
         assertEquals(1, repository.observeMedicine(medicine.id).first()!!.stock)
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
         assertTrue(history.none { it.action == HistoryAction.STOCK_CHANGE })
     }
 
@@ -100,7 +100,7 @@ class InMemoryMedicineRepositoryTest {
 
         repository.updateStock(medicine.id, delta = -3, userEmail = USER)
 
-        val stockChange = repository.observeHistory(medicine.id).first()
+        val stockChange = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
             .first { it.action == HistoryAction.STOCK_CHANGE }
 
         assertEquals(10, stockChange.stockBefore)
@@ -113,7 +113,7 @@ class InMemoryMedicineRepositoryTest {
     fun `creating a medicine records a history entry`() = runTest {
         val medicine = repository.addMedicine("Doliprane", stock = 10, aisleId = AISLE, userEmail = USER)
 
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
 
         assertEquals(1, history.size)
         assertEquals(HistoryAction.CREATE, history.single().action)
@@ -126,7 +126,7 @@ class InMemoryMedicineRepositoryTest {
         repository.deleteMedicine(medicine.id, userEmail = USER)
 
         assertNull(repository.observeMedicine(medicine.id).first())
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
         assertNotNull(history.firstOrNull { it.action == HistoryAction.DELETE })
     }
 
@@ -136,7 +136,7 @@ class InMemoryMedicineRepositoryTest {
 
         repository.updateStock(medicine.id, delta = 0, userEmail = USER)
 
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
         assertTrue(history.none { it.action == HistoryAction.STOCK_CHANGE })
     }
 
@@ -195,6 +195,34 @@ class InMemoryMedicineRepositoryTest {
     private companion object {
         const val USER = "operateur@rebonnte.fr"
         const val AISLE = "aisle-1"
+
+        /** Assez large pour que le plafond ne joue pas dans ces tests. */
+        const val ANY_LIMIT = 100
+    }
+
+    // --- Chargement paresseux ------------------------------------------------
+
+    @Test
+    fun `observeMedicinesInAisle keeps only that aisle, in alphabetical order`() = runTest {
+        repository.addMedicine("Insuline", stock = 5, aisleId = "cold", userEmail = USER)
+        repository.addMedicine("Zovirax", stock = 5, aisleId = AISLE, userEmail = USER)
+        repository.addMedicine("aspirine", stock = 5, aisleId = AISLE, userEmail = USER)
+
+        val medicines = repository.observeMedicinesInAisle(AISLE).first()
+
+        assertEquals(listOf("aspirine", "Zovirax"), medicines.map { it.name })
+    }
+
+    /** Le plafond garde les entrees les plus recentes, pas les premieres. */
+    @Test
+    fun `observeHistory returns at most the requested number of recent entries`() = runTest {
+        val medicine = repository.addMedicine("Doliprane", stock = 0, aisleId = AISLE, userEmail = USER)
+        repeat(5) { repository.updateStock(medicine.id, delta = 1, userEmail = USER) }
+
+        val history = repository.observeHistory(medicine.id, limit = 2).first()
+
+        assertEquals(2, history.size)
+        assertEquals(listOf(5, 4), history.map { it.stockAfter })
     }
 
     // --- Correction d'une fiche ----------------------------------------------
@@ -213,7 +241,7 @@ class InMemoryMedicineRepositoryTest {
         )
 
         assertEquals("Doliprane", repository.observeMedicine(medicine.id).first()!!.name)
-        val update = repository.observeHistory(medicine.id).first()
+        val update = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
             .single { it.action == HistoryAction.UPDATE }
         assertTrue(update.details.contains("Dolipran"))
         assertTrue(update.details.contains("Doliprane"))
@@ -234,7 +262,7 @@ class InMemoryMedicineRepositoryTest {
         )
 
         assertEquals("cold", repository.observeMedicine(medicine.id).first()!!.aisleId)
-        val update = repository.observeHistory(medicine.id).first()
+        val update = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
             .single { it.action == HistoryAction.UPDATE }
         assertTrue(update.details.contains("Stockage froid"))
     }
@@ -251,7 +279,7 @@ class InMemoryMedicineRepositoryTest {
         repository.updateMedicine(medicine.id, "Doliprane 1000", AISLE, "Stockage standard", USER)
 
         assertEquals(7, repository.observeMedicine(medicine.id).first()!!.stock)
-        val update = repository.observeHistory(medicine.id).first()
+        val update = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
             .single { it.action == HistoryAction.UPDATE }
         assertEquals(7, update.stockBefore)
         assertEquals(7, update.stockAfter)
@@ -264,7 +292,7 @@ class InMemoryMedicineRepositoryTest {
 
         repository.updateMedicine(medicine.id, "Doliprane", AISLE, "Stockage standard", USER)
 
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = ANY_LIMIT).first()
         assertTrue(history.none { it.action == HistoryAction.UPDATE })
     }
 

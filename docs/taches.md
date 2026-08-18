@@ -28,7 +28,7 @@ d'implémentation quand il éclaire le choix.
 | 6 | Demandes complémentaires | Terminé |
 | 7 | Accessibilité et confort | À faire |
 
-**Réalisé : 37 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 38 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---
@@ -715,7 +715,7 @@ l'absence de longueur maximale. Les emplacements, eux, sont traités par
 
 ## Lot 6 — Demandes complémentaires
 
-Deux demandes arrivées après la revue, en préparant la présentation.
+Trois demandes arrivées après la revue, en préparant la présentation.
 
 ### T-55 · Corriger la fiche d'un médicament · 0,75 j {#t-55}
 
@@ -785,6 +785,43 @@ pas observée au moment du contrôle.
 **Changement de comportement** : la fenêtre ne se ferme plus au clic mais au
 succès. Sinon un nom refusé disparaîtrait avec son message avant d'avoir été lu.
 
+### T-23 · Chargement paresseux · 0,5 j {#t-23}
+
+**Demande.** Ne charger une donnée qu'au moment où elle sert. Dernier point
+ouvert de l'audit green code, dont [T-22](#lot-3--persistance-et-fonctionnalités)
+avait traité le tri et le filtre.
+
+**Fait.** Deux lectures qui descendaient bien plus que nécessaire :
+
+| Écran | Avant | Après |
+|---|---|---|
+| Un emplacement | Toute la liste des médicaments, filtrée en mémoire | `whereEqualTo(aisleId)` : seuls les médicaments de l'emplacement |
+| Fiche d'un médicament | Tout l'historique | Les 20 entrées les plus récentes, puis 20 de plus à la demande |
+
+**Pourquoi ça compte.** Sur deux cents références dont douze au froid, ouvrir
+l'emplacement « Stockage froid » faisait descendre cent quatre-vingt-huit
+documents pour rien — du réseau, de la batterie, et des lectures facturées.
+L'historique d'un médicament très manipulé compte des centaines de lignes ;
+l'opérateur en lit trois.
+
+**Détail.** Le plafond de l'historique est demandé avec **une entrée de plus**
+que ce qui sera affiché : c'est cette entrée excédentaire, jamais montrée, qui
+dit à l'écran qu'une page plus ancienne existe. Sans elle il faudrait un
+comptage séparé, donc une lecture de plus.
+
+La fenêtre vit dans le ViewModel et non dans l'écran. L'élargir ne reconstruit
+pas le flux : la composable continue de collecter le même, et la fiche ne
+repasse pas par son indicateur de chargement. Elle revient à sa première page à
+chaque abonnement — ouvrir une fiche ne doit pas hériter de la profondeur
+atteinte sur la précédente.
+
+!!! note "Pas d'`orderBy` sur le filtre par emplacement"
+
+    Associer un filtre et un tri sur deux champs différents impose un index
+    composite à déclarer chez Firestore. Le tri se fait donc en mémoire, sur un
+    ensemble désormais restreint par construction — ce qui était précisément le
+    problème avant.
+
 ---
 
 ## Reste à faire {#reste-a-faire}
@@ -802,7 +839,6 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 | | Tâche |
 |---|---|
 | **T-21** | Reste de la validation : doublons de noms de **médicaments** — deux « Doliprane » restent possibles — et absence de longueur maximale sur les noms |
-| **T-23** | Chargement paresseux des listes |
 | **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
 
 ### Livrables et finition

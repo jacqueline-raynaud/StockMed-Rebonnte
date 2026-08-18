@@ -1,10 +1,11 @@
-package com.openclassrooms.rebonnte.data.repository.impl
+package com.openclassrooms.rebonnte.data.repository.fake
 
 import com.openclassrooms.rebonnte.data.model.HistoryAction
 import com.openclassrooms.rebonnte.data.model.HistoryDto
 import com.openclassrooms.rebonnte.data.model.MedicineDto
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
+import com.openclassrooms.rebonnte.data.repository.impl.describeChanges
 import com.openclassrooms.rebonnte.data.repository.StockErrorReason
 import com.openclassrooms.rebonnte.data.repository.StockException
 import java.util.Locale
@@ -30,9 +31,20 @@ class InMemoryMedicineRepository @Inject constructor() : MedicineRepository {
     override fun observeMedicine(id: String): Flow<MedicineDto?> =
         medicines.map { list -> list.firstOrNull { it.id == id } }
 
-    override fun observeHistory(medicineId: String): Flow<List<HistoryDto>> =
+    override fun observeMedicinesInAisle(aisleId: String): Flow<List<MedicineDto>> =
+        medicines.map { list ->
+            list.filter { it.aisleId == aisleId }.sortedBy { it.name.lowercase() }
+        }
+
+    override fun observeHistory(medicineId: String, limit: Int): Flow<List<HistoryDto>> =
         histories.map { list ->
-            list.filter { it.medicineId == medicineId }.sortedByDescending { it.date }
+            list.filter { it.medicineId == medicineId }
+                // Deux entrees enregistrees dans la meme milliseconde portent la
+                // meme date : la liste est renversee d'abord pour que le tri,
+                // stable, laisse la plus recente devant.
+                .asReversed()
+                .sortedByDescending { it.date }
+                .take(limit)
         }
 
     override suspend fun addMedicine(

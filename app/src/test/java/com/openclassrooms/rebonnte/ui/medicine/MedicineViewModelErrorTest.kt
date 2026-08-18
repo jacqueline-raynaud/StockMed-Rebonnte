@@ -2,8 +2,8 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.repository.StockErrorReason
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.fake.FailingMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule

@@ -65,6 +65,23 @@ class MedicineRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun observeMedicinesInAisle(aisleId: String): Flow<List<MedicineDto>> = callbackFlow {
+        val registration = medicines
+            .whereEqualTo(FIELD_AISLE_ID, aisleId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error.toStockException())
+                    return@addSnapshotListener
+                }
+                trySend(
+                    snapshot?.documents.orEmpty()
+                        .mapNotNull { it.toMedicine() }
+                        .sortedBy { it.name.lowercase() }
+                )
+            }
+        awaitClose { registration.remove() }
+    }
+
     override fun observeMedicine(id: String): Flow<MedicineDto?> = callbackFlow {
         val registration = medicines.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -76,10 +93,12 @@ class MedicineRepositoryImpl @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    override fun observeHistory(medicineId: String): Flow<List<HistoryDto>> = callbackFlow {
+    override fun observeHistory(medicineId: String, limit: Int): Flow<List<HistoryDto>> =
+        callbackFlow {
         val registration = history
             .whereEqualTo(FIELD_MEDICINE_ID, medicineId)
             .orderBy(FIELD_DATE, Query.Direction.DESCENDING)
+            .limit(limit.toLong())
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error.toStockException())
@@ -267,25 +286,6 @@ class MedicineRepositoryImpl @Inject constructor(
         "details" to details
     )
 
-    private companion object {
-        //transaction return value
-        const val DELETED = true
-
-        /** Meme raison que [DELETED] : la transaction ne doit pas rendre null. */
-        const val UPDATED = true
-
-        const val COLLECTION_MEDICINES = "medicines"
-        const val COLLECTION_HISTORY = "history"
-
-        const val FIELD_NAME = "name"
-        const val FIELD_NAME_LOWERCASE = "nameLowercase"
-        const val FIELD_AISLE_ID = "aisleId"
-        const val FIELD_STOCK = "stock"
-        const val FIELD_MEDICINE_ID = "medicineId"
-        const val FIELD_DATE = "date"
-
-        const val PREFIX_UPPER_BOUND = '\uf8ff'
-    }
 }
 
 /**
@@ -293,10 +293,10 @@ class MedicineRepositoryImpl @Inject constructor(
  * it is a technical field added solely to make prefix searches case-insensitive.
  */
 private fun MedicineDto.toDocument(): Map<String, Any> = mapOf(
-    "name" to name,
-    "nameLowercase" to name.lowercase(),
-    "stock" to stock,
-    "aisleId" to aisleId
+    FIELD_NAME to name,
+    FIELD_NAME_LOWERCASE to name.lowercase(),
+    FIELD_STOCK to stock,
+    FIELD_AISLE_ID to aisleId
 )
 
 private fun DocumentSnapshot.toMedicine(): MedicineDto? =
@@ -309,3 +309,19 @@ private fun List<MedicineDto>.sortedBy(sort: MedicineSort): List<MedicineDto> = 
     MedicineSort.STOCK_ASC -> sortedBy { it.stock }
     MedicineSort.STOCK_DESC -> sortedByDescending { it.stock }
 }
+
+private const val DELETED = true
+private const val UPDATED = true
+
+private const val COLLECTION_MEDICINES = "medicines"
+private const val COLLECTION_HISTORY = "history"
+
+private const val FIELD_NAME = "name"
+private const val FIELD_NAME_LOWERCASE = "nameLowercase"
+private const val FIELD_STOCK = "stock"
+private const val FIELD_AISLE_ID = "aisleId"
+private const val FIELD_MEDICINE_ID = "medicineId"
+private const val FIELD_DATE = "date"
+
+/** Dernier point de code utilisable : borne haute d'une recherche par prefixe. */
+private const val PREFIX_UPPER_BOUND = '\uf8ff'

@@ -4,8 +4,8 @@ import com.openclassrooms.rebonnte.data.model.HistoryAction
 import androidx.lifecycle.SavedStateHandle
 import com.openclassrooms.rebonnte.data.model.StorageLocations
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.flow.first
@@ -114,7 +114,7 @@ class MedicineFormViewModelTest {
             viewModel.submit()
 
             val created = medicineRepository.observeMedicines().first().single()
-            val entry = medicineRepository.observeHistory(created.id).first().single()
+            val entry = medicineRepository.observeHistory(created.id, limit = HISTORY_PAGE_SIZE).first().single()
             assertEquals(HistoryAction.CREATE, entry.action)
             assertEquals(FakeUserRepository.SIGNED_IN_USER.email, entry.userEmail)
         }

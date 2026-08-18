@@ -50,15 +50,23 @@ data class MedicineUiState(
 data class MedicineDetailUiState(
     val medicine: MedicineUi? = null,
     val histories: List<HistoryUi> = emptyList(),
+    /** True when the database holds older entries than the ones read. */
+    val hasMoreHistory: Boolean = false,
     val isLoading: Boolean = true,
     @StringRes val errorMessage: Int? = null
 )
 
-// Outcome of medicines read without filter and tri
-private data class MedicinesLoad(
+/**
+ * A medicines read: the result, or the fact that it is still loading or failed.
+ *
+ * Shared by the full list — where it is combined with the search text and the
+ * sort criterion — and by the single-aisle screen, which needs nothing else.
+ */
+@Immutable
+data class MedicineListUiState(
     val medicines: List<MedicineUi> = emptyList(),
     val isLoading: Boolean = true,
-    @StringRes val error: Int? = null
+    @StringRes val errorMessage: Int? = null
 )
 
 
@@ -84,11 +92,25 @@ class MedicineViewModel @Inject constructor(
             }
 
     // onStart` loading state, `catch` error state.
-    private val medicinesLoad: Flow<MedicinesLoad> =
+    private val medicinesLoad: Flow<MedicineListUiState> =
         medicines.whileSignedIn(userRepository, emptyList())
-            .map { MedicinesLoad(medicines = it, isLoading = false) }
-            .onStart { emit(MedicinesLoad()) }
-            .catch { emit(MedicinesLoad(isLoading = false, error = it.toMessageRes())) }
+            .map { MedicineListUiState(medicines = it, isLoading = false) }
+            .onStart { emit(MedicineListUiState()) }
+            .catch { emit(MedicineListUiState(isLoading = false, errorMessage = it.toMessageRes())) }
+
+    /**
+     * The medicines of one aisle, filtered by the database.
+     *
+     * The screen used to download the whole stock and filter it in memory. The
+     * aisle name is not resolved here: on this screen it is already the title.
+     */
+    fun observeMedicinesInAisle(aisleId: String): Flow<MedicineListUiState> =
+        repository.observeMedicinesInAisle(aisleId)
+            .map { medicines -> medicines.map { it.toUi(locationName = null) } }
+            .whileSignedIn(userRepository, emptyList())
+            .map { MedicineListUiState(medicines = it, isLoading = false) }
+            .onStart { emit(MedicineListUiState()) }
+            .catch { emit(MedicineListUiState(isLoading = false, errorMessage = it.toMessageRes())) }
 
     private val _actionError = MutableStateFlow<UiMessage?>(null)
     val actionError: StateFlow<UiMessage?> = _actionError.asStateFlow()
@@ -100,7 +122,7 @@ class MedicineViewModel @Inject constructor(
                 sort = sort,
                 query = query,
                 isLoading = load.isLoading,
-                errorMessage = load.error
+                errorMessage = load.errorMessage
             )
         }.stateIn(
             scope = viewModelScope,
@@ -108,20 +130,55 @@ class MedicineViewModel @Inject constructor(
             initialValue = MedicineUiState()
         )
 
+    // How much history is currently asked for. Held here rather than in the
+    // screen so that widening the window does not rebuild the flow: the
+    // composable keeps collecting the same one, and the medicine card does not
+    // flash back through its loading state.
+    private val historyLimit = MutableStateFlow(HISTORY_PAGE_SIZE)
+
+    /**
+     * A medicine and the most recent entries of its history.
+     *
+     * The history is read by pages: opening a card downloads [HISTORY_PAGE_SIZE]
+     * entries, not the several hundred a much-handled medicine accumulates.
+     * One extra entry is asked for — never displayed — because that is what
+     * tells the screen whether an older page exists.
+     *
+     * The window goes back to its first page on every subscription: opening
+     * another card must not inherit the depth reached on the previous one.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun observeDetail(medicineId: String): Flow<MedicineDetailUiState> =
-        combine(
-            repository.observeMedicine(medicineId)
-                .combine(aisleNames) { medicine, names -> medicine?.toUi(names[medicine.aisleId]) },
-            repository.observeHistory(medicineId)
-                .map { entries -> entries.map { it.toUi() } }
-        ) { medicine, histories ->
-            MedicineDetailUiState(medicine = medicine, histories = histories, isLoading = false)
-        }
+        historyLimit
+            .flatMapLatest { limit -> detail(medicineId, limit) }
             .whileSignedIn(userRepository, MedicineDetailUiState(isLoading = false))
-            .onStart { emit(MedicineDetailUiState()) }
+            .onStart {
+                historyLimit.value = HISTORY_PAGE_SIZE
+                emit(MedicineDetailUiState())
+            }
             .catch {
                 emit(MedicineDetailUiState(isLoading = false, errorMessage = it.toMessageRes()))
             }
+
+    private fun detail(medicineId: String, limit: Int): Flow<MedicineDetailUiState> =
+        combine(
+            repository.observeMedicine(medicineId)
+                .combine(aisleNames) { medicine, names -> medicine?.toUi(names[medicine.aisleId]) },
+            repository.observeHistory(medicineId, limit = limit + 1)
+                .map { entries -> entries.map { it.toUi() } }
+        ) { medicine, histories ->
+            MedicineDetailUiState(
+                medicine = medicine,
+                histories = histories.take(limit),
+                hasMoreHistory = histories.size > limit,
+                isLoading = false
+            )
+        }
+
+    /** Widens the history window by one page. */
+    fun showMoreHistory() {
+        historyLimit.value += HISTORY_PAGE_SIZE
+    }
 
     // confirm movement before show error
     private val _movementConfirmed = MutableStateFlow<UiMessage?>(null)
@@ -169,3 +226,6 @@ class MedicineViewModel @Inject constructor(
     private fun currentUserEmail(): String =
         userRepository.currentUserOrNull()?.email.orEmpty()
 }
+
+/** Enough entries to fill a screen, and to answer « qui a touche a ca ». */
+const val HISTORY_PAGE_SIZE = 20

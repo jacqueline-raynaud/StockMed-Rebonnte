@@ -1,4 +1,4 @@
-package com.openclassrooms.rebonnte.data.repository.impl
+package com.openclassrooms.rebonnte.data.repository.fake
 
 import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.StorageLocations

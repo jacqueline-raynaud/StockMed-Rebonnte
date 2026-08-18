@@ -2,7 +2,7 @@ package com.openclassrooms.rebonnte.ui.aisle
 
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.data.model.StorageLocations
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
 import kotlinx.coroutines.launch

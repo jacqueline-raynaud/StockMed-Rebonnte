@@ -104,6 +104,7 @@
     <string name="history_no_date">-</string>
     <string name="history_stock">Stock: %1$d -&gt; %2$d</string>
     <string name="history_details">Details: %1$s</string>
+    <string name="history_show_more">Show older entries</string>
 
     <!-- Medicine list -->
     <string name="medicine_stock">Stock: %1$d</string>

@@ -2,8 +2,8 @@ package com.openclassrooms.rebonnte.ui.medicine
 
 import com.openclassrooms.rebonnte.data.model.AisleDto
 import com.openclassrooms.rebonnte.data.model.HistoryAction
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.fake.FakeUserRepository
 import com.openclassrooms.rebonnte.util.MainDispatcherRule
@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -56,7 +57,7 @@ class MedicineViewModelTest {
 
             viewModel.updateStock(medicine.id, delta = -50)
 
-            val movements = repository.observeHistory(medicine.id).first()
+            val movements = repository.observeHistory(medicine.id, limit = HISTORY_PAGE_SIZE).first()
                 .filter { it.action == HistoryAction.STOCK_CHANGE }
             assertEquals(1, movements.size)
             assertEquals(60, movements.single().stockBefore)
@@ -75,7 +76,7 @@ class MedicineViewModelTest {
 
         viewModel.updateStock(medicine.id, delta = 5)
 
-        val history = repository.observeHistory(medicine.id).first()
+        val history = repository.observeHistory(medicine.id, limit = HISTORY_PAGE_SIZE).first()
         val stockChange = history.single { it.action == HistoryAction.STOCK_CHANGE }
         assertEquals(FakeUserRepository.SIGNED_IN_USER.email, stockChange.userEmail)
     }
@@ -95,7 +96,7 @@ class MedicineViewModelTest {
 
         viewModel.updateStock(medicine.id, delta = 1)
 
-        val stockChange = repository.observeHistory(medicine.id).first()
+        val stockChange = repository.observeHistory(medicine.id, limit = HISTORY_PAGE_SIZE).first()
             .single { it.action == HistoryAction.STOCK_CHANGE }
         assertEquals("", stockChange.userEmail)
     }
@@ -183,6 +184,74 @@ class MedicineViewModelTest {
 
             assertEquals(listOf(5, 1), viewModel.uiState.value.medicines.map { it.stock })
         }
+
+    // --- Chargement paresseux (T-23) -----------------------------------------
+
+    /**
+     * L'ecran d'un emplacement lisait la liste complete et gardait les
+     * medicaments portant ce rayon : tout le stock descendait pour afficher
+     * quelques lignes. Le filtre appartient desormais a la requete.
+     */
+    @Test
+    fun `an aisle only exposes its own medicines`() = runTest(mainDispatcherRule.dispatcher) {
+        repository.addMedicine("Insuline", 5, "cold", "")
+        repository.addMedicine("Doliprane", 10, aisle.id, "")
+        repository.addMedicine("Aspirine", 10, aisle.id, "")
+
+        var state = MedicineListUiState()
+        backgroundScope.launch { viewModel.observeMedicinesInAisle(aisle.id).collect { state = it } }
+
+        assertEquals(listOf("Aspirine", "Doliprane"), state.medicines.map { it.name })
+    }
+
+    /**
+     * Ouvrir une fiche ne doit pas telecharger des centaines d'entrees : une
+     * page suffit, et l'ecran sait qu'il en reste.
+     */
+    @Test
+    fun `opening a card reads a single page of history`() = runTest(mainDispatcherRule.dispatcher) {
+        val medicine = repository.addMedicine("Doliprane", 0, aisle.id, "")
+        repeat(HISTORY_PAGE_SIZE) { repository.updateStock(medicine.id, 1, "") }
+
+        var state = MedicineDetailUiState()
+        backgroundScope.launch { viewModel.observeDetail(medicine.id).collect { state = it } }
+
+        // HISTORY_PAGE_SIZE mouvements plus la creation : une entree de trop,
+        // donc une page pleine et un reste.
+        assertEquals(HISTORY_PAGE_SIZE, state.histories.size)
+        assertTrue(state.hasMoreHistory)
+    }
+
+    @Test
+    fun `asking for more history widens the window`() = runTest(mainDispatcherRule.dispatcher) {
+        val medicine = repository.addMedicine("Doliprane", 0, aisle.id, "")
+        repeat(HISTORY_PAGE_SIZE) { repository.updateStock(medicine.id, 1, "") }
+        var state = MedicineDetailUiState()
+        backgroundScope.launch { viewModel.observeDetail(medicine.id).collect { state = it } }
+
+        viewModel.showMoreHistory()
+
+        assertEquals(HISTORY_PAGE_SIZE + 1, state.histories.size)
+        assertFalse(state.hasMoreHistory)
+    }
+
+    /**
+     * Sans remise a zero, ouvrir une fiche apres avoir deroule l'historique
+     * d'une autre relirait d'emblee autant d'entrees.
+     */
+    @Test
+    fun `the history window resets on the next card`() = runTest(mainDispatcherRule.dispatcher) {
+        val medicine = repository.addMedicine("Doliprane", 0, aisle.id, "")
+        repeat(HISTORY_PAGE_SIZE) { repository.updateStock(medicine.id, 1, "") }
+        val first = backgroundScope.launch { viewModel.observeDetail(medicine.id).collect { } }
+        viewModel.showMoreHistory()
+        first.cancel()
+
+        var state = MedicineDetailUiState()
+        backgroundScope.launch { viewModel.observeDetail(medicine.id).collect { state = it } }
+
+        assertEquals(HISTORY_PAGE_SIZE, state.histories.size)
+    }
 
     /**
      * Le menu coche le critere actif : il doit donc etre observable.

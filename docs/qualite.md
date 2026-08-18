@@ -153,17 +153,17 @@ lu. Sa valeur était fausse depuis toujours.
 
 ## Tests unitaires
 
-**84 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
+**90 tests** sur les repositories et les cinq `ViewModel`, exécutés sur la JVM,
 sans émulateur ni réseau.
 
 | Classe testée | Tests |
 |---|---|
-| `InMemoryMedicineRepository` | 19 |
+| `InMemoryMedicineRepository` | 21 |
+| `MedicineViewModel` | 14 |
 | `MainViewModel` | 14 |
 | `AuthViewModel` | 11 |
 | `AisleViewModel` | 10 |
 | `MedicineFormViewModel` | 10 |
-| `MedicineViewModel` | 10 |
 | `MedicineViewModel` — chemins d'échec | 10 |
 
 ### Ce qu'ils verrouillent
@@ -183,6 +183,8 @@ réellement rencontré**, et échouerait sur le code d'origine.
 | `a removal larger than the stock is refused` | Le plafonnement silencieux à zéro |
 | `a refused movement produces no confirmation` | Le message de succès affiché avant l'opération |
 | `losing the network switches the application to offline` | Le stock périmé pris pour un stock réel |
+| `an aisle only exposes its own medicines` | Tout le stock téléchargé pour afficher un emplacement |
+| `the history window resets on the next card` | La profondeur d'historique héritée d'une fiche à l'autre |
 
 ### Un double d'essai qui échoue exprès
 

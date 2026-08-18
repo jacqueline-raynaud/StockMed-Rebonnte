@@ -5,14 +5,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.openclassrooms.rebonnte.ui.medicine.MedicineContent
+import com.openclassrooms.rebonnte.ui.medicine.MedicineListUiState
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
-import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
- * Medicines for a specifiqc location
- * reuse [MedicineContent] and its preview
+ * Medicines for a specific location.
+ *
+ * The screen used to read the shared list of all medicines and keep the ones
+ * carrying this aisle: the whole stock came down the wire to display a handful
+ * of lines. The filter now belongs to the query, so only the medicines of this
+ * aisle are ever read.
+ *
+ * Reuses [MedicineContent] and its previews.
  */
 @Composable
 fun AisleDetailScreen(
@@ -21,14 +26,14 @@ fun AisleDetailScreen(
     onMedicineClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val uiState by medicineViewModel.uiState.collectAsState()
-
-    val medicines = remember(uiState.medicines, aisleId) {
-        uiState.medicines.filter { it.aisleId == aisleId }
-    }
+    // remember(aisleId) to avoid recreating a flow upon every recomposition
+    val medicinesFlow = remember(aisleId) { medicineViewModel.observeMedicinesInAisle(aisleId) }
+    val uiState by medicinesFlow.collectAsState(initial = MedicineListUiState())
 
     MedicineContent(
-        medicines = medicines,
+        medicines = uiState.medicines,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
         onMedicineClick = onMedicineClick,
         modifier = modifier
     )

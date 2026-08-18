@@ -54,6 +54,8 @@ private const val EMPTY_QUANTITY = ""
 
 private const val CONTENT_TYPE_HISTORY = "history"
 
+private const val CONTENT_TYPE_SHOW_MORE = "history_show_more"
+
 @Composable
 fun MedicineDetailScreen(
     medicineId: String,
@@ -106,6 +108,8 @@ fun MedicineDetailScreen(
     MedicineDetailContent(
         medicine = currentMedicine,
         histories = uiState.histories,
+        hasMoreHistory = uiState.hasMoreHistory,
+        onShowMoreHistory = medicineViewModel::showMoreHistory,
         quantity = quantity,
         onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
         onRemove = { medicineViewModel.updateStock(medicineId, -it) },
@@ -129,7 +133,9 @@ fun MedicineDetailContent(
     onAdd: (Int) -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hasMoreHistory: Boolean = false,
+    onShowMoreHistory: () -> Unit = {}
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     val historyListState = rememberLazyListState()
@@ -236,6 +242,17 @@ fun MedicineDetailContent(
                 contentType = { CONTENT_TYPE_HISTORY }
             ) { history ->
                 HistoryItem(history = history)
+            }
+            // Older entries stay in the database until someone asks for them.
+            if (hasMoreHistory) {
+                item(contentType = CONTENT_TYPE_SHOW_MORE) {
+                    TextButton(
+                        onClick = onShowMoreHistory,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.history_show_more))
+                    }
+                }
             }
         }
     }
@@ -383,6 +400,24 @@ private fun MedicineDetailContentWithQuantityPreview() {
             onAdd = {},
             onDelete = {},
             onEdit = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MedicineDetailContentWithMoreHistoryPreview() {
+    RebonnteTheme {
+        MedicineDetailContent(
+            medicine = previewMedicine,
+            histories = previewHistories,
+            quantity = "",
+            onQuantityChange = {},
+            onRemove = {},
+            onAdd = {},
+            onDelete = {},
+            onEdit = {},
+            hasMoreHistory = true
         )
     }
 }

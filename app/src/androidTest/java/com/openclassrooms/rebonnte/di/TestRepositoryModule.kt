@@ -3,8 +3,8 @@ package com.openclassrooms.rebonnte.di
 import com.openclassrooms.rebonnte.data.network.NetworkMonitor
 import com.openclassrooms.rebonnte.data.preferences.ThemeRepository
 import com.openclassrooms.rebonnte.data.repository.AisleRepository
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryAisleRepository
-import com.openclassrooms.rebonnte.data.repository.impl.InMemoryMedicineRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryAisleRepository
+import com.openclassrooms.rebonnte.data.repository.fake.InMemoryMedicineRepository
 import com.openclassrooms.rebonnte.data.repository.MedicineRepository
 import com.openclassrooms.rebonnte.data.repository.UserRepository
 import com.openclassrooms.rebonnte.fake.FakeNetworkMonitor
