@@ -1,7 +1,5 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
-import androidx.annotation.StringRes
-import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.R
@@ -13,7 +11,6 @@ import com.openclassrooms.rebonnte.ui.UiMessage
 import com.openclassrooms.rebonnte.ui.toMessageRes
 import com.openclassrooms.rebonnte.ui.toUiMessage
 import com.openclassrooms.rebonnte.ui.whileSignedIn
-import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,43 +29,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
-
-// state for list, le critère et le tri
-
-@Immutable
-data class MedicineUiState(
-    val medicines: List<MedicineUi> = emptyList(),
-    val sort: MedicineSort = MedicineSort.NONE,
-    val query: String = "",
-    val isLoading: Boolean = true,
-    @StringRes val errorMessage: Int? = null
-)
-
-// state for medicine, history, and loading
-
-@Immutable
-data class MedicineDetailUiState(
-    val medicine: MedicineUi? = null,
-    val histories: List<HistoryUi> = emptyList(),
-    /** True when the database holds older entries than the ones read. */
-    val hasMoreHistory: Boolean = false,
-    val isLoading: Boolean = true,
-    @StringRes val errorMessage: Int? = null
-)
-
-/**
- * A medicines read: the result, or the fact that it is still loading or failed.
- *
- * Shared by the full list — where it is combined with the search text and the
- * sort criterion — and by the single-aisle screen, which needs nothing else.
- */
-@Immutable
-data class MedicineListUiState(
-    val medicines: List<MedicineUi> = emptyList(),
-    val isLoading: Boolean = true,
-    @StringRes val errorMessage: Int? = null
-)
-
 
 @HiltViewModel
 class MedicineViewModel @Inject constructor(
@@ -183,7 +143,8 @@ class MedicineViewModel @Inject constructor(
     // confirm movement before show error
     private val _movementConfirmed = MutableStateFlow<UiMessage?>(null)
     val movementConfirmed: StateFlow<UiMessage?> = _movementConfirmed.asStateFlow()
-        fun actionErrorShown() {
+
+    fun actionErrorShown() {
         _actionError.value = null
     }
 

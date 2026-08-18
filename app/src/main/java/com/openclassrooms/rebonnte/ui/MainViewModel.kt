@@ -1,7 +1,6 @@
 package com.openclassrooms.rebonnte.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.R
@@ -24,26 +23,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// state for welcomeScreen confirmed and network usage
-
-enum class AppState { READY, OFFLINE }
-
-// state for delete ccount
+/**
+ * Internal state, combined into [MainUiState] : the screen has no use for a
+ * deletion split in two, and the two values must never be exposed apart.
+ */
 private data class AccountDeletion(
     val inProgress: Boolean = false,
     @StringRes val error: Int? = null
-)
-
-// state for navigation
-
-@Immutable
-data class MainUiState(
-    val user: UserUi? = null,
-    val welcomeAcknowledged: Boolean = false,
-    val appState: AppState = AppState.READY,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val isDeletingAccount: Boolean = false,
-    @StringRes val deleteAccountError: Int? = null
 )
 
 @HiltViewModel

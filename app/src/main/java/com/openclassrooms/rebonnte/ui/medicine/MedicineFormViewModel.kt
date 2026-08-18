@@ -1,6 +1,5 @@
 package com.openclassrooms.rebonnte.ui.medicine
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,19 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class MedicineFormUiState(
-    val name: String = "",
-    val stock: String = "0",
-    val aisleId: String = "",
-    @StringRes val nameError: Int? = null,
-    @StringRes val stockError: Int? = null,
-    @StringRes val aisleError: Int? = null,
-    @StringRes val submitError: Int? = null,
-    val isSubmitting: Boolean = false,
-    val isSaved: Boolean = false,
-    val isEditing: Boolean = false
-)
 
 /**
  * Add and Edit medicine.

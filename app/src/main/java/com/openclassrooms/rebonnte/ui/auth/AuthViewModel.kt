@@ -13,20 +13,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class AuthMode { SIGN_IN, SIGN_UP }
-
-data class AuthUiState(
-    val mode: AuthMode = AuthMode.SIGN_IN,
-    val email: String = "",
-    val password: String = "",
-    val displayName: String = "",
-    @StringRes val emailError: Int? = null,
-    @StringRes val passwordError: Int? = null,
-    @StringRes val displayNameError: Int? = null,
-    @StringRes val formError: Int? = null,
-    val isSubmitting: Boolean = false
-)
-
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val userRepository: UserRepository

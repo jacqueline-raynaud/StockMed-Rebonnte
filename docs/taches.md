@@ -555,6 +555,16 @@ bénéfice de T-34 serait perdu.
 découpe en `XScreen` (connaît le ViewModel) et `XContent` (données et lambdas) ;
 neuf previews ; `contentType` sur les trois listes.
 
+Chaque état **public** a son fichier, à côté de son ViewModel : `MainUiState.kt`,
+`AuthUiState.kt`, `AisleUiState.kt`, `MedicineUiState.kt`,
+`MedicineListUiState.kt`, `MedicineDetailUiState.kt`, `MedicineFormUiState.kt`.
+Le `MedicineViewModel` en portait trois : la déclaration prenait le haut du
+fichier avant la première ligne de logique.
+
+Les états **internes** restent dans le ViewModel, et privés : `AccountDeletion`
+n'existe que pour être fusionné dans `MainUiState`, et l'exposer laisserait
+croire qu'un écran peut l'observer seul.
+
 **Détail.** Trois flux séparés peuvent être observés dans des états qui se
 contredisent — une liste déjà triée pendant que le menu affiche l'ancien
 critère. Un objet unique ne le peut pas.

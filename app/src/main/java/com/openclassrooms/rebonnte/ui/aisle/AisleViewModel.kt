@@ -1,7 +1,5 @@
 package com.openclassrooms.rebonnte.ui.aisle
 
-import androidx.annotation.StringRes
-import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.rebonnte.R
@@ -11,7 +9,6 @@ import com.openclassrooms.rebonnte.ui.UiMessage
 import com.openclassrooms.rebonnte.ui.toMessageRes
 import com.openclassrooms.rebonnte.ui.toUiMessage
 import com.openclassrooms.rebonnte.ui.whileSignedIn
-import com.openclassrooms.rebonnte.ui.model.AisleUi
 import com.openclassrooms.rebonnte.ui.model.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,13 +22,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-@Immutable
-data class AisleUiState(
-    val aisles: List<AisleUi> = emptyList(),
-    val isLoading: Boolean = true,
-    @StringRes val errorMessage: Int? = null
-)
 
 @HiltViewModel
 class AisleViewModel @Inject constructor(

@@ -18,10 +18,6 @@ class AisleViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    /**
-     * Sans emplacement, aucun medicament ne peut etre range : la liste ne doit
-     * jamais etre vide au premier lancement.
-     */
     @Test
     fun `the list starts with the standard storage locations`() =
         runTest(mainDispatcherRule.dispatcher) {
