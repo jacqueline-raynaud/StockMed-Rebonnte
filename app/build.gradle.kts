@@ -15,13 +15,6 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
-/**
- * Parametres de signature lus depuis local.properties, jamais versionne.
- *
- * La CI ecrit ce fichier a partir de secrets GitHub. En local, il est absent :
- * les builds debug fonctionnent sans, et seul assembleRelease reclame une
- * signature.
- */
 val signingProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
@@ -42,23 +35,17 @@ android {
         applicationId = "com.openclassrooms.rebonnte"
         minSdk = 24
         targetSdk = 34
-        // Chaque distribution doit porter un versionCode distinct, sinon App
-        // Distribution presente la nouvelle version comme identique a la
-        // precedente. La CI fournit le numero du run ; en local, 1 suffit.
+        // Un versionCode distinct pour chaque distribution
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = System.getenv("VERSION_NAME") ?: "1.0"
 
-        // Runner personnalise : Hilt doit remplacer l'Application par
-        // HiltTestApplication avant que le test ne demarre.
+        // Runner personnalise : HiltTestApplication avant que le test ne demarre.
         testInstrumentationRunner = "com.openclassrooms.rebonnte.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
     }
 
-    // Declaree uniquement si le keystore est present : sans cela, toute
-    // configuration Gradle echouerait sur un poste qui n'a pas la cle, y compris
-    // pour un simple assembleDebug.
     signingConfigs {
         if (keystoreFile != null) {
             create("release") {
@@ -72,27 +59,16 @@ android {
 
     buildTypes {
         debug {
-            // Sans ce drapeau, testDebugUnitTest ne produit aucun fichier .exec
-            // et le rapport JaCoCo est vide : c'est ce qui donnait 0 % dans
-            // SonarCloud alors meme que les tests passaient.
             enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
         release {
-            // R8 supprime le code inatteignable et renomme le reste. Les
-            // modeles lus par reflexion sont protreges par @Keep : sans elle,
-            // Firestore ne retrouverait plus ses champs et rendrait des objets
-            // vides, **sans lever d'erreur**.
             isMinifyEnabled = true
-            // Le retrait des ressources inutilisees ne peut s'activer qu'avec
-            // la reduction de code. Aucune ressource n'est resolue par son nom
-            // a l'execution ici, donc rien ne peut etre supprime a tort.
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Absente en local sans keystore : le build reste possible, l'APK
-            // produit n'est simplement pas signe.
             signingConfig = signingConfigs.findByName("release")
         }
     }
@@ -115,14 +91,7 @@ android {
         }
     }
     lint {
-        // Ces deux regles ne signalent rien ici : leurs detecteurs *plantent*.
-        // Le lint de Compose fourni par le BOM 2024.04.01 embarque
-        // kotlinx-metadata-jvm 2.0, qui ne sait pas lire les metadonnees des
-        // classes compilees en Kotlin 2.1 — celles du projet.
-        //
-        // Desactivation ciblee plutot que `abortOnError = false` : les autres
-        // regles continuent de bloquer la construction. A retirer lors d'une
-        // montee de version du BOM Compose (T-53).
+        //  A retirer lors d'une montee de version du BOM Compose.
         disable += "StateFlowValueCalledInComposition"
         disable += "CoroutineCreationDuringComposition"
     }
@@ -152,8 +121,6 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.kotlinx.coroutines.play.services)
 
-
-
     // tests
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -169,13 +136,6 @@ dependencies {
 
 /**
  * Rapport de couverture des tests unitaires.
- *
- * Le plugin JaCoCo standard ne connait pas les variantes Android : il faut lui
- * designer explicitement les classes compilees et les donnees d'execution.
- *
- * Les tests instrumentes (connectedDebugAndroidTest) ne sont volontairement pas
- * inclus : ils exigent un emulateur que la CI ne lance pas encore. Ils seront
- * ajoutes avec le job emulateur.
  */
 val jacocoExcludes = listOf(
     "**/R.class",
@@ -184,8 +144,6 @@ val jacocoExcludes = listOf(
     "**/Manifest*.*",
     "**/*Test.class",
     "**/*Test$*.class",
-    // Code genere : l'inclure ferait chuter la couverture sans rien dire de la
-    // qualite du code ecrit a la main.
     "**/di/**",
     "**/*Module*",
     "**/Hilt_*",
@@ -206,6 +164,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     group = JavaBasePlugin.VERIFICATION_GROUP
 
     dependsOn("testDebugUnitTest")
+    mustRunAfter("connectedDebugAndroidTest")
 
     reports {
         xml.required.set(true)
@@ -230,6 +189,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     executionData.setFrom(
         fileTree(layout.buildDirectory) {
             include("outputs/unit_test_code_coverage/debugUnitTest/*.exec")
+            include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
         }
     )
 }
@@ -241,7 +201,7 @@ sonar {
         property("sonar.projectName", "StockMed-Rebonnte")
         property("sonar.host.url", "https://sonarcloud.io")
         // sonar.qualitygate.wait reste retire tant que la couverture n'aura pas
-        // atteint le seuil de la porte "Sonar way".
+        // atteint le seuil de la porte "Sonar way" soit 80%.
         property("sonar.androidLint.reportPaths", "")
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
