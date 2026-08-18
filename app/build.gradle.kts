@@ -148,6 +148,7 @@ val jacocoExcludes = listOf(
     "**/*Module*",
     "**/Hilt_*",
     "**/*_Hilt*",
+    "**/*_HiltComponents*",
     "**/*_Factory*",
     "**/*_MembersInjector*",
     "**/*_GeneratedInjector*",

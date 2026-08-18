@@ -95,6 +95,7 @@ import com.openclassrooms.rebonnte.data.preferences.ThemeMode
 import com.openclassrooms.rebonnte.data.repository.MedicineSort
 import com.openclassrooms.rebonnte.ui.navigation.Destinations
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
+import com.openclassrooms.rebonnte.ui.welcome.DeleteAccountControls
 import com.openclassrooms.rebonnte.ui.welcome.WelcomeScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -386,10 +387,12 @@ fun MyApp() {
                             user = user,
                             onContinue = mainViewModel::acknowledgeWelcome,
                             onSignOut = mainViewModel::signOut,
-                            onDeleteAccount = mainViewModel::deleteAccount,
-                            isDeletingAccount = mainUiState.isDeletingAccount,
-                            deleteAccountError = mainUiState.deleteAccountError,
-                            onDeleteAccountErrorShown = mainViewModel::deleteAccountErrorShown
+                            deleteAccount = DeleteAccountControls(
+                                isDeleting = mainUiState.isDeletingAccount,
+                                error = mainUiState.deleteAccountError,
+                                onDelete = mainViewModel::deleteAccount,
+                                onErrorShown = mainViewModel::deleteAccountErrorShown
+                            )
                         )
                     }
                 }

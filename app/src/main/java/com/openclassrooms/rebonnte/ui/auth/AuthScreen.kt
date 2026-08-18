@@ -1,5 +1,6 @@
 package com.openclassrooms.rebonnte.ui.auth
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
@@ -76,50 +78,45 @@ fun AuthContent(
         )
         Spacer(Modifier.height(24.dp))
 
+        // Le nom n'existe qu'a la creation : on ne le redemande pas a chaque
+        // connexion.
         if (isSignUp) {
-            OutlinedTextField(
+            AuthField(
                 value = state.displayName,
                 onValueChange = onDisplayNameChange,
-                label = { Text(stringResource(R.string.auth_field_name)) },
-                singleLine = true,
-                isError = state.displayNameError != null,
-                supportingText = { state.displayNameError?.let { Text(stringResource(it)) } },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth()
+                label = R.string.auth_field_name,
+                error = state.displayNameError,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
             Spacer(Modifier.height(8.dp))
         }
 
-        OutlinedTextField(
+        AuthField(
             value = state.email,
             onValueChange = onEmailChange,
-            label = { Text(stringResource(R.string.auth_field_email)) },
-            singleLine = true,
-            isError = state.emailError != null,
-            supportingText = { state.emailError?.let { Text(stringResource(it)) } },
+            label = R.string.auth_field_email,
+            error = state.emailError,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
-            ),
-            modifier = Modifier.fillMaxWidth()
+            )
         )
         Spacer(Modifier.height(8.dp))
 
-        OutlinedTextField(
+        AuthField(
             value = state.password,
             onValueChange = onPasswordChange,
-            label = { Text(stringResource(R.string.auth_field_password)) },
-            singleLine = true,
-            isError = state.passwordError != null,
-            supportingText = { state.passwordError?.let { Text(stringResource(it)) } },
-            visualTransformation = PasswordVisualTransformation(),
+            label = R.string.auth_field_password,
+            error = state.passwordError,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = PasswordVisualTransformation()
         )
 
+        // Erreur du formulaire entier — un refus du serveur — par opposition aux
+        // erreurs de champ, qui s'affichent sous le champ fautif.
         state.formError?.let { error ->
             Spacer(Modifier.height(12.dp))
             Text(
@@ -130,29 +127,11 @@ fun AuthContent(
         }
 
         Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onSubmit,
-            enabled = !state.isSubmitting,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (state.isSubmitting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.height(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text(
-                    stringResource(
-                        if (isSignUp) {
-                            R.string.auth_action_sign_up
-                        } else {
-                            R.string.auth_action_sign_in
-                        }
-                    )
-                )
-            }
-        }
+        SubmitButton(
+            isSignUp = isSignUp,
+            isSubmitting = state.isSubmitting,
+            onSubmit = onSubmit
+        )
 
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onToggleMode, enabled = !state.isSubmitting) {
@@ -163,6 +142,63 @@ fun AuthContent(
                     } else {
                         R.string.auth_switch_to_sign_up
                     }
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Un champ du formulaire, avec son libelle et son erreur.
+ *
+ * Les trois champs ne different que par leur libelle, leur clavier et leur
+ * masquage : le reste — ligne unique, largeur, mise en erreur, message de
+ * support — etait recopie a l'identique trois fois.
+ */
+@Composable
+private fun AuthField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    @StringRes label: Int,
+    @StringRes error: Int?,
+    keyboardOptions: KeyboardOptions,
+    visualTransformation: VisualTransformation = VisualTransformation.None
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(stringResource(label)) },
+        singleLine = true,
+        isError = error != null,
+        supportingText = { error?.let { Text(stringResource(it)) } },
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+/** Le bouton porte l'attente : desactive, et son libelle cede la place. */
+@Composable
+private fun SubmitButton(
+    isSignUp: Boolean,
+    isSubmitting: Boolean,
+    onSubmit: () -> Unit
+) {
+    Button(
+        onClick = onSubmit,
+        enabled = !isSubmitting,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (isSubmitting) {
+            CircularProgressIndicator(
+                modifier = Modifier.height(20.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
+            Text(
+                stringResource(
+                    if (isSignUp) R.string.auth_action_sign_up else R.string.auth_action_sign_in
                 )
             )
         }

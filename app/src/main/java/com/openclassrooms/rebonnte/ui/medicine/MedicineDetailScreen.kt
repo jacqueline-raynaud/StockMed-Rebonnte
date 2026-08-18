@@ -26,12 +26,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,7 +48,6 @@ import com.openclassrooms.rebonnte.ui.component.LoadingState
 import com.openclassrooms.rebonnte.ui.model.HistoryUi
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
-import kotlinx.coroutines.launch
 
 private const val EMPTY_QUANTITY = ""
 
@@ -71,10 +70,9 @@ fun MedicineDetailScreen(
 
     var quantity by rememberSaveable { mutableStateOf(EMPTY_QUANTITY) }
 
-    val scope = rememberCoroutineScope()
-    // stringResource n'est appelable que depuis un composable ; le message du
-    // snackbar depend de la quantite saisie au moment du clic, donc il se
-    // resout via le contexte.
+    // Le message du snackbar se resout dans un `LaunchedEffect`, qui n'est pas
+    // un contexte composable : `stringResource` n'y est pas appelable, d'ou le
+    // passage par le contexte Android.
     val context = LocalContext.current
 
     val confirmation by medicineViewModel.movementConfirmed.collectAsState()
@@ -105,37 +103,57 @@ fun MedicineDetailScreen(
         return
     }
 
+    // `remember` sur ce que les lambdas capturent : sans lui, un objet neuf a
+    // chaque recomposition empecherait la composable de sauter son rendu.
+    val actions = remember(medicineId, onEdit, onDeleted) {
+        MedicineDetailActions(
+            onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
+            onRemove = { medicineViewModel.updateStock(medicineId, -it) },
+            onAdd = { medicineViewModel.updateStock(medicineId, it) },
+            onDelete = {
+                medicineViewModel.deleteMedicine(medicineId)
+                onDeleted()
+            },
+            onEdit = onEdit,
+            onShowMoreHistory = medicineViewModel::showMoreHistory
+        )
+    }
+
     MedicineDetailContent(
         medicine = currentMedicine,
         histories = uiState.histories,
         hasMoreHistory = uiState.hasMoreHistory,
-        onShowMoreHistory = medicineViewModel::showMoreHistory,
         quantity = quantity,
-        onQuantityChange = { quantity = it.filter(Char::isDigit).take(5) },
-        onRemove = { medicineViewModel.updateStock(medicineId, -it) },
-        onAdd = { medicineViewModel.updateStock(medicineId, it) },
-        onDelete = {
-            medicineViewModel.deleteMedicine(currentMedicine.id)
-            onDeleted()
-        },
-        onEdit = onEdit,
+        actions = actions,
         modifier = modifier
     )
 }
+
+/**
+ * Les gestes possibles sur la fiche.
+ *
+ * Regroupes parce qu'ils vont ensemble : ce sont les six sorties de l'ecran,
+ * face a l'etat qui en est l'entree. Les enumerer un par un donnait une
+ * signature de onze parametres ou les donnees se perdaient parmi les rappels.
+ */
+@Immutable
+data class MedicineDetailActions(
+    val onQuantityChange: (String) -> Unit,
+    val onRemove: (Int) -> Unit,
+    val onAdd: (Int) -> Unit,
+    val onDelete: () -> Unit,
+    val onEdit: () -> Unit,
+    val onShowMoreHistory: () -> Unit
+)
 
 @Composable
 fun MedicineDetailContent(
     medicine: MedicineUi,
     histories: List<HistoryUi>,
     quantity: String,
-    onQuantityChange: (String) -> Unit,
-    onRemove: (Int) -> Unit,
-    onAdd: (Int) -> Unit,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit,
+    actions: MedicineDetailActions,
     modifier: Modifier = Modifier,
-    hasMoreHistory: Boolean = false,
-    onShowMoreHistory: () -> Unit = {}
+    hasMoreHistory: Boolean = false
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     val historyListState = rememberLazyListState()
@@ -151,7 +169,7 @@ fun MedicineDetailContent(
             medicine = medicine,
             onConfirm = {
                 confirmDelete = false
-                onDelete()
+                actions.onDelete()
             },
             onDismiss = { confirmDelete = false }
         )
@@ -184,7 +202,7 @@ fun MedicineDetailContent(
         ) {
             OutlinedTextField(
                 value = quantity,
-                onValueChange = onQuantityChange,
+                onValueChange = actions.onQuantityChange,
                 label = { Text(stringResource(R.string.detail_field_quantity)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -192,7 +210,7 @@ fun MedicineDetailContent(
             )
             val amount = quantity.toIntOrNull() ?: 0
             OutlinedButton(
-                onClick = { onRemove(amount) },
+                onClick = { actions.onRemove(amount) },
                 enabled = amount > 0,
                 colors = ButtonDefaults.outlinedButtonColors(
                     disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -201,7 +219,7 @@ fun MedicineDetailContent(
                 Text(stringResource(R.string.detail_action_remove))
             }
             Button(
-                onClick = { onAdd(amount) },
+                onClick = { actions.onAdd(amount) },
                 enabled = amount > 0,
                 colors = ButtonDefaults.buttonColors(
                     disabledContainerColor =
@@ -215,7 +233,7 @@ fun MedicineDetailContent(
 
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onEdit) {
+            TextButton(onClick = actions.onEdit) {
                 Text(stringResource(R.string.detail_edit_medicine))
             }
             TextButton(onClick = { confirmDelete = true }) {
@@ -247,7 +265,7 @@ fun MedicineDetailContent(
             if (hasMoreHistory) {
                 item(contentType = CONTENT_TYPE_SHOW_MORE) {
                     TextButton(
-                        onClick = onShowMoreHistory,
+                        onClick = actions.onShowMoreHistory,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.history_show_more))
@@ -339,6 +357,15 @@ fun HistoryItem(history: HistoryUi) {
     }
 }
 
+private val previewActions = MedicineDetailActions(
+    onQuantityChange = {},
+    onRemove = {},
+    onAdd = {},
+    onDelete = {},
+    onEdit = {},
+    onShowMoreHistory = {}
+)
+
 private val previewMedicine = MedicineUi(
     id = "1",
     name = "Doliprane 1000 mg",
@@ -377,11 +404,7 @@ private fun MedicineDetailContentPreview() {
             medicine = previewMedicine,
             histories = previewHistories,
             quantity = "",
-            onQuantityChange = {},
-            onRemove = {},
-            onAdd = {},
-            onDelete = {},
-            onEdit = {}
+            actions = previewActions
         )
     }
 }
@@ -395,11 +418,7 @@ private fun MedicineDetailContentWithQuantityPreview() {
             medicine = previewMedicine.copy(locationName = null),
             histories = emptyList(),
             quantity = "50",
-            onQuantityChange = {},
-            onRemove = {},
-            onAdd = {},
-            onDelete = {},
-            onEdit = {}
+            actions = previewActions
         )
     }
 }
@@ -412,11 +431,7 @@ private fun MedicineDetailContentWithMoreHistoryPreview() {
             medicine = previewMedicine,
             histories = previewHistories,
             quantity = "",
-            onQuantityChange = {},
-            onRemove = {},
-            onAdd = {},
-            onDelete = {},
-            onEdit = {},
+            actions = previewActions,
             hasMoreHistory = true
         )
     }

@@ -27,25 +27,25 @@ import javax.inject.Singleton
     components = [SingletonComponent::class],
     replaces = [RepositoryModule::class]
 )
-abstract class TestRepositoryModule {
+interface TestRepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindNetworkMonitor(impl: FakeNetworkMonitor): NetworkMonitor
+    fun bindNetworkMonitor(impl: FakeNetworkMonitor): NetworkMonitor
 
     @Binds
     @Singleton
-    abstract fun bindThemeRepository(impl: FakeThemeRepository): ThemeRepository
+    fun bindThemeRepository(impl: FakeThemeRepository): ThemeRepository
 
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: FakeUserRepository): UserRepository
+    fun bindUserRepository(impl: FakeUserRepository): UserRepository
 
     @Binds
     @Singleton
-    abstract fun bindMedicineRepository(impl: FakeMedicineRepository): MedicineRepository
+    fun bindMedicineRepository(impl: FakeMedicineRepository): MedicineRepository
 
     @Binds
     @Singleton
-    abstract fun bindAisleRepository(impl: FakeAisleRepository): AisleRepository
+    fun bindAisleRepository(impl: FakeAisleRepository): AisleRepository
 }

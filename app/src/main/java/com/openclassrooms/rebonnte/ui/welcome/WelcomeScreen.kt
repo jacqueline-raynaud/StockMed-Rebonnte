@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,24 @@ import com.openclassrooms.rebonnte.ui.model.UserUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
+ * Tout ce que la suppression de compte demande a l'ecran d'accueil.
+ *
+ * L'etat et les deux rappels voyagent ensemble parce qu'ils ne servent qu'a
+ * ca : les enumerer separement donnait quatre parametres sur huit consacres a
+ * une action secondaire, qui noyaient les trois du parcours principal.
+ *
+ * Les valeurs par defaut laissent la preview afficher l'ecran sans cette
+ * fonctionnalite.
+ */
+@Immutable
+data class DeleteAccountControls(
+    val isDeleting: Boolean = false,
+    @StringRes val error: Int? = null,
+    val onDelete: (String) -> Unit = {},
+    val onErrorShown: () -> Unit = {}
+)
+
+/**
  * allows the username to be validated if the previous user did not log out
  */
 @Composable
@@ -45,26 +64,23 @@ fun WelcomeScreen(
     onContinue: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
-    onDeleteAccount: (String) -> Unit = {},
-    isDeletingAccount: Boolean = false,
-    @StringRes deleteAccountError: Int? = null,
-    onDeleteAccountErrorShown: () -> Unit = {}
+    deleteAccount: DeleteAccountControls = DeleteAccountControls()
 ) {
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     // if error re open windows
-    LaunchedEffect(deleteAccountError) {
-        if (deleteAccountError != null) confirmDelete = true
+    LaunchedEffect(deleteAccount.error) {
+        if (deleteAccount.error != null) confirmDelete = true
     }
 
     if (confirmDelete) {
         DeleteAccountDialog(
-            isDeleting = isDeletingAccount,
-            errorMessage = deleteAccountError,
-            onConfirm = onDeleteAccount,
+            isDeleting = deleteAccount.isDeleting,
+            errorMessage = deleteAccount.error,
+            onConfirm = deleteAccount.onDelete,
             onDismiss = {
                 confirmDelete = false
-                onDeleteAccountErrorShown()
+                deleteAccount.onErrorShown()
             }
         )
     }

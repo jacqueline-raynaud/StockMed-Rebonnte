@@ -34,25 +34,25 @@ object FirebaseModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+interface RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
+    fun bindNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
 
     @Binds
     @Singleton
-    abstract fun bindThemeRepository(impl: SharedPreferencesThemeRepository): ThemeRepository
+    fun bindThemeRepository(impl: SharedPreferencesThemeRepository): ThemeRepository
 
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
+    fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
     @Binds
     @Singleton
-    abstract fun bindMedicineRepository(impl: MedicineRepositoryImpl): MedicineRepository
+    fun bindMedicineRepository(impl: MedicineRepositoryImpl): MedicineRepository
 
     @Binds
     @Singleton
-    abstract fun bindAisleRepository(impl: AisleRepositoryImpl): AisleRepository
+    fun bindAisleRepository(impl: AisleRepositoryImpl): AisleRepository
 }
