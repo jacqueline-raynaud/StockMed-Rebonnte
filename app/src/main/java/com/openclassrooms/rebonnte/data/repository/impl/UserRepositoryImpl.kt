@@ -18,11 +18,6 @@ class UserRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
 ) : UserRepository {
 
-    /**
-     * callbackFlow + awaitClose : l'ecouteur est retire des que plus personne
-     * ne collecte. Un addAuthStateListener sans retrait symetrique retiendrait
-     * son observateur pour toute la duree du processus.
-     */
     override val currentUser: Flow<UserDto?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.toUser())
@@ -46,9 +41,6 @@ class UserRepositoryImpl @Inject constructor(
         val result = auth.createUserWithEmailAndPassword(email.trim(), password).await()
         val firebaseUser = checkNotNull(result.user)
 
-        // Le nom d'affichage n'est pas un champ du compte a la creation : il
-        // faut une mise a jour de profil, puis un reload pour que l'instance
-        // locale le refletent.
         firebaseUser.updateProfile(
             UserProfileChangeRequest.Builder()
                 .setDisplayName(displayName.trim())
@@ -64,14 +56,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Re-authentification puis suppression, dans cet ordre.
-     *
-     * Firebase refuse `delete()` si la connexion n'est pas recente, avec une
-     * erreur peu parlante. Redemander le mot de passe leve la contrainte et
-     * sert de confirmation : c'est une operation irreversible.
-     *
-     * L'e-mail est relu sur le compte plutot que passe en parametre : il doit
-     * correspondre a la session en cours, quoi qu'affiche l'ecran.
+     * Re-authentification and delet account
      */
     override suspend fun deleteAccount(password: String): Result<Unit> = runCatching {
         val firebaseUser = checkNotNull(auth.currentUser)

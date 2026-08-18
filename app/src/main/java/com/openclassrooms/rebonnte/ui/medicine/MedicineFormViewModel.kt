@@ -29,36 +29,20 @@ data class MedicineFormUiState(
     val name: String = "",
     val stock: String = "0",
     val aisleId: String = "",
-    // Identifiants de ressource : voir AuthUiState pour la raison.
     @StringRes val nameError: Int? = null,
     @StringRes val stockError: Int? = null,
     @StringRes val aisleError: Int? = null,
-    /** Echec de l'enregistrement lui-meme, par opposition aux erreurs de saisie. */
     @StringRes val submitError: Int? = null,
     val isSubmitting: Boolean = false,
     val isSaved: Boolean = false,
-    /**
-     * Correction d'une fiche existante plutot que creation.
-     *
-     * L'ecran s'en sert pour masquer la quantite initiale et changer le libelle
-     * du bouton : **le stock ne se corrige pas par ce formulaire**, il ne bouge
-     * que par un mouvement trace.
-     */
     val isEditing: Boolean = false
 )
 
 /**
- * Creation **et** correction d'un medicament.
+ * Add and Edit medicine.
  *
- * Un seul formulaire pour les deux : les champs sont les memes, les regles de
- * validation aussi. Les separer aurait duplique la liste deroulante des
- * emplacements et ses controles, avec le risque de les voir diverger.
- *
- * Le mode se deduit de la route : `medicine/new` ne porte pas d'identifiant,
- * `medicine/{id}/edit` si.
- *
- * Remplace l'ancien bouton « + » qui ajoutait un medicament au nom et au stock
- * aleatoires, dans un rayon tire au hasard.
+ * It's the route that determines the case
+ * `medicine/new`withaut id and `medicine/{id}/edit` .
  */
 @HiltViewModel
 class MedicineFormViewModel @Inject constructor(
@@ -70,7 +54,6 @@ class MedicineFormViewModel @Inject constructor(
 
     private val medicineId: String? = savedStateHandle[Destinations.MEDICINE_ID_ARG]
 
-    /** Alimente la liste deroulante : on choisit parmi ce qui existe. */
     val aisles: StateFlow<List<AisleUi>> = aisleRepository.observeAisles()
         .map { aisles -> aisles.map { it.toUi() } }
         .whileSignedIn(userRepository, emptyList())
@@ -84,9 +67,6 @@ class MedicineFormViewModel @Inject constructor(
     val uiState: StateFlow<MedicineFormUiState> = _uiState.asStateFlow()
 
     init {
-        // Prechargement de la fiche a corriger. `first()` et non une
-        // observation continue : le formulaire ne doit pas ecraser la saisie en
-        // cours si un collegue modifie la meme fiche pendant l'edition.
         medicineId?.let { id ->
             viewModelScope.launch {
                 val medicine = runCatching { medicineRepository.observeMedicine(id).first() }
@@ -120,9 +100,6 @@ class MedicineFormViewModel @Inject constructor(
 
         val nameError = if (state.name.isBlank()) R.string.form_error_name_required else null
         val stock = state.stock.toIntOrNull()
-        // La quantite n'est pas saisissable en correction : elle n'a pas a etre
-        // validee, et un stock devenu illisible ne doit pas bloquer un simple
-        // changement de nom.
         val stockError = when {
             state.isEditing -> null
             stock == null -> R.string.form_error_quantity_invalid
@@ -143,8 +120,6 @@ class MedicineFormViewModel @Inject constructor(
 
         viewModelScope.launch {
             val userEmail = userRepository.currentUserOrNull()?.email.orEmpty()
-            // Le libelle accompagne la correction pour rendre l'entree
-            // d'historique lisible : voir MedicineRepository.updateMedicine.
             val aisleName = aisles.value.firstOrNull { it.id == state.aisleId }?.name.orEmpty()
 
             runCatching {
@@ -165,10 +140,8 @@ class MedicineFormViewModel @Inject constructor(
                     )
                 }
             }.fold(
-                // L'ecran observe isSaved pour revenir a la liste.
+                // screen observe isSaved for return list.
                 onSuccess = { _uiState.update { it.copy(isSubmitting = false, isSaved = true) } },
-                // On reste sur le formulaire : la saisie est conservee, le geste
-                // peut etre repete sans tout retaper.
                 onFailure = { error ->
                     _uiState.update {
                         it.copy(isSubmitting = false, submitError = error.toMessageRes())

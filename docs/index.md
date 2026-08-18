@@ -29,6 +29,10 @@ choix ont été faits ainsi.
 
     Les choix structurants et les alternatives écartées.
 
+- **[Parcours utilisateur](parcours.md)**
+
+    Chaque geste de l'opérateur, relié au code qui l'exécute.
+
 </div>
 
 ## État du projet
@@ -72,7 +76,7 @@ captures d'écran et à un export PDF, plus aux durées réelles à renseigner.
 
 | | |
 |---|---|
-| Tests unitaires | 72 |
+| Tests unitaires | 84 |
 | Tests d'interface | 9 |
 | Couverture (indicateur SonarCloud) | 16,2 % |
 | Intégration continue | Trois workflows : vérification, tests instrumentés, documentation |

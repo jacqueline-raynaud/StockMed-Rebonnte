@@ -21,17 +21,6 @@ import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
-/**
- * Ligne de liste d'un medicament.
- *
- * Il en existait deux versions incompatibles, dans MedicineScreen et dans
- * AisleDetailActivity, avec des signatures et des styles differents. Celle-ci
- * les remplace.
- *
- * Le chevron n'a pas de contentDescription : c'est une decoration, le libelle
- * de la ligne porte deja l'information. Lui en donner une ferait doublon a
- * l'oreille sous TalkBack.
- */
 @Composable
 fun MedicineItem(
     medicine: MedicineUi,
@@ -54,8 +43,6 @@ fun MedicineItem(
             Text(
                 text = stringResource(R.string.medicine_stock, medicine.stock),
                 style = MaterialTheme.typography.bodyMedium,
-                // Couleur du theme plutot que Color.Gray en dur : illisible en
-                // mode sombre.
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

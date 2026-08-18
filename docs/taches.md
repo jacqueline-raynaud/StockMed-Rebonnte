@@ -25,9 +25,10 @@ d'implémentation quand il éclaire le choix.
 | 3 | Persistance et fonctionnalités | Terminé |
 | 4 | Qualité, CI et livrables | Terminé |
 | 5 | Reprise après revue technique | Terminé |
-| 6 | Accessibilité et confort | À faire |
+| 6 | Demandes complémentaires | Terminé |
+| 7 | Accessibilité et confort | À faire |
 
-**Réalisé : 35 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 37 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---
@@ -706,8 +707,83 @@ serait enveloppée par Firestore et perdrait sa raison.
     enregistré. Le champ n'est vidé qu'à ce moment : un retrait refusé conserve
     la saisie.
 
-**Reste ouvert dans T-21** : les doublons de noms et l'absence de longueur
-maximale. Voir le [reste à faire](#reste-a-faire).
+**Reste ouvert dans T-21** : les doublons de noms de **médicaments** et
+l'absence de longueur maximale. Les emplacements, eux, sont traités par
+[T-56](#t-56). Voir le [reste à faire](#reste-a-faire).
+
+---
+
+## Lot 6 — Demandes complémentaires
+
+Deux demandes arrivées après la revue, en préparant la présentation.
+
+### T-55 · Corriger la fiche d'un médicament · 0,75 j {#t-55}
+
+**Demande.** Pouvoir rattraper une faute d'orthographe dans un nom, ou déplacer
+un médicament d'un emplacement à un autre — et que la correction figure dans
+l'historique.
+
+**Fait.** Un bouton « Modifier » sur la fiche détail ouvre le formulaire de
+création, prérempli, en mode correction.
+
+**Décision — le stock n'est pas modifiable ici.** C'est le point structurant :
+laisser corriger une quantité par ce formulaire contournerait la traçabilité.
+Le stock ne bouge que par un mouvement, qui laisse une entrée datée et signée.
+Autrement, le journal ne dirait plus d'où vient un écart d'inventaire.
+
+Le champ de quantité disparaît donc en mode correction, et sa validation est
+désactivée : un stock devenu illisible ne doit pas empêcher de corriger une
+faute de frappe.
+
+**Décision — un seul formulaire pour les deux modes.** Le mode se déduit de la
+route : `medicine/new` ne porte pas d'identifiant, `medicine/{id}/edit` si, et
+le ViewModel le lit dans son `SavedStateHandle`. Deux écrans séparés auraient
+dupliqué la liste déroulante des emplacements et ses contrôles, avec le risque
+de les voir diverger.
+
+**Détail.** L'entrée d'historique porte l'action `UPDATE`, avec un stock avant
+et après identiques — la correction se distingue d'un mouvement au premier coup
+d'œil :
+
+```
+Nom modifie de « Dolipran » a « Doliprane » ; Emplacement modifie : Stockage froid
+```
+
+Sans changement réel, **rien n'est écrit** : rouvrir une fiche et enregistrer
+sans rien toucher ne crée pas d'entrée. Un journal pollué de lignes « rien n'a
+changé » perd sa valeur.
+
+!!! warning "Le champ qui aurait fait disparaître le médicament"
+
+    `nameLowercase` porte le tri et la recherche. Le renommage doit le mettre à
+    jour en même temps que `name` : l'oublier aurait fait sortir le médicament
+    renommé de tous les résultats de recherche, **sans aucune erreur visible**.
+
+### T-56 · Noms d'emplacement uniques · 0,25 j {#t-56}
+
+**Demande.** Empêcher deux emplacements de porter le même nom, et refuser un
+nom fait uniquement d'espaces.
+
+**Fait.** Le doublon est refusé à la casse et aux espaces près — « Stockage
+froid », « stockage FROID » et «  Stockage froid  » sont le même emplacement.
+Le message s'affiche sous le champ, en rouge, et la fenêtre reste ouverte.
+
+**Pourquoi ça compte.** Deux « Stockage froid » seraient **indiscernables dans
+la liste déroulante** du formulaire de médicament. L'opérateur ne saurait pas
+lequel il choisit, et le stock se répartirait entre deux emplacements
+identiques sans que personne s'en aperçoive.
+
+**Détail.** Le nom vide était déjà refusé — le bouton de validation est
+désactivé — mais silencieusement. La règle est désormais vérifiée aussi dans le
+ViewModel, avec son message : une règle métier ne doit pas dépendre d'un détail
+d'affichage.
+
+La vérification lit la liste **à la source** plutôt que dans l'état de l'écran,
+qui est partagé en `WhileSubscribed` et pourrait être vide si la liste n'était
+pas observée au moment du contrôle.
+
+**Changement de comportement** : la fenêtre ne se ferme plus au clic mais au
+succès. Sinon un nom refusé disparaîtrait avec son message avant d'avoir été lu.
 
 ---
 
@@ -725,7 +801,7 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 
 | | Tâche |
 |---|---|
-| **T-21** | Reste de la validation : doublons de noms — rien n'empêche deux emplacements « Stockage froid », indiscernables dans la liste déroulante — et absence de longueur maximale |
+| **T-21** | Reste de la validation : doublons de noms de **médicaments** — deux « Doliprane » restent possibles — et absence de longueur maximale sur les noms |
 | **T-23** | Chargement paresseux des listes |
 | **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
 

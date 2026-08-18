@@ -33,10 +33,6 @@ fun MedicineScreen(
     )
 }
 
-/**
- * Sert la liste complete comme la liste d'un emplacement : c'est la meme ligne,
- * la meme mise en page, seul le contenu change.
- */
 @Composable
 fun MedicineContent(
     medicines: List<MedicineUi>,
@@ -90,8 +86,6 @@ private fun MedicineContentPreview() {
                     aisleId = "cold",
                     locationName = "Stockage froid"
                 ),
-                // Emplacement supprime : le libelle manque, la ligne tient
-                // quand meme.
                 MedicineUi(
                     id = "3",
                     name = "Morphine",

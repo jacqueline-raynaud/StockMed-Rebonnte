@@ -50,15 +50,6 @@ import com.openclassrooms.rebonnte.ui.model.MedicineUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 import kotlinx.coroutines.launch
 
-/**
- * Champ vide au depart et apres chaque mouvement : les boutons Retirer et
- * Ajouter sont alors desactives.
- *
- * Repartir de « 1 » serait plus rapide pour un mouvement unitaire, mais
- * laisserait les boutons actifs en permanence. Sur un telephone partage,
- * un doigt qui traine suffirait a produire un mouvement de stock intempestif —
- * et il serait trace dans l'historique comme un mouvement legitime.
- */
 private const val EMPTY_QUANTITY = ""
 
 private const val CONTENT_TYPE_HISTORY = "history"
@@ -72,8 +63,7 @@ fun MedicineDetailScreen(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // remember(medicineId) : sans cela, un nouveau Flow serait cree a chaque
-    // recomposition.
+    // remember(medicineId) to avoid recreating a flow upon every recomposition
     val detailFlow = remember(medicineId) { medicineViewModel.observeDetail(medicineId) }
     val uiState by detailFlow.collectAsState(initial = MedicineDetailUiState())
 
@@ -85,16 +75,6 @@ fun MedicineDetailScreen(
     // resout via le contexte.
     val context = LocalContext.current
 
-    /**
-     * La confirmation vient du ViewModel, une fois le mouvement **enregistre**.
-     *
-     * Sans retour visible, l'operateur doute d'avoir appuye et recommence — un
-     * double retrait de cinquante boites passe inapercu jusqu'a l'inventaire.
-     *
-     * Le champ n'est vide qu'a ce moment-la : un retrait refuse conserve la
-     * saisie, l'operateur n'a pas a la retaper. Et le vider desactive les deux
-     * boutons, pour que le geste doive etre repris deliberement.
-     */
     val confirmation by medicineViewModel.movementConfirmed.collectAsState()
     LaunchedEffect(confirmation) {
         val message = confirmation ?: return@LaunchedEffect
@@ -116,9 +96,6 @@ fun MedicineDetailScreen(
 
     val currentMedicine = uiState.medicine
     if (currentMedicine == null) {
-        // L'ancien code faisait un `return` au milieu du composable : ecran
-        // blanc sans explication. Ce cas ne se confond plus avec un chargement
-        // en cours ni avec une lecture qui a echoue.
         Text(
             text = stringResource(R.string.detail_not_found),
             modifier = modifier.padding(16.dp)
@@ -157,9 +134,6 @@ fun MedicineDetailContent(
     var confirmDelete by remember { mutableStateOf(false) }
     val historyListState = rememberLazyListState()
 
-    // L'historique est trie du plus recent au plus ancien : une nouvelle entree
-    // apparait en tete. Si l'operateur avait fait defiler la liste, il ne la
-    // verrait pas — d'ou le retour en haut quand la plus recente change.
     LaunchedEffect(histories.firstOrNull()?.id) {
         if (histories.isNotEmpty()) {
             historyListState.animateScrollToItem(0)
@@ -185,12 +159,11 @@ fun MedicineDetailContent(
         Spacer(modifier = Modifier.height(12.dp))
         ReadOnlyField(
             label = stringResource(R.string.detail_field_location),
-            // Le libelle arrive deja resolu par le ViewModel : l'ecran n'a plus
-            // a croiser la liste des emplacements.
             value = medicine.locationName
                 ?: stringResource(R.string.detail_unknown_location)
         )
         Spacer(modifier = Modifier.height(12.dp))
+
         ReadOnlyField(
             label = stringResource(R.string.detail_field_stock),
             value = medicine.stock.toString()
@@ -198,9 +171,6 @@ fun MedicineDetailContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Une quantite saisie plutot que des appuis repetes : retirer cinquante
-        // boites produit une seule operation, donc une seule entree
-        // d'historique.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -215,10 +185,6 @@ fun MedicineDetailContent(
                 modifier = Modifier.width(120.dp)
             )
             val amount = quantity.toIntOrNull() ?: 0
-            // Les deux boutons restent visiblement inactifs tant qu'aucune
-            // quantite n'est saisie — c'est le garde-fou voulu — mais leur
-            // libelle doit rester lisible. L'attenuation par defaut de Material
-            // (38 %) disparaissait dans le fond sombre.
             OutlinedButton(
                 onClick = { onRemove(amount) },
                 enabled = amount > 0,
@@ -275,19 +241,6 @@ fun MedicineDetailContent(
     }
 }
 
-/**
- * Une donnee en lecture, et non un champ de saisie desactive.
- *
- * Ces trois valeurs etaient des `TextField(enabled = false)`. Material atténue
- * volontairement le contenu desactive — c'est correct pour un champ momentanement
- * indisponible, et faux ici : ce n'est pas une saisie qu'on interdit, c'est
- * **la donnee** que l'ecran est venu montrer. En mode sombre, le stock
- * s'affichait en gris clair sur gris fonce.
- *
- * Les contenus desactives echappent aux exigences de contraste WCAG, justement
- * parce qu'ils ne portent pas d'information utile. Raison de plus pour ne pas
- * s'en servir comme affichage.
- */
 @Composable
 private fun ReadOnlyField(label: String, value: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -316,9 +269,6 @@ private fun DeleteMedicineDialog(
         text = {
             Column {
                 Text(stringResource(R.string.detail_delete_message, medicine.name))
-                // Le stock restant est rappele explicitement : supprimer un
-                // medicament encore en stock est une decision qui doit etre
-                // prise en connaissance de cause.
                 if (medicine.stock > 0) {
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -390,8 +340,7 @@ private val previewHistories = listOf(
         stockAfter = 42,
         details = "Stock modifie de 92 a 42"
     ),
-    // Entree ancienne, sans auteur ni date : le cas que l'historique d'origine
-    // produisait, et que l'affichage doit encaisser.
+
     HistoryUi(
         id = "h2",
         medicineName = "Doliprane 1000 mg",
@@ -420,7 +369,7 @@ private fun MedicineDetailContentPreview() {
     }
 }
 
-/** Quantite saisie : les deux boutons deviennent actifs. */
+
 @Preview(showBackground = true)
 @Composable
 private fun MedicineDetailContentWithQuantityPreview() {

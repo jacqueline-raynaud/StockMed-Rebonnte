@@ -37,9 +37,7 @@ import com.openclassrooms.rebonnte.ui.model.UserUi
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
- * Garde-fou pour les telephones partages entre operateurs, demande par le
- * Product Owner : on nomme explicitement la session ouverte et on offre d'en
- * sortir avant d'acceder au stock.
+ * allows the username to be validated if the previous user did not log out
  */
 @Composable
 fun WelcomeScreen(
@@ -54,8 +52,7 @@ fun WelcomeScreen(
 ) {
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
-    // L'echec rouvre la fenetre : le mot de passe etait sans doute mal saisi,
-    // et refermer obligerait a tout reprendre.
+    // if error re open windows
     LaunchedEffect(deleteAccountError) {
         if (deleteAccountError != null) confirmDelete = true
     }
@@ -114,8 +111,6 @@ fun WelcomeScreen(
             Text(stringResource(R.string.action_sign_out))
         }
 
-        // Discret et a l'ecart des deux actions courantes : c'est irreversible,
-        // ca ne doit pas se toucher en visant « Se deconnecter ».
         Spacer(Modifier.height(24.dp))
         TextButton(onClick = { confirmDelete = true }) {
             Text(
@@ -138,17 +133,7 @@ private fun WelcomeScreenPreview() {
     }
 }
 
-/**
- * Confirmation de suppression de compte.
- *
- * Le mot de passe est redemande pour deux raisons : Firebase exige une
- * connexion recente pour supprimer un compte, et sur un telephone partage la
- * saisie fait office de preuve que c'est bien le titulaire qui agit.
- *
- * L'avertissement sur l'historique est affiche avant la validation, et non
- * apres : l'operateur doit savoir que ses mouvements resteront signes de son
- * adresse.
- */
+
 @Composable
 private fun DeleteAccountDialog(
     isDeleting: Boolean,

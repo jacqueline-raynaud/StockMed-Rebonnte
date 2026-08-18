@@ -21,13 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.UiMessage
 
-/**
- * Les deux etats qu'une liste vide ne savait pas exprimer.
- *
- * Un `LazyColumn` vide se lisait « il n'y a rien en stock », que les donnees
- * soient en route ou que la lecture ait echoue. Sur un stock de medicaments,
- * confondre « rien » et « je ne sais pas » n'est pas anodin.
- */
 @Composable
 fun LoadingState(modifier: Modifier = Modifier) {
     Box(
@@ -39,15 +32,8 @@ fun LoadingState(modifier: Modifier = Modifier) {
 }
 
 /**
- * Un geste qui n'a pas abouti, annonce par une fenetre a valider.
- *
- * Un snackbar ne convient pas ici : il s'efface tout seul, en bas de l'ecran,
- * et rien ne garantit qu'il ait ete lu. Pour un mouvement de stock refuse,
- * l'operateur doit **acquitter** le message — sinon il repart en croyant son
- * retrait enregistre, et l'ecart n'apparaitra qu'a l'inventaire.
- *
- * Le snackbar reste pour les confirmations : une operation reussie n'a pas
- * besoin d'etre validee.
+ * Prefer the stock movement error dialog box over the snackbar,
+ * which might go unnoticed.
  */
 @Composable
 fun ActionErrorDialog(message: UiMessage, onDismiss: () -> Unit) {

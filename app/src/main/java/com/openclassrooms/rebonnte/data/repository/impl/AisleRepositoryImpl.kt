@@ -19,6 +19,13 @@ class AisleRepositoryImpl @Inject constructor(
 
     private val aisles get() = firestore.collection(COLLECTION_AISLES)
 
+    /**
+     * Observes the collection of aisles .
+     * Povides a real-time stream of the current data.
+     * The resulting list is ordered alphabetically by the aisle name.
+     *
+     * @return A [Flow] emitting a list of [AisleDto] objects whenever the remote data changes.
+     */
     override fun observeAisles(): Flow<List<AisleDto>> = callbackFlow {
         val registration = aisles.orderBy(FIELD_NAME).addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -34,6 +41,13 @@ class AisleRepositoryImpl @Inject constructor(
         awaitClose { registration.remove() }
     }
 
+    /**
+     * Observes a specific aisle
+     * Provides a real-time stream of its data.
+     *
+     * @param id The ID of the aisle to observe.
+     * @return A [Flow] emitting the [AisleDto] object for the specified aisle, or `null` if not found.
+     */
     override fun observeAisle(id: String): Flow<AisleDto?> = callbackFlow {
         val registration = aisles.document(id).addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -53,12 +67,8 @@ class AisleRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Identifiants de document fixes plutot que generes : `set` devient
-     * idempotent. Deux appareils qui amorcent la base au meme instant
-     * aboutissent au meme resultat, la ou des identifiants aleatoires auraient
-     * cree des doublons.
-     *
-     * `merge` preserve un libelle qui aurait ete personnalise depuis la console.
+     * prevents non-existent locations from appearing when the application starts
+     * and avoids duplicate entries created by two users
      */
     override suspend fun ensureDefaultStorageLocations() {
         val batch = firestore.batch()

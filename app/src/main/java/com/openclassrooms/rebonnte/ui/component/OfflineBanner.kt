@@ -25,15 +25,10 @@ import com.openclassrooms.rebonnte.R
 import com.openclassrooms.rebonnte.ui.theme.RebonnteTheme
 
 /**
- * Bandeau permanent, et non un dialogue.
+ * Persistent banner when the network is down
  *
- * Une coupure reseau peut durer : un dialogue se ferme et ne dit plus rien
- * trois minutes plus tard, alors que la situation, elle, n'a pas change. Le
- * bandeau reste tant que le reseau manque et disparait des son retour, sans
- * demander d'action.
- *
- * Il accompagne [OfflineContent], qui bloque l'ecran : le bandeau nomme la
- * cause en permanence, y compris apres un defilement.
+ * It accompanies [OfflineContent], which blocks the screen: the banner names the
+ * cause permanently, including after a scroll.
  */
 @Composable
 fun OfflineBanner(modifier: Modifier = Modifier) {
@@ -47,9 +42,7 @@ fun OfflineBanner(modifier: Modifier = Modifier) {
     ) {
         Icon(
             imageVector = Icons.Default.Info,
-            // Decoratif : le texte a cote porte deja toute l'information, et
-            // TalkBack le lira.
-            contentDescription = null,
+            contentDescription = null, //talkback reads text aloud
             tint = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
@@ -69,20 +62,15 @@ private fun OfflineBannerPreview() {
 }
 
 /**
- * Ecran de blocage hors ligne.
+ * Screen block when the network is down
  *
  * Decision metier : sans reseau, l'application n'affiche aucune donnee et
  * n'autorise aucune action. Deux raisons, tranchees avec le metier :
  *
- * - Les transactions Firestore, dont dependent les mouvements de stock, ne
- *   fonctionnent pas hors ligne. Laisser les boutons actifs promettrait des
- *   operations qui n'auraient pas lieu.
- * - Un comptage manuel effectue sur des chiffres possiblement perimes est pire
- *   que pas de comptage : il produit un ecart d'inventaire que personne ne sait
- *   ensuite expliquer.
+ * Firestore transactions, upon which stock movements depend, do not
+ * work offline
  *
- * L'entreprise equipe ses operateurs et fournit la couverture reseau : le
- * hors-ligne est un incident, pas un mode de travail.
+ * Being offline is an incident, not a way of working
  */
 @Composable
 fun OfflineContent(modifier: Modifier = Modifier) {

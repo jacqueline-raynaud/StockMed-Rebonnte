@@ -18,18 +18,7 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40
 )
 
-/**
- * Les couleurs dynamiques sont **volontairement absentes**.
- *
- * Elles derivent la palette du fond d'ecran de l'utilisateur : les contrastes
- * deviennent imprevisibles et aucune conformite WCAG ne peut etre garantie.
- * Sur une application ou l'on lit des quantites de medicaments, la lisibilite
- * prime sur la coquetterie — et c'est incompatible avec T-31.
- *
- * [darkTheme] est un parametre et non une lecture directe du systeme : le
- * reglage de l'utilisateur peut forcer un mode, quel que soit celui du
- * telephone.
- */
+
 @Composable
 fun RebonnteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

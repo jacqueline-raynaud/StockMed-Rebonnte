@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** Pendant de [InMemoryMedicineRepository] pour les emplacements de stockage. */
+/** In-memory implementation as a double in unit and instrumented tests. */
 @Singleton
 class InMemoryAisleRepository @Inject constructor() : AisleRepository {
 
@@ -28,8 +28,6 @@ class InMemoryAisleRepository @Inject constructor() : AisleRepository {
     }
 
     override suspend fun ensureDefaultStorageLocations() {
-        // Les emplacements standards sont deja presents a la construction ;
-        // on ne recree que ceux qu'un test aurait retires.
         val existing = aisles.value.map { it.id }.toSet()
         aisles.value = aisles.value + StorageLocations.DEFAULTS.filterNot { it.id in existing }
     }
