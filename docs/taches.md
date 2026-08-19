@@ -28,7 +28,7 @@ d'implémentation quand il éclaire le choix.
 | 6 | Demandes complémentaires | Terminé |
 | 7 | Accessibilité et confort | À faire |
 
-**Réalisé : 38 tâches.** Le [reste à faire](#reste-a-faire) est détaillé en fin
+**Réalisé : 42 tâches**, pour 30,25 jours estimés au cadrage. Le [reste à faire](#reste-a-faire) est détaillé en fin
 de page — un backlog honnête vaut mieux qu'une liste toute verte.
 
 ---

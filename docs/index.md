@@ -90,6 +90,7 @@ mesures](qualite.md).
 
 |                      |                                                                                                                                                          |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Ce site              | [jacqueline-raynaud.github.io/StockMed-Rebonnte](https://jacqueline-raynaud.github.io/StockMed-Rebonnte/)                                                |
 | Dépôt                | [github.com/jacqueline-raynaud/StockMed-Rebonnte](https://github.com/jacqueline-raynaud/StockMed-Rebonnte)                                               |
 | Intégration continue | [github.com/jacqueline-raynaud/StockMed-Rebonnte/actions](https://github.com/jacqueline-raynaud/StockMed-Rebonnte/actions)                               |
 | Qualité du code      | [sonarcloud.io/project/overview?id=jacqueline-raynaud_StockMed-Rebonnte](https://sonarcloud.io/project/overview?id=jacqueline-raynaud_StockMed-Rebonnte) |

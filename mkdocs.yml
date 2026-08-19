@@ -3,6 +3,7 @@ site_description: >-
   Reprise de l'application de gestion des stocks de médicaments Rebonnte :
   analyse, corrections, décisions d'architecture et qualité.
 site_author: Jacqueline Raynaud
+site_url: https://jacqueline-raynaud.github.io/StockMed-Rebonnte/
 
 repo_url: https://github.com/jacqueline-raynaud/StockMed-Rebonnte
 repo_name: jacqueline-raynaud/StockMed-Rebonnte
