@@ -18,10 +18,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * T-15 : la creation remplace l'ancien bouton qui ajoutait un medicament au nom
- * et au stock aleatoires, dans un emplacement tire au hasard.
- */
+
 class MedicineFormViewModelTest {
 
     @get:Rule
@@ -44,7 +41,7 @@ class MedicineFormViewModelTest {
         )
     }
 
-    // --- Validation ----------------------------------------------------------
+    // --- Validation ---
 
     @Test
     fun `an empty form creates nothing`() = runTest(mainDispatcherRule.dispatcher) {
@@ -85,7 +82,7 @@ class MedicineFormViewModelTest {
         assertEquals(null, viewModel.uiState.value.nameError)
     }
 
-    // --- Creation ------------------------------------------------------------
+    // --- Creation ---
 
     @Test
     fun `a valid form creates the medicine in the chosen location`() =
@@ -140,7 +137,7 @@ class MedicineFormViewModelTest {
             )
         }
 
-    // --- Mode correction ------------------------------------------------------
+    // --- Mode correction ----
 
     /**
      * En correction, le formulaire arrive prerempli : l'operateur corrige une

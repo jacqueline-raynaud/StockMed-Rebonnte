@@ -1,7 +1,11 @@
 package com.openclassrooms.rebonnte.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -117,5 +121,25 @@ private fun OfflineContentPreview() {
             OfflineBanner()
             OfflineContent()
         }
+    }
+}
+
+/**
+ * Le voile hors ligne : il recouvre l'ecran et avale les gestes.
+ *
+ * Bloquer totalement est un choix du Product Owner — un comptage de stock fait
+ * sur des donnees peut-etre perimees ne vaut rien.
+ */
+@Composable
+internal fun BoxScope.OfflineOverlay(isOffline: Boolean) {
+    if (!isOffline) return
+
+    Box(
+        modifier = Modifier
+            .matchParentSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .pointerInput(Unit) { detectTapGestures { } }
+    ) {
+        OfflineContent()
     }
 }
