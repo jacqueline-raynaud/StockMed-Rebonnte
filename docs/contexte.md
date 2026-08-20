@@ -27,7 +27,19 @@ charges était considérable.
 | Historique            | **Cassé** — rien n'apparait                                     |
 
 Absents également : toute persistance, l'injection de dépendances, les tests,
-l'intégration continue et la distribution de l'application. 
+l'intégration continue et la distribution de l'application.
+
+### L'équipe en place
+
+Le pôle IT & Development du groupe est **essentiellement composé de développeurs
+web**, chargés des web-apps du groupe. L'application Android était pour eux un
+terrain inhabituel, ce qui éclaire une partie des défauts relevés — le découpage
+en `Activity`, les données en mémoire, l'absence de tests.
+
+Ce n'est pas qu'une explication : c'est une donnée d'organisation qui sert au
+moment de décider **où** un besoin doit être traité. Elle est ce qui a conduit à
+transmettre le journal global du stock ([T-45](taches.md#reste-a-faire)) à ce
+pôle plutôt que d'en faire un écran mobile.
 
 ---
 
@@ -186,7 +198,7 @@ non traitées sont signalées comme telles : voir le
 | Constat                                                                    | Tâche | État        |
 |----------------------------------------------------------------------------|-------|-------------|
 | Retirer 50 boîtes demande 50 clics et produit 50 lignes d'historique       | T-44  | Fait        |
-| Historique consultable seulement médicament par médicament                 | T-45  | **À faire** |
+| Historique consultable seulement médicament par médicament                 | T-45  | **Transmis au pôle web** |
 | Rayons créés au hasard, sans rapport avec les règles de stockage           | T-46  | Fait        |
 | Base de données ouverte sans règles de sécurité                            | T-43  | Fait        |
 | Un retrait supérieur au stock était plafonné en silence                    | T-21  | Fait        |

@@ -842,7 +842,36 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 
 | | Tâche | État actuel |
 |---|---|---|
-| **T-45** | Journal global du stock | L'historique n'est consultable que médicament par médicament. Le service qualité a besoin de « qui a touché au stock cette semaine ». Le modèle le permet déjà, il ne manque qu'un écran — voir l'[ambiguïté relevée](analyse.md#une-ambiguite-dans-les-demandes) |
+| **T-45** | Journal global du stock | **Transmis au pôle web**, avec son dossier de conception. L'historique reste consultable médicament par médicament dans l'application ; le journal transverse, lui, sort du périmètre mobile — voir [ci-dessous](#t-45) et l'[ambiguïté relevée](analyse.md#une-ambiguite-dans-les-demandes) |
+
+#### T-45 · Le journal du stock part au pôle web {#t-45}
+
+Le service qualité veut répondre à « qui a touché au stock cette semaine ». Le
+besoin est légitime et le modèle de données le permet déjà. Il n'a pourtant pas
+été réalisé côté Android, et c'est une décision.
+
+**Le contrôle d'accès est intenable côté mobile.** Le journal ne s'adresse pas
+aux opérateurs mais au service qui gère les stocks. Or la fiche d'un médicament
+et le journal global lisent **la même collection avec la même opération** : un
+`list` sur `history`. Une règle Firestore ne sait pas distinguer les deux — elle
+dit oui aux deux, ou non aux deux. Masquer l'écran dans l'application ne
+protégerait donc rien : il suffit d'extraire l'APK pour interroger la base
+directement.
+
+**Le support ne correspond pas à l'usage.** Un journal d'audit se consulte
+depuis un bureau : on trie, on croise des critères, on imprime, et on finit
+généralement par exporter vers un tableur. C'est une page web, pas un téléphone
+tenu d'une main devant une étagère.
+
+**L'équipe compétente existe déjà.** Le pôle IT & Development est composé de
+développeurs web ([voir le contexte](contexte.md#lequipe-en-place)). Une
+web-app lisant Firestore **depuis son serveur** résout au passage le problème
+d'accès : le navigateur ne touche jamais la base, et la frontière devient réelle.
+
+Le dossier de transmission — modèle de données, contraintes de requête, index à
+créer, pièges connus et questions à trancher — a été rédigé et remis. Ce qui
+reste dans l'application est inchangé : l'historique de chaque fiche, tel que le
+Product Owner l'a demandé.
 
 ### Robustesse
 
