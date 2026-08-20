@@ -609,7 +609,7 @@ n'a rien vu se solde par un écart d'inventaire.
     pouvait donc montrer que l'application mourait sur une erreur Firestore.
 
     D'où `FailingMedicineRepository`, qui échoue toujours avec la raison
-    demandée. Les sept tests qu'il porte ne rateraient pas une assertion sur
+    demandée. Les dix tests qu'il porte ne rateraient pas une assertion sur
     la version précédente : ils planteraient.
 
 ### T-51 · Blocage hors ligne · 0,5 j
@@ -851,6 +851,7 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 | **T-21** | Reste de la validation : doublons de noms de **médicaments** — deux « Doliprane » restent possibles — et absence de longueur maximale sur les noms |
 | **T-57** | Pagination de la liste principale des médicaments, qui descend en entier. Raisonnable sur quelques centaines de références, à revoir sur plusieurs milliers — voir [T-23](#t-23) |
 | **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
+| **T-58** | **Mot de passe oublié** : l'écran de connexion est un cul-de-sac. Un opérateur qui a oublié son mot de passe n'a aucune issue dans l'application. Voir la [question ouverte](#mot-de-passe-oublie) sur la procédure à retenir |
 
 ### Livrables et finition
 
@@ -963,8 +964,30 @@ mieux dans un mode différent du reste du téléphone.
 
 ### Questions ouvertes pour le Product Owner
 
-Trois points relèvent d'une **règle métier**, pas d'un choix technique. Ils sont
+Quatre points relèvent d'une **règle métier**, pas d'un choix technique. Ils sont
 signalés ici plutôt que tranchés unilatéralement.
+
+#### Mot de passe oublié : quelle procédure ? {#mot-de-passe-oublie}
+
+L'écran de connexion n'offre aucune issue à qui a oublié son mot de passe. Le
+manque est réel, mais la solution évidente — un lien « Mot de passe oublié ? »
+qui envoie un courriel de réinitialisation — **suppose que l'opérateur ait accès
+à sa boîte mail depuis le téléphone de l'entrepôt**. Sur des appareils partagés,
+ce n'est pas acquis.
+
+**Trois politiques possibles :**
+
+| Politique | Conséquence |
+|---|---|
+| Réinitialisation par courriel dans l'application | Une demi-journée, et l'opérateur se dépanne seul. Suppose un accès à sa messagerie depuis le téléphone, et ouvre une boîte mail personnelle sur un appareil partagé |
+| Réinitialisation par un administrateur | Aucun développement : la console Firebase le permet déjà. Demande une procédure écrite et quelqu'un de joignable ; l'opérateur est bloqué en attendant |
+| Comptes créés et gérés par un administrateur | La création libre de compte disparaît de l'application. Le plus cohérent avec un usage professionnel, le plus coûteux à mettre en place |
+
+**Ce que la question révèle** : l'application laisse aujourd'hui n'importe qui
+créer un compte et accéder au stock. C'est ce que demandait le cahier des
+charges, mais la question du mot de passe oublié montre que le modèle de gestion
+des comptes n'a jamais été arbitré. La réponse à celle-ci décidera aussi de
+celui-là.
 
 #### L'adresse e-mail dans l'historique après suppression du compte {#rgpd}
 
