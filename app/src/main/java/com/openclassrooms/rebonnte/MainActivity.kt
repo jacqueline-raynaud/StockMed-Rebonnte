@@ -189,7 +189,7 @@ fun MyApp() {
                     navController = navController,
                     startDestination = startDestination
                 ) {
-                    sessionDestinations(mainViewModel, mainUiState)
+                    sessionDestinations(mainViewModel)
                     stockDestinations(
                         navController = navController,
                         medicineViewModel = medicineViewModel,

@@ -143,6 +143,36 @@ class NavigationFlowTest {
     }
 
     /**
+     * Regression : apres une connexion, l'ecran d'accueil restait **vide**.
+     *
+     * Le graphe de navigation recevait l'etat en parametre au lieu de le lire
+     * dans la destination. Construit une seule fois, il conservait le `user` a
+     * `null` du premier affichage : la redirection amenait bien sur l'accueil,
+     * mais plus rien ne s'y affichait.
+     *
+     * Tous les autres tests demarrent avec une session deja ouverte — le seul
+     * cas ou le defaut est invisible. C'est pourquoi il est passe au travers.
+     */
+    @Test
+    fun signingIn_showsTheWelcomeScreen() {
+        userRepository.setSignedIn(null)
+        launchApp()
+
+        composeRule.onNodeWithText(string(R.string.auth_field_email))
+            .performTextInput("operateur@rebonnte.fr")
+        composeRule.onNodeWithText(string(R.string.auth_field_password))
+            .performTextInput("motdepasse")
+        composeRule.onNodeWithText(string(R.string.auth_action_sign_in)).performClick()
+        composeRule.waitForIdle()
+
+        composeRule
+            .onNodeWithText(
+                string(R.string.welcome_greeting, FakeUserRepository.TEST_DISPLAY_NAME)
+            )
+            .assertIsDisplayed()
+    }
+
+    /**
      * Regression : au demarrage avec une session deja ouverte, l'effet de
      * navigation renavigait en boucle vers la destination de depart. L'ecran
      * s'affichait mais ne repondait plus a aucun clic.

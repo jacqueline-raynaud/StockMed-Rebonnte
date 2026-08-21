@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -25,6 +27,7 @@ import com.openclassrooms.rebonnte.ui.medicine.MedicineScreen
 import com.openclassrooms.rebonnte.ui.medicine.MedicineViewModel
 import com.openclassrooms.rebonnte.ui.welcome.DeleteAccountControls
 import com.openclassrooms.rebonnte.ui.welcome.WelcomeScreen
+
 /**
  * Ramene l'operateur sur l'ecran que sa session impose.
  *
@@ -69,23 +72,31 @@ internal fun FinishOnBackFromRoot(navController: NavHostController) {
     }
 }
 
-/** Connexion et accueil : les deux ecrans qui precedent l'entree dans le stock. */
-internal fun NavGraphBuilder.sessionDestinations(
-    mainViewModel: MainViewModel,
-    mainUiState: MainUiState
-) {
+/**
+ * Connexion et accueil : les deux ecrans qui precedent l'entree dans le stock.
+ *
+ * Le ViewModel est recu, **jamais son etat**. Le graphe de navigation n'est
+ * construit qu'une fois : un etat passe en parametre y resterait fige sur sa
+ * valeur du premier affichage. Au demarrage sans session, `user` vaut `null` ;
+ * apres connexion l'accueil s'afficherait vide, faute de relire quoi que ce
+ * soit. La collecte doit donc avoir lieu **dans** la destination, ou elle
+ * s'abonne reellement a l'etat.
+ */
+internal fun NavGraphBuilder.sessionDestinations(mainViewModel: MainViewModel) {
     composable(Destinations.AUTH) {
         AuthScreen(viewModel = hiltViewModel<AuthViewModel>())
     }
     composable(Destinations.WELCOME) {
-        mainUiState.user?.let { user ->
+        val state by mainViewModel.uiState.collectAsState()
+
+        state.user?.let { user ->
             WelcomeScreen(
                 user = user,
                 onContinue = mainViewModel::acknowledgeWelcome,
                 onSignOut = mainViewModel::signOut,
                 deleteAccount = DeleteAccountControls(
-                    isDeleting = mainUiState.isDeletingAccount,
-                    error = mainUiState.deleteAccountError,
+                    isDeleting = state.isDeletingAccount,
+                    error = state.deleteAccountError,
                     onDelete = mainViewModel::deleteAccount,
                     onErrorShown = mainViewModel::deleteAccountErrorShown
                 )
