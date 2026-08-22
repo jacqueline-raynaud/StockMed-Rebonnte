@@ -69,7 +69,14 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.superfences
+  # custom_fences : sans cette declaration, un bloc de langage "mermaid"
+  # s'affiche en code gris au lieu d'etre dessine. Material embarque deja
+  # Mermaid, il suffit de lui designer le langage a intercepter.
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
