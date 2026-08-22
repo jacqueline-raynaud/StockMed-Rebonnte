@@ -30,6 +30,42 @@ parcours, ceux du cahier des charges.
 L'écran est découpé en deux : `AuthScreen` (`AuthScreen.kt:36`) connaît le
 ViewModel, `AuthContent` (:54) ne reçoit que des données et des lambdas - c'est
 ce qui le rend prévisualisable et testable sans Hilt.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant UI as AuthScreen
+    participant VM as AuthViewModel
+    participant Repo as UserRepositoryImpl
+    participant FB as Firebase Auth
+
+    UI->>U: Formulaire de connexion (route AUTH)
+    U->>UI: Touche « Créer un compte »
+    UI->>VM: toggleMode() (:33)
+    VM-->>UI: Mode inscription, le champ Nom apparaît
+    U->>UI: Saisit nom, adresse, mot de passe
+    UI->>VM: onDisplayNameChange(), onEmailChange(), onPasswordChange()
+    U->>UI: Touche « Créer le compte »
+    UI->>VM: submit() (:44)
+
+    alt Validation locale échouée
+        VM-->>UI: Erreurs sous les champs, aucun appel réseau
+    else Champs valides
+        VM->>Repo: signUp(email, mot de passe, nom) (:36)
+        Repo->>FB: createUserWithEmailAndPassword()
+        alt Échec
+            FB-->>Repo: exception
+            Repo-->>VM: Result.failure
+            Note over VM: messageFor() traduit « already in use » (:99)
+            VM-->>UI: Message sous le bouton, saisie conservée
+        else Succès
+            FB-->>Repo: FirebaseUser
+            Repo->>FB: updateProfile(nom) puis reload()
+            Note over VM: Le ViewModel ne navigue pas.<br/>currentUser change, SessionRedirect fait le reste (:39)
+            VM-->>U: Écran d'accueil, pas le stock
+        end
+    end
+```
 
 ### S'identifier
 
@@ -44,6 +80,31 @@ garde-fou demandé pour les téléphones partagés.
 Il touche « OK, c'est bien moi » (:122) → `acknowledgeWelcome()`
 (`MainViewModel.kt:116`), et l'effet de navigation l'envoie sur la liste des
 emplacements.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant VM as AuthViewModel
+    participant Repo as UserRepositoryImpl
+    participant FB as Firebase Auth
+    participant Nav as SessionRedirect
+
+    U->>VM: submit() (:44)
+    Note over VM: Validation locale : arobase et point,<br/>mot de passe d'au moins six caractères
+    VM->>Repo: signIn(adresse, mot de passe) (:31)
+    Repo->>FB: signInWithEmailAndPassword()
+
+    alt Échec
+        FB-->>Repo: exception
+        Repo-->>VM: Result.failure
+        VM-->>U: « Adresse ou mot de passe incorrect » (:99)
+    else Succès
+        FB->>Repo: AuthStateListener émet le nouvel utilisateur
+        Repo-->>Nav: MainUiState.user change
+        Nav->>Nav: user non nul, accueil non validé (:39)
+        Nav->>U: Écran d'accueil
+    end
+```
 
 ### Se déconnecter
 
@@ -63,6 +124,31 @@ cette remise à zéro, l'opérateur suivant sauterait l'avertissement.
   bouton retour ne doit pas ramener sur les écrans de stock ;
 - `whileSignedIn` (`ui/SessionGate.kt`) annule les écouteurs Firestore. Sans
   lui, ils recevraient un refus de permission et l'application se fermerait.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant VM as MainViewModel
+    participant Repo as UserRepositoryImpl
+    participant Gate as whileSignedIn
+    participant FS as Écouteurs Firestore
+
+    U->>VM: signOut() (:120)
+    VM->>VM: welcomeAcknowledged = false (:121)
+    Note over VM: D'abord la remise à zéro : sans elle, l'opérateur<br/>suivant sauterait l'avertissement
+    VM->>Repo: signOut() (:54)
+
+    par Deux mécanismes
+        Repo-->>Gate: currentUser passe à null
+        Gate->>FS: flux débranchés, awaitClose retire les écouteurs
+        Note over FS: Sans cela : PERMISSION_DENIED,<br/>et l'application se ferme
+    and
+        Repo-->>VM: MainUiState.user = null
+        VM-->>U: SessionRedirect ramène sur AUTH, pile vidée
+    end
+
+    Note over U: À la racine, le retour ferme l'application<br/>FinishOnBackFromRoot (:68) — sinon écran noir
+```
 
 ### Supprimer le compte
 
@@ -77,6 +163,35 @@ cette remise à zéro, l'opérateur suivant sauterait l'avertissement.
 
 L'avertissement est affiché **avant** la validation, pas après. Voir la
 [question ouverte](taches.md#rgpd) sur le sort de cette donnée personnelle.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant Dlg as DeleteAccountDialog
+    participant VM as MainViewModel
+    participant Repo as UserRepositoryImpl
+    participant FB as Firebase Auth
+
+    U->>Dlg: « Supprimer mon compte » (:131)
+    Note over Dlg: Avertit AVANT validation que l'historique<br/>restera signé de son adresse
+    U->>Dlg: Saisit son mot de passe et valide (:194)
+    Dlg->>VM: deleteAccount(mot de passe) (:83)
+    VM->>Repo: deleteAccount(mot de passe) (:61)
+    Repo->>FB: reauthenticate(credential)
+    Note over Repo,FB: Firebase refuse delete() sans connexion récente.<br/>Le mot de passe lève la contrainte et sert de confirmation
+
+    alt Mot de passe faux
+        FB-->>Repo: exception
+        Repo-->>VM: Result.failure
+        VM->>VM: deletionMessageFor() (:101)
+        VM-->>Dlg: Erreur sous le champ, fenêtre rouverte
+    else Accepté
+        Repo->>FB: delete()
+        FB-->>Repo: compte supprimé, session fermée
+        VM-->>U: SessionRedirect ramène sur AUTH
+        Note over FB: L'historique reste : journal en ajout seul
+    end
+```
 
 ---
 
@@ -100,6 +215,37 @@ seraient indiscernables dans la liste déroulante du formulaire de médicament.
 
 Cet écran remplace l'ancien bouton qui fabriquait « Aisle 2 », « Aisle 3 » : un
 emplacement porte un nom choisi.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant Fab as StockFab
+    participant Host as AddAisleDialogHost
+    participant VM as AisleViewModel
+    participant Repo as AisleRepositoryImpl
+
+    U->>Fab: Bouton flottant (AppBars.kt:143)
+    Note over Fab: C'est l'onglet courant qui décide de ce qu'on ajoute
+    Fab->>Host: showAddAisleDialog = true (MainActivity.kt:180)
+    U->>Host: Saisit un nom et valide (AddAisleDialog.kt:45)
+    Host->>VM: addAisle(nom) (:53)
+
+    alt Nom vide ou fait d'espaces
+        VM-->>Host: form_error_name_required (:56)
+    else Nom déjà pris
+        Note over VM: Comparaison à la casse et aux espaces près
+        VM-->>Host: aisle_error_duplicate (:66)
+    else Nom accepté
+        VM->>Repo: addAisle(nom) (:62)
+        Repo-->>VM: AisleDto
+        VM->>VM: aisleCreated = true (:73)
+        VM-->>Host: LaunchedEffect(aisleCreated) ferme la fenêtre
+        Repo-->>U: La liste se met à jour seule, observeAisles est un flux
+    end
+```
+
+La fenêtre se ferme **au succès, jamais au clic** : sinon un nom refusé
+disparaîtrait avec son message avant d'avoir été lu.
 
 ### Ouvrir un emplacement
 
@@ -116,6 +262,24 @@ propre flux - `observeMedicinesInAisle` (`MedicineViewModel.kt:67`) →
 `MedicineRepositoryImpl.kt:68` - dont le filtre `whereEqualTo("aisleId", …)`
 est **exécuté par la base**. Auparavant tout le stock descendait pour n'afficher
 qu'une poignée de lignes.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant List as AisleScreen
+    participant Screen as AisleDetailScreen
+    participant VM as MedicineViewModel
+    participant FS as Firestore
+
+    U->>List: Touche un emplacement (AisleItem :94)
+    List->>Screen: Destinations.aisleDetail(id), composable AISLE_DETAIL
+    Screen->>VM: observeMedicinesInAisle(aisleId) (:67)
+    VM->>FS: whereEqualTo("aisleId", …) (MedicineRepositoryImpl.kt:68)
+    Note over FS: Le filtre est exécuté PAR LA BASE.<br/>Avant, tout le stock descendait pour afficher<br/>une poignée de lignes
+    FS-->>VM: seulement les médicaments de cet emplacement
+    VM-->>Screen: MedicineListUiState
+    Screen->>U: Réutilise MedicineContent (:33)
+```
 
 ### Ouvrir un médicament depuis un emplacement
 
@@ -142,6 +306,38 @@ C'est la même composable que la liste principale : `MedicineContent`
 
 Cet écran remplace le bouton « + » qui ajoutait un médicament au nom et au stock
 aléatoires, dans un emplacement tiré au hasard.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant UI as MedicineFormScreen
+    participant VM as MedicineFormViewModel
+    participant Repo as MedicineRepositoryImpl
+    participant FS as Firestore
+
+    U->>UI: Saisit le nom, choisit l'emplacement, la quantité
+    Note over UI: L'emplacement se choisit dans une liste (:107).<br/>On ne peut plus inventer un rayon
+    U->>UI: Touche « Créer le médicament » (:143)
+    UI->>VM: submit() (:83)
+
+    alt Un champ invalide
+        VM-->>UI: Erreurs sous les champs, aucun appel réseau
+    else Champs valides
+        VM->>Repo: addMedicine(nom, stock, aisleId, e-mail) (:116)
+        Repo->>FS: WriteBatch : set(médicament) + set(entrée CREATE)
+        Note over FS: Un lot, pas deux écritures successives :<br/>aucun des deux ne peut exister sans l'autre
+        alt Échec
+            FS-->>Repo: exception
+            Repo-->>VM: StockException traduite
+            VM-->>UI: Message sous le bouton, saisie conservée
+        else Succès
+            FS-->>Repo: lot appliqué
+            VM->>VM: isSaved = true (:130)
+            VM-->>UI: LaunchedEffect(isSaved) (:46)
+            UI->>U: Retour automatique à la liste
+        end
+    end
+```
 
 ### Ouvrir un médicament
 
@@ -165,6 +361,36 @@ lecture par `ReadOnlyField` (:280), l'historique par `HistoryItem` (:327).
 L'historique remonte en tête à chaque nouvelle entrée (:161) : sans cela, un
 opérateur qui a fait défiler la liste ne verrait pas le mouvement qu'il vient de
 faire.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant UI as MedicineDetailScreen
+    participant VM as MedicineViewModel
+    participant Repo as MedicineRepositoryImpl
+
+    U->>UI: Touche un médicament
+    UI->>VM: observeDetail(medicineId) (:111)
+
+    par Trois sources combinées
+        VM->>Repo: observeMedicine(id) (:85)
+    and
+        VM->>Repo: observeHistory(id, limit = 20 + 1) (:96)
+        Note over Repo: Une entrée de plus que ce qui sera affiché :<br/>c'est elle, jamais montrée, qui dit qu'une<br/>page plus ancienne existe
+    and
+        VM->>VM: aisleNames — le document ne porte qu'un identifiant
+    end
+
+    Repo-->>VM: le médicament et 21 entrées
+    VM->>VM: take(20), hasMoreHistory = true (:123)
+    VM-->>UI: MedicineDetailUiState
+    UI->>U: Fiche, 20 entrées, bouton « Voir plus »
+
+    U->>UI: « Voir les entrées plus anciennes » (:268)
+    UI->>VM: showMoreHistory() (:139)
+    Note over VM: La fenêtre vit dans le ViewModel : l'élargir ne<br/>reconstruit pas le flux, la fiche ne repasse pas<br/>par son indicateur de chargement
+    VM-->>UI: 40 entrées
+```
 
 ### Diminuer la quantité
 
@@ -185,6 +411,42 @@ affichée travaillerait sur un chiffre peut-être périmé.
 **Un mouvement de cinquante unités produit une seule entrée d'historique.** Le
 service qualité cherchant « qui a retiré 50 boîtes » ne trouve pas cinquante
 lignes de « -1 ».
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant UI as MedicineDetailScreen
+    participant VM as MedicineViewModel
+    participant Repo as MedicineRepositoryImpl
+    participant FS as Firestore
+
+    U->>UI: Saisit une quantité, touche « Retirer » (:213)
+    UI->>VM: updateStock(id, -quantité) (:155)
+    VM->>Repo: updateStock(id, delta, e-mail) (:204)
+
+    rect rgb(245, 245, 245)
+        Note over Repo,FS: runTransaction : lire, décider, écrire
+        Repo->>FS: get(medicine) — toutes les lectures d'abord
+        FS-->>Repo: le stock réel
+        alt stock + delta inférieur à zéro
+            Repo-->>Repo: StockChange.Insufficient(disponible)
+        else Mouvement possible
+            Repo->>FS: update(stock) + set(entrée d'historique)
+            Note over FS: Les deux écritures ensemble, ou aucune
+        end
+    end
+
+    alt Refus
+        Repo-->>VM: StockException(INSUFFICIENT_STOCK, disponible)
+        VM->>VM: actionError = toUiMessage() (:168)
+        VM-->>U: Fenêtre à valider, saisie conservée
+    else Succès
+        Repo-->>VM: écriture confirmée par le serveur
+        VM->>VM: movementConfirmed (:159)
+        VM-->>UI: LaunchedEffect(confirmation) (:79)
+        UI->>U: Snackbar, et le champ se vide seulement ici
+    end
+```
 
 ### Corriger une fiche
 
@@ -196,6 +458,41 @@ création, qui lit son identifiant dans son `SavedStateHandle`.
 l'emplacement, jamais le stock : celui-ci ne bouge que par un mouvement tracé.
 La correction produit sa propre entrée d'historique, avec un stock avant et
 après identiques.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant Detail as MedicineDetailScreen
+    participant VM as MedicineFormViewModel
+    participant Repo as MedicineRepositoryImpl
+    participant FS as Firestore
+
+    U->>Detail: « Modifier ce médicament » (:236)
+    Detail->>VM: composable MEDICINE_EDIT (StockNavGraph.kt:152)
+    Note over VM: L'identifiant vient du SavedStateHandle (:41) :<br/>c'est la route qui distingue création et correction
+    VM->>Repo: observeMedicine(id).first() (:58)
+    Repo-->>VM: les valeurs actuelles
+    VM-->>U: Formulaire pré-rempli, le même écran que la création
+
+    U->>VM: Corrige le nom ou l'emplacement, valide
+    VM->>Repo: updateMedicine(...) (:157)
+
+    rect rgb(245, 245, 245)
+        Repo->>FS: get(medicine) puis relecture
+        alt Aucun changement réel
+            Repo-->>Repo: rien n'est écrit, pas d'entrée d'historique
+        else Changement
+            Repo->>FS: update(name + nameLowercase + aisleId)
+            Repo->>FS: set(entrée UPDATE, stock avant = stock après)
+            Note over FS: nameLowercase mis à jour EN MÊME TEMPS : l'oublier<br/>ferait sortir le médicament de la recherche,<br/>sans aucune erreur visible
+        end
+    end
+
+    Repo-->>U: Retour à la fiche
+```
+
+Le stock n'est **jamais** modifiable ici : il ne bouge que par un mouvement
+tracé. Corriger un stock par ce chemin contournerait la traçabilité.
 
 ### Supprimer un médicament
 
@@ -208,6 +505,27 @@ après identiques.
    transaction. **L'historique survit au médicament supprimé** - c'est
    l'opération que le service qualité a le plus besoin de retrouver.
 4. `onDeleted` renvoie à la liste par `navigateUp`.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Opérateur
+    participant UI as MedicineDetailScreen
+    participant Dlg as DeleteMedicineDialog
+    participant VM as MedicineViewModel
+    participant Repo as MedicineRepositoryImpl
+    participant FS as Firestore
+
+    U->>UI: « Supprimer ce médicament » (:239)
+    UI->>Dlg: Ouvre la confirmation (:296)
+    Note over Dlg: Rappelle EN ROUGE le nombre d'unités restantes<br/>si le stock n'est pas nul
+    U->>Dlg: Valide
+    Dlg->>VM: deleteMedicine(id) (:172)
+    VM->>Repo: deleteMedicine(id, e-mail) (:249)
+    Repo->>FS: runTransaction : delete(medicine) + set(entrée DELETE)
+    Note over FS: L'historique survit au médicament supprimé.<br/>C'est l'opération que le service qualité a<br/>le plus besoin de retrouver
+    Repo-->>VM: suppression confirmée
+    VM-->>U: onDeleted, retour à la liste par navigateUp
+```
 
 ---
 
