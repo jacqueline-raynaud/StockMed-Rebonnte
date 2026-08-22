@@ -2,6 +2,7 @@
 
 Pour chaque tâche : le **problème sous-jacent**, ce qui a été fait, et les arbitrages si nécessaire.
 
+un kanban est à disposition : [kanban](https://delicate-burn-9be.notion.site/3c17a4d984d68048b7f0def2255d1521?v=3c17a4d984d680c8972d000caadf82b3&source=copy_link)
 ---
 
 ## Vue d'ensemble
@@ -17,8 +18,7 @@ Pour chaque tâche : le **problème sous-jacent**, ce qui a été fait, et les a
 | 6 | Demandes complémentaires | Terminé |
 | 7 | Accessibilité et confort | En cours |
 
-**Réalisé : 42 tâches**, pour 30,25 jours estimés au cadrage. Le [reste à faire](#reste-a-faire) est détaillé en fin  
-de page
+**Réalisé : 42 tâches**, pour 15,55 jours estimés au cadrage. Le [reste à faire](#reste-a-faire) est détaillé en fin de page
 
 ---
 
@@ -122,7 +122,7 @@ aucun rayon n'existait.
 
 ## Lot 2 - Architecture
 
-### T-10 · Couche data et repositories · 0.1 j
+### T-10 · Couche data et repositories · 0,1 j
 
 **Problème.** Les `ViewModel` contenaient les données, la logique de persistance  
 et l'état de présentation. Rien n'était testable sans émulateur.
@@ -191,7 +191,7 @@ les interfaces existantes. Collections `medicines`, `aisles` et `history`.
 écritures successives - pour l'atomicité et pour la concurrence entre opérateurs.  
 Voir [Décisions](decisions.md#le-mouvement-et-sa-trace-dans-une-transaction).
 
-### T-17 · Authentification · 0.75 j
+### T-17 · Authentification · 0,75 j
 
 **Problème.** Aucune authentification, alors que le cahier des charges demandait  
 création de compte et identification.
@@ -307,7 +307,7 @@ collection racine, pas dans le document du médicament. Le rappel du stock
 restant répond à une [question ouverte](#questions-ouvertes-pour-le-product-owner)  
 sans la trancher.
 
-### t-41 · Saisie d'une quantité · 0,75 j
+### T-41 · Saisie d'une quantité · 0,75 j
 
 **Problème.** Retirer cinquante boîtes demandait cinquante appuis - et produisait  
 **cinquante lignes d'historique**. Le service qualité cherchant « qui a retiré  
@@ -355,7 +355,7 @@ d'accueil. Un faux `UserRepository` installe une session avant le lancement de
 l'`Activity`, ce qui reproduit le démarrage session ouverte sans avoir à tuer le  
 processus.
 
-### T-27 · Intégration continue · 0.25 j
+### T-27 · Intégration continue · 0,25 j
 
 **Fait.** Deux jobs GitHub Actions sur chaque push et chaque pull request :  
 compilation, tests unitaires, lint, couverture et analyse SonarCloud d'un côté ;  
@@ -397,7 +397,6 @@ pas la mise à jour.
 Le keystore et `local.properties` sont effacés en fin de job, avec `if: always()`  
 pour que ça s'exécute même après un échec.
 
-```
 
 ### T-30 · Documentation · 0,5 j
 
@@ -410,7 +409,7 @@ pour que ça s'exécute même après un échec.
 
 ---
 
-## Lot 5 - Reprise après revue technique
+## Lot 5 - Reprise après revue technique {#lot-5-reprise-apres-revue-technique}
 
 Ce lot regroupe la mise en conformité suite à une revue de code, plus trois défauts découverts en la menant.
 
@@ -459,7 +458,7 @@ technologie, ce qui est précisément l'intérêt d'une interface.
 - Serializer pour l'obfuscation - Utilisation de @Keep recommandé par Firebase
 
 
-### T-44 · Modèles d'affichage · 1 j
+### T-47 · Modèles d'affichage · 1 j
 
 **Demande review tuteur** Ne pas exposer d'objets de la base à l'affichage.
 
@@ -527,7 +526,6 @@ n'a rien vu se solde par un écart d'inventaire.
 Création d'un Fake `FailingMedicineRepository` pour les tests, qui échoue toujours avec la raison
 demandée. 
 
-```
 
 ### T-51 · Blocage hors ligne · 0,5 j
 
@@ -583,7 +581,7 @@ conformité WCAG invérifiable. Incompatible avec T-31.
 qu'à partir de l'API 29 alors que l'application descend à l'API 24 - d'où  
 `values/` et `values-night/`.
 
-### T-40 · Suppression de compte · 0.25 j
+### T-40 · Suppression de compte · 0,25 j
 
 **Problématique.** En utilisation personnel, un utilisateur doit pouvoir supprimer son compte.
 
@@ -787,12 +785,10 @@ règles continuent de bloquer la construction. C'est **T-53**.
 
 ### Cadrage de T-32 - thème clair/sombre {#cadrage-t-32}
 
-"Réalisé"
+!!! note "Réalisé"
 
-```
-Ce cadrage a servi de base à [T-32](#t-32). Il est conservé pour la trace
-du raisonnement.
-```
+    Ce cadrage a servi de base à [T-32](#t-32). Il est conservé pour la trace
+    du raisonnement.
 
 L'audit demandait de « maintenir le respect du mode sombre ». Le thème était  
 alors figé sur `android:Theme.Material.Light` : le mode sombre ne pouvait pas  

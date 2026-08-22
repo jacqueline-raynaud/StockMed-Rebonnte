@@ -110,9 +110,7 @@ val viewModel = ViewModelProvider(MainActivity.mainActivity)[MedicineViewModel::
 
 !!! info "note d'architecture"
 
-```
-Les écrans de détail sont des `Activity`il faut les transformer en destination .
-```
+    Les écrans de détail sont des `Activity`il faut les transformer en destination .
 
 ---
 
@@ -174,8 +172,7 @@ boutons de stock, ce qui correspond à « peu esthétique et en bas de la liste 
 
 !!! note "Une seconde lecture reste ouverte"
 
-```
-« Magasin » pourrait désigner le stock dans son ensemble, c'est-à-dire un
-**journal global** plutôt que par médicament. 
-À arbitrer avec le Product Owner.
+    « Magasin » pourrait désigner le stock dans son ensemble, c'est-à-dire un
+    **journal global** plutôt que par médicament.
+    À arbitrer avec le Product Owner.
 ```

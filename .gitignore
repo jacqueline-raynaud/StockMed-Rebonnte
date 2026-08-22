@@ -74,3 +74,6 @@ npm-debug.log
 
 # MkDocs
 site/
+
+# Configuration d'editeur, propre a chaque poste
+.vscode/

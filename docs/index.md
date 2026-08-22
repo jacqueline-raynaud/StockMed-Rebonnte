@@ -27,10 +27,6 @@ Le listing des tâches : problème, correction, détail d'implémentation.
 
 Les choix structurants et les alternatives écartées.
 
-[**Parcours utilisateur**](parcours.md)
-
-Chaque geste de l'opérateur, relié au code qui l'exécute.
-
 ## État du projet
 
 Les défauts bloquants sont corrigés, l'architecture est en place et les données  
@@ -84,4 +80,4 @@ Le détail et les limites de ces chiffres sont dans [Tests, CI et](qualite.md) [
 | Dépôt | [github.com/jacqueline-raynaud/StockMed-Rebonnte](https://github.com/jacqueline-raynaud/StockMed-Rebonnte) |  
 | Intégration continue | [github.com/jacqueline-raynaud/StockMed-Rebonnte/actions](https://github.com/jacqueline-raynaud/StockMed-Rebonnte/actions) |  
 | Qualité du code | [sonarcloud.io/project/overview?id=jacqueline-raynaud\_StockMed-Rebonnte](https://sonarcloud.io/project/overview?id=jacqueline-raynaud_StockMed-Rebonnte) |  
-| Suivi des tâches | [site notion](https://delicate-burn-9be.notion.site/3c17a4d984d68048b7f0def2255d1521?v=3c17a4d984d680c8972d000caadf82b3&source=copy_link) |
+| kanban | [site notion](https://delicate-burn-9be.notion.site/3c17a4d984d68048b7f0def2255d1521?v=3c17a4d984d680c8972d000caadf82b3&source=copy_link) |

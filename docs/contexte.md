@@ -88,13 +88,11 @@ Certaines actions apparaissent de façon sporadique, d'autres sont
 totalement absentes. Le service ne peut pas suivre les modifications du stock,  
 ce qui rend **l'application inutilisable pour leurs besoins**.
 
-"Ce n'est pas une demande de fonctionnalité"
+!!! info "Ce n'est pas une demande de fonctionnalité"
 
-```
-Le service qualité demande simplement de pouvoir **se fier** à l'historique. 
-C'est ce qui a orienté les décisions de [journalisation systématique](decisions.md#lecriture-est-dans-le-repository-pas-chez-lappelant)
-et de [journal en ajout seul](decisions.md#un-journal-en-ajout-seul).
-```
+    Le service qualité demande simplement de pouvoir **se fier** à l'historique.
+    C'est ce qui a orienté les décisions de [journalisation systématique](decisions.md#lecriture-est-dans-le-repository-pas-chez-lappelant)
+    et de [journal en ajout seul](decisions.md#un-journal-en-ajout-seul).
 
 ### Product Owner
 
@@ -168,7 +166,7 @@ non traitées sont signalées comme telles : voir le
 | Remarque | Tâches | État |
 | --- | --- | --- |
 | Actions non enregistrées dans l'historique | T-05, T-20 | Fait |
-| Historique sporadique et non fiable | T-05, T-19, T-20, T-43 | Fait |
+| Historique sporadique et non fiable | T-05, T-19, T-20, T-35 | Fait |
 
 ### Product Owner
 
@@ -191,30 +189,32 @@ non traitées sont signalées comme telles : voir le
 
 | Constat | Tâche | État |
 | --- | --- | --- |
-| Retirer 50 boîtes demande 50 clics et produit 50 lignes d'historique | T-44 | Fait |
-| Historique consultable seulement médicament par médicament | T-45 | **à transmettre au pole Web** |
-| Rayons créés au hasard, sans rapport avec les règles de stockage | T-46 | Fait |
-| Base de données ouverte sans règles de sécurité | T-43 | Fait |
+| Retirer 50 boîtes demande 50 clics et produit 50 lignes d'historique | T-41 | Fait |
+| Historique consultable seulement médicament par médicament | T-42 | **à transmettre au pole Web** |
+| Emplacements de stockage | T-36 | Fait |
+| Base de données ouverte sans règles de sécurité | T-35 | Fait |
 | Un retrait supérieur au stock était plafonné en silence | T-21 | Fait |
-| Impossible de corriger une faute dans un nom, ou de déplacer un médicament | T-55 | Fait |
-| Rien n'empêchait deux emplacements portant le même nom | T-56 | Fait |
+| Impossible de corriger une faute dans un nom, ou de déplacer un médicament | T-44 | Fait |
+| Rien n'empêchait deux emplacements portant le même nom | T-46 | Fait |
 | Une erreur Firestore fermait l'application | T-24 | Fait |
 | Hors ligne, un stock vide faute de cache se lisait comme un stock réel | T-51 | Fait |
+
+> note "T-41 ne figurait dans aucune note"
+> 
+> Le défaut est apparu à l'usage : la correction de T-05 rend l'historique  
+> visible et montre qu'un mouvement de 50 unités y produit 50 lignes.
+
 
 ### Suite à revue technique
 
 | Remarque | Tâches | État |
 | --- | --- | --- |
-| Nommer les modèles `Dto`, protéger de l'obfuscation | T-47 | Fait |
-| Séparer interfaces et implémentations, suffixe `Impl` | T-47 | Fait |
-| Ne pas exposer d'objets Firebase à l'affichage | T-48 | Fait |
-| Un `UiState` par ViewModel | T-49 | Fait |
-| Composables sans état et previews | T-49 | Fait |
-| `key` et `contentType` dans les listes | T-49 | Fait |
-| Suppression du compte utilisateur | T-50 | Fait |
+| Nommer les modèles `Dto`, protéger de l'obfuscation | T-43 | Fait |
+| Séparer interfaces et implémentations, suffixe `Impl` | T-43 | Fait |
+| Ne pas exposer d'objets Firebase à l'affichage | T-46 | Fait |
+| Un `UiState` par ViewModel | T-43 | Fait |
+| Composables sans état et previews | T-45 | Fait |
+| `key` et `contentType` dans les listes | T-43 | Fait |
+| Suppression du compte utilisateur | T-40 | Fait - question ouverte |
 | Externalisation des chaînes | T-34 | Fait |
 
-> note "T-44 ne figurait dans aucune note"
-> 
-> Le défaut est apparu à l'usage : la correction de T-05 rend l'historique  
-> visible et montre qu'un mouvement de 50 unités y produit 50 lignes.

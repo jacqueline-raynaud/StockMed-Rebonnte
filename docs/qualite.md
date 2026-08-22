@@ -1,11 +1,9 @@
 # Tests, CI et mesures
 
-info "Chiffres relevés au moment de la rédaction"
+!!! info "Chiffres relevés au moment de la rédaction"
 
-```
-Les valeurs de couverture évoluent à chaque commit. Les tableaux de bord
-liés depuis l'[accueil](index.md#liens) font foi.
-```
+    Les valeurs de couverture évoluent à chaque commit. Les tableaux de bord
+    liés depuis l'[accueil](index.md#liens) font foi.
 
 ---
 
