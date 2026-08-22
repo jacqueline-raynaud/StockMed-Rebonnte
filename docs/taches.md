@@ -911,7 +911,7 @@ Le choix appartient au Product Owner.
 
 #### Portée de l'historique
 
-Voir T-45 : « fiche détail d'un magasin » ne correspond à aucun écran de  
+Voir T-42 : « fiche détail d'un magasin » ne correspond à aucun écran de  
 l'application. L'interprétation retenue et la lecture alternative sont détaillées  
 dans l'[analyse](analyse.md#une-ambiguite-dans-les-demandes).
 
