@@ -1,7 +1,6 @@
 # Tâches réalisées
 
-Pour chaque tâche : le **problème sous-jacent**, ce qui a été fait, et le détail  
-d'implémentation quand il éclaire le choix.
+Pour chaque tâche : le **problème sous-jacent**, ce qui a été fait, et les arbitrages si nécessaire.
 
 ---
 
@@ -251,7 +250,7 @@ minuscules. Ce n'est pas l'ordre alphabétique attendu par un opérateur.
 un « contient ». Firestore ne sait pas faire de recherche textuelle.  
 [Explication](decisions.md#la-recherche-est-un-commence-par-pas-un-contient).
 
-### T-43 · Règles de sécurité Firestore · 0,25 j
+### T-35 · Règles de sécurité Firestore · 0,25 j
 
 **Problème.** Une base en mode test est ouverte à tout Internet, et les règles du  
 mode test expirent au bout de 30 jours - l'application tomberait en panne sans  
@@ -265,7 +264,7 @@ utilisateurs authentifiés, suppression de rayon interdite, et **journal d'audit
 `userEmail` doit correspondre au compte appelant. C'est ce qui distingue un  
 journal d'audit d'un simple log.
 
-### T-46 · Emplacements de stockage · 0,5 j
+### T-36 · Emplacements de stockage · 0,5 j
 
 **Problème.** Les rayons étaient créés au hasard : « Aisle 2 », « Aisle 3 ». Or  
 un médicament se range selon des règles précises - stockage standard, froid, ou  
@@ -308,7 +307,7 @@ collection racine, pas dans le document du médicament. Le rappel du stock
 restant répond à une [question ouverte](#questions-ouvertes-pour-le-product-owner)  
 sans la trancher.
 
-### T-44 · Saisie d'une quantité · 0,75 j
+### t-41 · Saisie d'une quantité · 0,75 j
 
 **Problème.** Retirer cinquante boîtes demandait cinquante appuis - et produisait  
 **cinquante lignes d'historique**. Le service qualité cherchant « qui a retiré  
@@ -407,7 +406,7 @@ pour que ça s'exécute même après un échec.
 -	Création du workflow docs.yml utlisant MkDocs
 -	Réalisation des documents : utilisation massive de l'ia  Gemini pour retravailler les notes en vrac, et de l'ia Claude pour associer Liste des tâches et suivi git et création des pages.
 
-**Fait.** Ce site, publié sur GitHub Pages par une action dédiée.
+**Fait.** Ce site, publié sur GitHub Pages par une action régit par un tag.
 
 ---
 
@@ -439,9 +438,9 @@ casser à cause d'une traduction.
 
 
 
-### T-47 · Structure de la couche data · 1 j
+### T-43 · Structure de la couche data · 1 j
 
-**Demande.** Nommer les modèles `Dto` pour marquer la frontière externe,  
+**Demande review tuteur** Nommer les modèles `Dto` pour marquer la frontière externe,  
 séparer les interfaces de leurs implémentations, suffixer celles-ci en `Impl`.
 
 
@@ -460,9 +459,9 @@ technologie, ce qui est précisément l'intérêt d'une interface.
 - Serializer pour l'obfuscation - Utilisation de @Keep recommandé par Firebase
 
 
-### T-48 · Modèles d'affichage · 1 j
+### T-44 · Modèles d'affichage · 1 j
 
-**Demande.** Ne pas exposer d'objets de la base à l'affichage.
+**Demande review tuteur** Ne pas exposer d'objets de la base à l'affichage.
 
 **Fait.** Quatre modèles `Ui` immuables, avec le mapping dans les ViewModels -  
 et non dans les dépôts, qui devraient alors connaître l'affichage.
@@ -482,7 +481,7 @@ Les libellés de remplacement restent nullables plutôt que résolus dans le
 ViewModel - sinon celui-ci devrait connaître la langue du téléphone, et le  
 bénéfice de T-34 serait perdu.
 
-### T-49 · UiState, composables sans état et previews · 2 j
+### T-45 · UiState, composables sans état et previews · 2 j
 
 **Demande.** Un `UiState` par ViewModel, séparer les composables avec et sans  
 état, ajouter des previews et des `contentType`.
@@ -584,7 +583,7 @@ conformité WCAG invérifiable. Incompatible avec T-31.
 qu'à partir de l'API 29 alors que l'application descend à l'API 24 - d'où  
 `values/` et `values-night/`.
 
-### T-50 · Suppression de compte · 0.25 j
+### T-40 · Suppression de compte · 0.25 j
 
 **Problématique.** En utilisation personnel, un utilisateur doit pouvoir supprimer son compte.
 
@@ -613,9 +612,9 @@ opérateur a servi le même médicament entre-temps.
 
 ## Lot 6 - Eléments complémentaires
 
-### T-55 · Corriger la fiche d'un médicament · 0,5 j {#t-55}
+### T-44 · Corriger la fiche d'un médicament · 0,5 j {#t-44}
 
-**Demande.** Pouvoir rattraper une faute d'orthographe dans un nom, ou déplacer  
+**Reflexion ** Pouvoir rattraper une faute d'orthographe dans un nom, ou déplacer  
 un médicament d'un emplacement à un autre - et que la correction figure dans  
 l'historique.
 
@@ -637,7 +636,7 @@ et après identiques - la correction se distingue d'un mouvement au premier coup
 d'œil :
 
 
-### T-56 · Noms d'emplacement uniques · 0,25 j {#t-56}
+### T-46 · Noms d'emplacement uniques · 0,25 j {#t-46}
 
 **Demande.** Empêcher deux emplacements de porter le même nom, et refuser un  
 nom fait uniquement d'espaces.
@@ -692,55 +691,45 @@ Identifié, non traité. Rien n'est oublié : tout est dans le suivi des tâches
 
 |   | Tâche | État actuel |
 | --- | --- | --- |
-| **T-45** | Journal global du stock | **Transmis au pôle web**, avec son dossier de conception. L'historique reste consultable médicament par médicament dans l'application ; le journal transverse, lui, sort du périmètre mobile - voir [ci-dessous](#t-45) et l'[ambiguïté relevée](analyse.md#une-ambiguite-dans-les-demandes) |
+| **T-42** | Journal global du stock | **Transmis au pôle web**, avec son dossier de conception. L'historique reste consultable médicament par médicament dans l'application ; le journal transverse, lui, sort du périmètre mobile - voir [ci-dessous](#t-42) et l'[ambiguïté relevée](analyse.md#une-ambiguite-dans-les-demandes) |
 
-#### T-45 · Le journal du stock part au pôle web {#t-45}
+#### T-42 · Le journal du stock détaillé {#t-42}
 
 Le service qualité veut répondre à « qui a touché au stock cette semaine ». Le  
 besoin est légitime et le modèle de données le permet déjà. Il n'a pourtant pas  
 été réalisé côté Android, et c'est une décision.
 
-**Le contrôle d'accès est intenable côté mobile.** Le journal ne s'adresse pas  
-aux opérateurs mais au service qui gère les stocks. Or la fiche d'un médicament  
-et le journal global lisent **la même collection avec la même opération** : un  
-`list` sur `history`. Une règle Firestore ne sait pas distinguer les deux - elle  
-dit oui aux deux, ou non aux deux. Masquer l'écran dans l'application ne  
-protégerait donc rien : il suffit d'extraire l'APK pour interroger la base  
-directement.
+**réflexions à trancher par PO** : 
+**support et usage** : la consultation souhaité par le service qui gère les stock
+s'apparente plus à du contrôle global.
+Tel que fait sur l'appli, l'historique s'utilise sur un médicament.
+On peut supposer que le contrôle souhaité par le service s'apparente à 
+on trie, on croise des critères, on imprime, et on exporte vers un tableur. 
+C'est une page web, pas un téléphone.
 
-**Le support ne correspond pas à l'usage.** Un journal d'audit se consulte  
-depuis un bureau : on trie, on croise des critères, on imprime, et on finit  
-généralement par exporter vers un tableur. C'est une page web, pas un téléphone  
-tenu d'une main devant une étagère.
 
-**L'équipe compétente existe déjà.** Le pôle IT & Development est composé de  
+**L'équipe compétente existe .** Le pôle IT & Development est composé de  
 développeurs web ([voir le contexte](contexte.md#lequipe-en-place)). Une  
-web-app lisant Firestore **depuis son serveur** résout au passage le problème  
-d'accès : le navigateur ne touche jamais la base, et la frontière devient réelle.
+web-app lisant Firestore depuis son serveur semble plus indiqué.
 
-Le dossier de transmission - modèle de données, contraintes de requête, index à  
-créer, pièges connus et questions à trancher - a été rédigé et remis. Ce qui  
-reste dans l'application est inchangé : l'historique de chaque fiche, tel que le  
-Product Owner l'a demandé.
 
 ### Robustesse
 
 |   | Tâche |
 | --- | --- |
-| **T-21** | Reste de la validation : doublons de noms de **médicaments** - deux « Doliprane » restent possibles - et absence de longueur maximale sur les noms |
-| **T-57** | Pagination de la liste principale des médicaments, qui descend en entier. Raisonnable sur quelques centaines de références, à revoir sur plusieurs milliers - voir [T-23](#t-23) |
-| **T-52** | Détecter l'accessibilité réelle du serveur, et non ce qu'Android croit du réseau. Voir la [limite connue](#limites-connues) |
-| **T-58** | **Mot de passe oublié** : l'écran de connexion est un cul-de-sac. Un opérateur qui a oublié son mot de passe n'a aucune issue dans l'application. Voir la [question ouverte](#mot-de-passe-oublie) sur la procédure à retenir |
+| **T-15b** | Reste de la validation : doublons de noms de **médicaments** - deux « Doliprane » restent possibles - et absence de longueur maximale sur les noms |
+| **T-23** | Limiter le chargement de la liste |
+| **T-57** | **Mot de passe oublié** : l'écran de connexion est un cul-de-sac. Un opérateur qui a oublié son mot de passe n'a aucune issue dans l'application. Voir la [question ouverte](#mot-de-passe-oublie) sur la procédure à retenir |
 
 ### Livrables et finition
 
 |   | Tâche |
 | --- | --- |
 | **T-31** | Accessibilité : parcours TalkBack, zones tactiles, contrastes |
-| **T-53** | Monter le BOM Compose pour réactiver `StateFlowValueCalledInComposition` - voir les [limites connues](#limites-connues) |
-| **T-54** | Retirer la diffusion interne, devenue du code mort - voir ci-dessous |
+| **T-52** | Monter le BOM Compose pour réactiver `StateFlowValueCalledInComposition` - voir les [limites connues](#limites-connues) |
+| **T-53** | Retirer la diffusion interne, devenue du code mort - voir ci-dessous |
 
-#### T-54 · Le `BroadcastReceiver` n'a plus d'objet {#t-54}
+#### T-53 · Le `BroadcastReceiver` n'a plus d'objet {#t-53}
 
 L'application s'envoie un message à elle-même 200 ms après le démarrage, le  
 reçoit, et affiche « Mise à jour reçue ». Personne d'autre n'émet cette action,  
@@ -798,7 +787,7 @@ règles continuent de bloquer la construction. C'est **T-53**.
 
 ### Cadrage de T-32 - thème clair/sombre {#cadrage-t-32}
 
-!!! success "Réalisé"
+"Réalisé"
 
 ```
 Ce cadrage a servi de base à [T-32](#t-32). Il est conservé pour la trace
